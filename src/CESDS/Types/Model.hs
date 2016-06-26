@@ -1,7 +1,6 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric  #-}
-
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 
 module CESDS.Types.Model (
@@ -12,11 +11,10 @@ module CESDS.Types.Model (
 
 import CESDS.Types (Generation, Identifier, Tags)
 import CESDS.Types.Variable (VariableIdentifier)
-import Data.Aeson (Value(String))
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), typeMismatch)
-import Data.Text (Text, pack, unpack)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.=), object, withObject)
+import Data.Text (Text)
 import GHC.Generics (Generic)
-import Network.URI (URI, parseURI)
+import Network.URI (URI)
 
 
 type ModelIdentifier = Identifier
@@ -25,27 +23,42 @@ type ModelIdentifier = Identifier
 data Model =
   Model
   {
-    modelID          :: ModelIdentifier
-  , modelURI         :: URI
-  , modelName        :: Maybe Text
-  , modelDescription :: Maybe Text
-  , modelTags        :: Tags
-  , generation       :: Generation
-  , variables        :: [VariableIdentifier]
-  , primaryKey       :: VariableIdentifier
-  , timeKey          :: Maybe VariableIdentifier
+    identifier  :: ModelIdentifier
+  , uri         :: URI
+  , name        :: Maybe Text
+  , description :: Maybe Text
+  , tags        :: Tags
+  , generation  :: Generation
+  , variables   :: [VariableIdentifier]
+  , primaryKey  :: VariableIdentifier
+  , timeKey     :: Maybe VariableIdentifier
   }
-    deriving (Eq, FromJSON, Generic, Read, Show, ToJSON)
+    deriving (Eq, Generic, Read, Show)
 
+instance FromJSON Model where
+  parseJSON = withObject "MODEL" $ \o ->
+                do
+                  identifier  <- o .: "model_id"
+                  uri         <- o .: "model_uri"
+                  name        <- o .: "label"
+                  description <- o .: "description"
+                  tags        <- o .: "tags"
+                  generation  <- o .: "generation"
+                  variables   <- o .: "variables"
+                  primaryKey  <- o .: "primary_key"
+                  timeKey     <- o .: "time_key"
+                  return Model{..}
 
-instance Read URI where
-  readsPrec _ s = case parseURI s of
-                    Nothing  -> []
-                    Just uri -> [(uri, "")]
-
-instance FromJSON URI where
-  parseJSON invalid@(String s) = maybe (typeMismatch "URI" invalid) return . parseURI $ unpack s
-  parseJSON invalid            = typeMismatch "URI" invalid
-
-instance ToJSON URI where
-  toJSON = String . pack . show
+instance ToJSON Model where
+  toJSON Model{..} = object
+                       [
+                         "model_id"    .= identifier
+                       , "model_uri"   .= uri
+                       , "label"       .= name
+                       , "description" .= description
+                       , "tags"        .= tags
+                       , "generation"  .= generation
+                       , "variables"   .= variables
+                       , "primary_key" .= primaryKey
+                       , "time_key"    .= timeKey
+                       ]

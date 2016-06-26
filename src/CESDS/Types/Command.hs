@@ -1,5 +1,6 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 
 module CESDS.Types.Command (
@@ -9,40 +10,90 @@ module CESDS.Types.Command (
 
 
 import CESDS.Types.Model (ModelIdentifier)
-import Data.Aeson (FromJSON, ToJSON)
+import Control.Applicative ((<|>))
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.=), object, withObject)
 import GHC.Generics (Generic)
+import Data.Text (Text)
 
 
 data Command =
     RestartServer
   | RestartModel
     {
-      model :: ModelIdentifier
+      models :: [ModelIdentifier]
     }
   | ClearServer
   | ClearModel     
     {
-      model :: ModelIdentifier
+      models :: [ModelIdentifier]
     }
   | StrategyRandom
     {
-      model :: ModelIdentifier
+      models :: [ModelIdentifier]
     }
   | StrategyFIFO   
     {
-      model :: ModelIdentifier
+      models :: [ModelIdentifier]
     }
   | StrategyFILO   
     {
-      model :: ModelIdentifier
+      models :: [ModelIdentifier]
     }
-    deriving (Eq, FromJSON, Generic, Read, Show, ToJSON)
+    deriving (Eq, Generic, Read, Show)
 
+instance FromJSON Command where
+  parseJSON =
+    withObject "COMMAND" $ \o ->
+      parseModelCommand o <|> parseServerCommand o
+    where
+      parseServerCommand o =
+        do
+          command <- o .: "command"
+          case command of
+            "restart" -> return RestartServer
+            "clear"   -> return ClearServer
+            _         -> fail $ "invalid COMMAND_OPTION \"" ++ command ++ "\""
+      parseModelCommand o =
+        do
+          command <- o .: "command"
+          models  <- o .: "models"
+          case command of
+           "restart"            -> return RestartModel{..}
+           "clear"              -> return ClearModel{..}
+           "model_strat_random" -> return StrategyRandom{..}
+           "model_strat_fifo"   -> return StrategyFIFO{..}
+           "model_strat_filo"   -> return StrategyFILO{..}
+           _                    -> fail $ "invalid COMMAND_OPTION \"" ++ command ++ "\""
+
+instance ToJSON Command where
+  toJSON RestartServer      = object ["command" .= ("restart"            :: String)                   ]
+  toJSON ClearServer        = object ["command" .= ("clear"              :: String)                   ]
+  toJSON RestartModel{..}   = object ["command" .= ("restart"            :: String), "param" .= models]
+  toJSON ClearModel{..}     = object ["command" .= ("clear"              :: String), "param" .= models]
+  toJSON StrategyRandom{..} = object ["command" .= ("model_strat_random" :: String), "param" .= models]
+  toJSON StrategyFIFO{..}   = object ["command" .= ("model_strat_fifo"   :: String), "param" .= models]
+  toJSON StrategyFILO{..}   = object ["command" .= ("model_strat_filo"   :: String), "param" .= models]
+        
 
 data Result =
     Success
   | Error
     {
-      message :: String
+      code    :: Text
+    , message :: Maybe Text
     }
-    deriving (Eq, FromJSON, Generic, Read, Show, ToJSON)
+    deriving (Eq, Generic, Read, Show)
+
+instance FromJSON Result where
+  parseJSON = withObject "COMMAND_RESULT" $ \o ->
+    parseError o <|> return Success
+    where
+      parseError o =
+        do
+          code    <- o .: "result"
+          message <- o .: "additional"
+          return Error{..}
+
+instance ToJSON Result where
+  toJSON Success   = object [                                          ]
+  toJSON Error{..} = object ["result" .= code , "additional" .= message]

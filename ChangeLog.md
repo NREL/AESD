@@ -1,5 +1,9 @@
 # Revision history for cesds-records
 
+## 0.1.3.0  -- 2016-06-24
+
+* Rewrote JSON instances to conform to CESDS specification
+
 ## 0.1.2.0  -- 2016-06-24
 
 * Added orphan Read, FromJSON, and ToJSON instances for URI

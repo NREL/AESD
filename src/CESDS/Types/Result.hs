@@ -1,14 +1,22 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric  #-}
+
+
 module CESDS.Types.Result (
   ResultIdentifier
-, Result
+, Result(..)
 ) where
 
 
 import CESDS.Types (Identifier)
-import Data.Aeson (Object)
+import CESDS.Types.Variable (VariableIdentifier)
+import Data.Aeson.Types (FromJSON, ToJSON)
+import Data.Scientific (Scientific)
+import GHC.Generics (Generic)
 
 
 type ResultIdentifier = Identifier
 
 
-type Result = Object
+newtype Result = Result {unResult :: [(VariableIdentifier, Scientific)]}
+  deriving (Eq, FromJSON, Generic, Read, Show, ToJSON)

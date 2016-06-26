@@ -1,18 +1,19 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 
 module CESDS.Types.Server (
   ServerIdentifier
 , APIVersion
 , Server(..)
-, ServerStatus(..)
+, Status(..)
 ) where
 
 
 import CESDS.Types (Identifier)
 import CESDS.Types.Model (ModelIdentifier)
-import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Value(String), (.:), (.=), object, withObject, withText)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -29,12 +30,32 @@ data Server =
     identifier :: ServerIdentifier
   , version    :: APIVersion
   , models     :: [ModelIdentifier]
-  , status     :: ServerStatus
+  , status     :: Status
   }
-    deriving (Eq, FromJSON, Generic, Read, Show, ToJSON)
+    deriving (Eq, Generic, Read, Show)
+
+instance FromJSON Server where
+  parseJSON =
+    withObject "SERVER" $ \o ->
+      do
+        identifier <- o .: "server_id"
+        version    <- o .: "version"
+        models     <- o .: "models"
+        status     <- o .: "status"
+        return Server{..}
+
+instance ToJSON Server where
+  toJSON Server{..} =
+    object
+      [
+        "server_id" .= identifier
+      , "version"   .= version
+      , "models"    .= models
+      , "status"    .= status
+      ]
 
 
-data ServerStatus =
+data Status =
     Okay
   | Broken
   | OnFire
@@ -42,4 +63,19 @@ data ServerStatus =
     {
       message :: Text
     }
-    deriving (Eq, FromJSON, Generic, Read, Show, ToJSON)
+    deriving (Eq, Generic, Read, Show)
+
+instance FromJSON Status where
+  parseJSON =
+    withText "SERVER_STATUS" $ \s ->
+      case s of
+        "ok"      -> return Okay
+        "broken"  -> return Broken
+        "on_fire" -> return OnFire
+        _         -> return $ OtherStatus s
+
+instance ToJSON Status where
+  toJSON Okay            = String "ok"
+  toJSON Broken          = String "broken"
+  toJSON OnFire          = String "on_fire"
+  toJSON OtherStatus{..} = String message

@@ -1,4 +1,4 @@
-.sw?
+*.sw?
 tmp/
 cabal.sandbox.config
 .cabal-sandbox/
