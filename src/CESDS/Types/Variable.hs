@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
@@ -13,10 +13,10 @@ module CESDS.Types.Variable (
 ) where
 
 
-import CESDS.Types (Color, Identifier)
+import CESDS.Types (Color, Identifier, object')
 import Control.Applicative ((<|>))
 import Control.Monad (when)
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.!=), (.=), object, withObject)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.!=), (.=), withObject)
 import Data.Scientific (Scientific)
 import Data.Text (Text)
 import GHC.Generics (Generic)
@@ -40,16 +40,16 @@ instance FromJSON Variable where
   parseJSON =
     withObject "VAR" $ \o ->
       do
-        identifier <- o .: "var_id"
-        display    <- o .: "disp"
-        domain     <- o .: "domain"
-        units      <- o .: "units"
-        isInput    <- o .: "is_input" .!= False
+        identifier <- o .:  "var_id"
+        display    <- o .:  "disp"
+        domain     <- o .:  "domain"
+        units      <- o .:? "units"
+        isInput    <- o .:  "is_input" .!= False
         return Variable{..}
 
 instance ToJSON Variable where
   toJSON Variable{..} =
-    object
+    object'
       [
         "var_id"   .= identifier
       , "disp"     .= display
@@ -72,17 +72,17 @@ instance FromJSON Display where
   parseJSON =
     withObject "VAR disp" $ \o ->
       do
-        label      <- o .: "label"
-        shortLabel <- o .: "shortlabel"
-        color      <- o .: "color"
+        label      <- o .:  "label"
+        shortLabel <- o .:? "shortlabel"
+        color      <- o .:? "color"
         return Display{..}
 
 instance ToJSON Display where
   toJSON Display{..} =
-    object
+    object'
       [
         "label"      .= label
-      , "shortlable" .= shortLabel
+      , "shortlabel" .= shortLabel
       , "color"      .= color
       ]
 
@@ -108,20 +108,20 @@ instance FromJSON Domain where
         withObject "VAR domain interval" $ \o' ->
           do
             bounds <- o' .: "bounds"
-            when (length bounds == 2)
-              $ fail "VAR domain interval must contain two entries"
+            when (length bounds /= 2)
+              $ fail "VAR domain interval bounds must contain two entries"
             let
               [lowerBound, upperBound] = bounds
             return Interval{..}
       parseSet =
         withObject "VAR domain set" $ \o' ->
           do
-            options <- o' .: "options"
+            options <- o' .:? "options"
             return Set{..}
 
 instance ToJSON Domain where
-  toJSON Interval{..} = object ["bounds"  .= [lowerBound, upperBound]]
-  toJSON Set{..}      = object ["options" .= options                 ]
+  toJSON Interval{..} = object' ["interval" .= object' ["bounds"  .= [lowerBound, upperBound]]]
+  toJSON Set{..}      = object' ["set"      .= object' ["options" .= options                 ]]
 
 
 type SetValue = Text
@@ -147,7 +147,7 @@ instance FromJSON Units where
     withObject "VAR units" $ \o ->
       do
         si <- o .: "SI"
-        when (length si == 8)
+        when (length si /= 8)
           $ fail "VAR units SI must contain eight entries"
         let
           [lengthExponent, massExponent, timeExponent, currentExponent, temperatureExponent, molExponent, intensityExponent, angleExponent] = si
@@ -156,7 +156,7 @@ instance FromJSON Units where
 
 instance ToJSON Units where
   toJSON Units{..} =
-    object
+    object'
       [
         "SI"    .= [lengthExponent, massExponent, timeExponent, currentExponent, temperatureExponent, molExponent, intensityExponent, angleExponent]
       , "scale" .= scale

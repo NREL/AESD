@@ -9,9 +9,9 @@ module CESDS.Types.Bookmark (
 ) where
 
 
-import CESDS.Types (Color, Identifier, Tags)
-import CESDS.Types.Result (ResultIdentifier)
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.=), object, withObject)
+import CESDS.Types (Color, Identifier, Tags, object')
+import CESDS.Types.Record (RecordIdentifier)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -27,7 +27,7 @@ data Bookmark =
   , size       :: Int
   , color      :: Maybe Color
   , tags       :: Tags
-  , results    :: Maybe [ResultIdentifier]
+  , records    :: Maybe [RecordIdentifier]
   }
     deriving (Eq, Generic, Read, Show)
 
@@ -38,24 +38,24 @@ instance FromJSON Bookmark where
         meta <- withObject "BOOKMARK_META"
                   (\o' ->
                     do
-                      identifier <- o' .: "bookmark_id"
-                      name       <- o' .: "name"
-                      size       <- o' .: "size"
-                      color      <- o' .: "color"
-                      tags       <- o' .: "tags"
-                      let results  = Nothing
+                      identifier <- o' .:  "bookmark_id"
+                      name       <- o' .:  "name"
+                      size       <- o' .:  "size"
+                      color      <- o' .:? "color"
+                      tags       <- o' .:  "tags"
+                      let records  = Nothing
                       return Bookmark{..}
                   )
                   =<< o .: "meta"
-        results <- o .: "record_ids"
-        return $ meta {results = results}
+        records <- o .:? "record_ids"
+        return $ meta {records = records}
 
 instance ToJSON Bookmark where
   toJSON Bookmark{..} =
-    object
-      $ maybe id ((:) . ("record_ids" .=)) results
+    object'
+      $ maybe id ((:) . ("record_ids" .=)) records
       [
-        "meta" .= object
+        "meta" .= object'
                     [
                       "bookmark_id" .= identifier
                     , "name"        .= name

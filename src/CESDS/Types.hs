@@ -10,10 +10,11 @@ module CESDS.Types (
 , Color
 , Tags(..)
 , Generation
+, object'
 ) where
 
 
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Pair, Value(String), object, withObject, withText)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Pair, Value(Null, String), object, withObject, withText)
 import Data.Colour.SRGB (Colour, sRGB24reads, sRGB24shows)
 import Data.Text (Text, pack, unpack)
 import GHC.Generics (Generic)
@@ -67,3 +68,7 @@ instance FromJSON URI where
 
 instance ToJSON URI where
   toJSON = String . pack . show
+
+
+object' :: [Pair] -> Value
+object' = object . filter ((/= Null) . snd)

@@ -1,5 +1,4 @@
-{-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE OverloadedStrings   #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -9,25 +8,32 @@ module Main (
 ) where
 
 
-import CESDS.Types (Color, Tags(..))
-import CESDS.Types.Model (Model(..))
+import CESDS.Types (Color)
+import CESDS.Types.Bookmark (Bookmark(..))
+import CESDS.Types.Bookmark.Test ()
+import CESDS.Types.Command (Command, Result)
+import CESDS.Types.Command.Test ()
+import CESDS.Types.Filter (Filter, SelectionExpression)
+import CESDS.Types.Filter.Test ()
+import CESDS.Types.Model (Model)
+import CESDS.Types.Model.Test ()
+import CESDS.Types.Record (Record)
+import CESDS.Types.Record.Test ()
+import CESDS.Types.Server (Server, Status)
+import CESDS.Types.Server.Test ()
+import CESDS.Types.Test ()
+import CESDS.Types.Variable (Display, Domain, Units, Variable)
+import CESDS.Types.Variable.Test ()
+import CESDS.Types.Work (Submission, SubmissionResult, WorkStatus)
+import CESDS.Types.Work.Test ()
 import Control.Arrow ((&&&))
 import Control.Monad (unless)
-import Data.Aeson (Result(Success), decode, encode)
-import Data.Aeson.Types (FromJSON, Result(Success), ToJSON, Value(..), fromJSON, object)
-import Data.Colour.SRGB (sRGB24)
-import Data.Maybe (fromJust, isJust)
-import Data.Scientific (Scientific, fromFloatDigits, scientific)
-import Data.Text (Text, pack)
-import Network.URI (URI, parseURI)
+import Data.Aeson (decode, encode)
+import Data.Aeson.Types (FromJSON, ToJSON)
+import Network.URI (URI)
 import System.Exit (exitFailure)
-import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (Gen, choose, elements, generate, listOf1, oneof, resize, sample)
-import Test.QuickCheck.Property (Property, ioProperty, property)
+import Test.QuickCheck.Property (Property, label, property)
 import Test.QuickCheck.Test (isSuccess, quickCheckResult)
-
-import qualified Data.HashMap.Strict as H (fromList)
-import qualified Data.Vector as V (fromList)
 
 
 checkShowRead :: (Eq a, Read a, Show a) => a -> Property
@@ -38,105 +44,84 @@ checkEncodeDecode :: (Eq a, FromJSON a, ToJSON a) => a -> Property
 checkEncodeDecode = property . uncurry (==) . (Just &&& decode . encode)
 
 
-checkParse :: (Value -> Result a)  -> Gen Value -> Property
-checkParse p g =
-  ioProperty
-    $ do
-      v <- generate g
-      return
-        $ case p v of
-            Success _ -> True
-            _         -> False
-
-
-instance Arbitrary Text where
-  arbitrary = pack <$> listOf1 (elements $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'])
-
-
-instance Arbitrary Scientific where
-  arbitrary =
-    oneof
-      [
-        fromFloatDigits <$> (arbitrary :: Gen Double)
-      , flip scientific 0 <$> (arbitrary :: Gen Integer)
-      ]
-
-
-instance Arbitrary Value where
-  arbitrary =
-    oneof
-      [
-        Object . H.fromList <$> resize 4 arbitrary
-      , Array . V.fromList <$> arbitrary
-      , String <$> arbitrary
-      , Number <$> arbitrary
-      , Bool   <$> arbitrary
-      , return Null
-      ]
-
-
-instance Arbitrary Color where
-  arbitrary = sRGB24 <$> arbitrary <*> arbitrary <*> arbitrary
-
-
 prop_color_io :: Color -> Property
-prop_color_io = checkShowRead
+prop_color_io = label "Color read/show" . checkShowRead
 
 
 prop_color_json :: Color -> Property
-prop_color_json = checkEncodeDecode
-
-
-instance Arbitrary URI where
-  arbitrary = -- FIXME: Make this more rigorous, even though it is good enough for testing this package.
-    fromJust
-      . parseURI
-      . ("http://" ++)
-      <$> listOf1 (elements $ ['a'..'z'] ++ ['0'..'9'])
+prop_color_json = label "Color JSON" . checkEncodeDecode
 
 
 prop_uri_io :: URI -> Property
-prop_uri_io = checkShowRead
+prop_uri_io = label "URI read/show" . checkShowRead
 
 
 prop_uri_json :: URI -> Property
-prop_uri_json = checkEncodeDecode
+prop_uri_json = label "URI JSON" . checkEncodeDecode
 
 
-instance Arbitrary Tags where
-  arbitrary = Tags <$> resize 4 arbitrary
+prop_variable_json :: Variable -> Property
+prop_variable_json = label "Variable JSON" . checkEncodeDecode
 
 
-instance Arbitrary Model where
-  arbitrary =
-    do
-      identifier  <- arbitrary
-      uri         <- arbitrary
-      name        <- arbitrary
-      description <- arbitrary
-      tags        <- arbitrary
-      generation  <- arbitrary
-      variables   <- listOf1 arbitrary
-      primaryKey  <- elements variables
-      timeKey     <- elements $ Nothing : map Just variables
-      return Model{..}
+prop_display_json :: Display -> Property
+prop_display_json = label "Display JSON" . checkEncodeDecode
+
+
+prop_domain_json :: Domain -> Property
+prop_domain_json = label "Domain JSON" . checkEncodeDecode
+
+
+prop_units_json :: Units -> Property
+prop_units_json = label "Units JSON" . checkEncodeDecode
 
 
 prop_model_json :: Model -> Property
-prop_model_json = checkEncodeDecode
+prop_model_json = label "Model JSON" . checkEncodeDecode
 
 
-arbitraryModel :: Gen Value
-arbitraryModel =
-  do
-    return
-      $ object
-          [
-          ]
+prop_status_json :: Status -> Property
+prop_status_json = label "Status JSON" . checkEncodeDecode
 
 
-prop_model_parse :: Property
-prop_model_parse = checkParse (fromJSON :: Value -> Result Model) arbitraryModel
+prop_server_json :: Server -> Property
+prop_server_json = label "Server JSON" . checkEncodeDecode
+
+
+prop_result_json :: Result -> Property
+prop_result_json = label "Result JSON" . checkEncodeDecode
+
+
+prop_command_json :: Command -> Property
+prop_command_json = label "Command JSON" . checkEncodeDecode
+
+
+prop_record_json :: Record -> Property
+prop_record_json = label "Record JSON" . checkEncodeDecode
+
+
+prop_submission_json :: Submission -> Property
+prop_submission_json = label "Submission JSON" . checkEncodeDecode
+
+
+prop_submission_result_json :: SubmissionResult -> Property
+prop_submission_result_json = label "SubmissionResult JSON" . checkEncodeDecode
+
+
+prop_work_status_json :: WorkStatus -> Property
+prop_work_status_json = label "WorkStatus JSON" . checkEncodeDecode
+
+
+prop_bookmark_json :: Bookmark -> Property
+prop_bookmark_json = label "Bookmark JSON" . checkEncodeDecode
+
+
+prop_selection_json :: SelectionExpression -> Property
+prop_selection_json = label "SelectionExpression JSON" . checkEncodeDecode
+
+
+prop_filter_json :: Filter -> Property
+prop_filter_json = label "Filter JSON" . checkEncodeDecode
 
 
 main :: IO ()
@@ -149,7 +134,21 @@ main =
         , quickCheckResult prop_color_json
         , quickCheckResult prop_uri_io
         , quickCheckResult prop_uri_json
+        , quickCheckResult prop_display_json
+        , quickCheckResult prop_domain_json
+        , quickCheckResult prop_units_json
+        , quickCheckResult prop_variable_json
         , quickCheckResult prop_model_json
---      , quickCheckResult prop_model_parse
+        , quickCheckResult prop_status_json
+        , quickCheckResult prop_server_json
+        , quickCheckResult prop_result_json
+        , quickCheckResult prop_command_json
+        , quickCheckResult prop_record_json
+        , quickCheckResult prop_submission_json
+        , quickCheckResult prop_submission_result_json
+        , quickCheckResult prop_work_status_json
+        , quickCheckResult prop_bookmark_json
+        , quickCheckResult prop_selection_json
+        , quickCheckResult prop_filter_json
         ]
     unless (all isSuccess results) exitFailure

@@ -9,9 +9,9 @@ module CESDS.Types.Model (
 ) where
 
 
-import CESDS.Types (Generation, Identifier, Tags)
+import CESDS.Types (Generation, Identifier, Tags, object')
 import CESDS.Types.Variable (VariableIdentifier)
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.=), object, withObject)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Network.URI (URI)
@@ -38,19 +38,19 @@ data Model =
 instance FromJSON Model where
   parseJSON = withObject "MODEL" $ \o ->
                 do
-                  identifier  <- o .: "model_id"
-                  uri         <- o .: "model_uri"
-                  name        <- o .: "label"
-                  description <- o .: "description"
-                  tags        <- o .: "tags"
-                  generation  <- o .: "generation"
-                  variables   <- o .: "variables"
-                  primaryKey  <- o .: "primary_key"
-                  timeKey     <- o .: "time_key"
+                  identifier  <- o .:  "model_id"
+                  uri         <- o .:  "model_uri"
+                  name        <- o .:? "label"
+                  description <- o .:? "description"
+                  tags        <- o .:  "tags"
+                  generation  <- o .:  "generation"
+                  variables   <- o .:  "variables"
+                  primaryKey  <- o .:  "primary_key"
+                  timeKey     <- o .:? "time_key"
                   return Model{..}
 
 instance ToJSON Model where
-  toJSON Model{..} = object
+  toJSON Model{..} = object'
                        [
                          "model_id"    .= identifier
                        , "model_uri"   .= uri

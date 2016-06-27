@@ -2,9 +2,9 @@
 {-# LANGUAGE DeriveGeneric  #-}
 
 
-module CESDS.Types.Result (
-  ResultIdentifier
-, Result(..)
+module CESDS.Types.Record (
+  RecordIdentifier
+, Record(..)
 ) where
 
 
@@ -15,8 +15,8 @@ import Data.Scientific (Scientific)
 import GHC.Generics (Generic)
 
 
-type ResultIdentifier = Identifier
+type RecordIdentifier = Identifier
 
 
-newtype Result = Result {unResult :: [(VariableIdentifier, Scientific)]}
+newtype Record = Record {unRecord :: [(VariableIdentifier, Scientific)]}
   deriving (Eq, FromJSON, Generic, Read, Show, ToJSON)

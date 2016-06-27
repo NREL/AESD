@@ -1,8 +1,12 @@
 # Revision history for cesds-records
 
+## 0.1.4.0  -- 2016-06-27
+
+* JSON test cases.
+
 ## 0.1.3.1  -- 2016-06-25
 
-* Tested `CESDS.Types`
+* Tested `CESDS Types.
 
 ## 0.1.3.0  -- 2016-06-25
 

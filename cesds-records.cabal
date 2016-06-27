@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                cesds-records
-version:             0.1.3.4
+version:             0.1.4.0
 -- synopsis:            
 -- description:         
 license:             AllRightsReserved
@@ -21,7 +21,7 @@ library
                        CESDS.Types.Command
                        CESDS.Types.Filter
                        CESDS.Types.Model
-                       CESDS.Types.Result
+                       CESDS.Types.Record
                        CESDS.Types.Server
                        CESDS.Types.Work
                        CESDS.Types.Variable
@@ -45,6 +45,15 @@ library
 test-suite cesds-json-parsing
   main-is         : TestJSON.hs
   hs-source-dirs  : src
+  other-modules:     CESDS.Types.Test
+                       CESDS.Types.Bookmark.Test
+                       CESDS.Types.Command.Test
+                       CESDS.Types.Filter.Test
+                       CESDS.Types.Model.Test
+                       CESDS.Types.Record.Test
+                       CESDS.Types.Server.Test
+                       CESDS.Types.Work.Test
+                       CESDS.Types.Variable.Test
   build-depends   : base               
                ,       aeson
                ,       colour

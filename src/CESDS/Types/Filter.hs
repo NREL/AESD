@@ -10,11 +10,12 @@ module CESDS.Types.Filter (
 ) where
 
 
-import CESDS.Types (Color, Identifier, Tags)
+import CESDS.Types (Color, Identifier, Tags, object')
 import CESDS.Types.Variable (Domain(..), VariableIdentifier)
 import Control.Applicative ((<|>))
 import Control.Monad (when)
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.=), object, withObject)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
+import Data.Maybe (fromMaybe)
 import Data.Scientific (Scientific)
 import Data.Text (Text, pack)
 import GHC.Generics (Generic)
@@ -42,24 +43,24 @@ instance FromJSON Filter where
         meta <- withObject "FILTER_META"
                   (\o' ->
                     do
-                      identifier <- o' .: "filter_id"
-                      name       <- o' .: "name"
-                      size       <- o' .: "size"
-                      color      <- o' .: "color"
-                      tags       <- o' .: "tags"
+                      identifier <- o' .:  "filter_id"
+                      name       <- o' .:  "name"
+                      size       <- o' .:? "size"
+                      color      <- o' .:? "color"
+                      tags       <- o' .:  "tags"
                       let expression = Nothing
                       return Filter{..}
                   )
                   =<< o .: "meta"
-        expression <- o .: "expr"
+        expression <- o .:? "expr"
         return $ meta {expression = expression}
 
 instance ToJSON Filter where
   toJSON Filter{..} =
-    object
+    object'
       $ maybe id ((:) . ("expr" .=)) expression
       [
-        "meta" .= object
+        "meta" .= object'
                     [
                       "filter_id" .= identifier
                     , "name"      .= name
@@ -73,17 +74,17 @@ instance ToJSON Filter where
 data SelectionExpression =
     NotSelection 
     {
-      expression1 :: SelectionExpression
+      right :: SelectionExpression
     }
   | UnionSelection
     {
-      expression1 :: SelectionExpression
-    , expression2 :: SelectionExpression
+      left  :: SelectionExpression
+    , right :: SelectionExpression
     }
   | IntersectSelection
     {
-      expression1 :: SelectionExpression
-    , expression2 :: SelectionExpression
+      left  :: SelectionExpression
+    , right :: SelectionExpression
     }
   | ValueSelection
     {
@@ -93,7 +94,7 @@ data SelectionExpression =
   | DomainSelection
     {
       variable :: VariableIdentifier
-    , domain :: Domain
+    , domain   :: Domain
     }
     deriving (Eq, Generic, Read, Show)
 
@@ -135,40 +136,40 @@ instance FromJSON SelectionExpression where
 
 instance ToJSON SelectionExpression where
   toJSON NotSelection{..} =
-    object
+    object'
       [
         "expr" .= pack "not"
-      , "a"    .= expression1
+      , "a"    .= right
       ]
   toJSON UnionSelection{..} =
-    object
+    object'
       [
         "expr" .= pack "union"
-      , "a"    .= expression1
-      , "b"    .= expression2
+      , "a"    .= left
+      , "b"    .= right
       ] 
   toJSON IntersectSelection{..} =
-    object
+    object'
       [
         "expr" .= pack "isect"
-      , "a"    .= expression1
-      , "b"    .= expression2
+      , "a"    .= left
+      , "b"    .= right
       ]
   toJSON ValueSelection{..} =
-    object
+    object'
       [
         "var"   .= variable
       , "value" .= value
       ]
   toJSON DomainSelection{..} =
     case domain of
-      Interval{..} -> object
+      Interval{..} -> object'
                         [
                           "var"      .= variable
                         , "interval" .= [lowerBound, upperBound]
                         ]
-      Set{..}      -> object
+      Set{..}      -> object'
                         [
                           "var" .= variable
-                        , "set" .= options
+                        , "set" .= fromMaybe [] options
                         ]

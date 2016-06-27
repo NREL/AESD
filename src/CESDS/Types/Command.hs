@@ -9,9 +9,10 @@ module CESDS.Types.Command (
 ) where
 
 
+import CESDS.Types (object')
 import CESDS.Types.Model (ModelIdentifier)
 import Control.Applicative ((<|>))
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.=), object, withObject)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
 import GHC.Generics (Generic)
 import Data.Text (Text)
 
@@ -56,7 +57,7 @@ instance FromJSON Command where
       parseModelCommand o =
         do
           command <- o .: "command"
-          models  <- o .: "models"
+          models  <- o .: "param"
           case command of
            "restart"            -> return RestartModel{..}
            "clear"              -> return ClearModel{..}
@@ -66,13 +67,13 @@ instance FromJSON Command where
            _                    -> fail $ "invalid COMMAND_OPTION \"" ++ command ++ "\""
 
 instance ToJSON Command where
-  toJSON RestartServer      = object ["command" .= ("restart"            :: String)                   ]
-  toJSON ClearServer        = object ["command" .= ("clear"              :: String)                   ]
-  toJSON RestartModel{..}   = object ["command" .= ("restart"            :: String), "param" .= models]
-  toJSON ClearModel{..}     = object ["command" .= ("clear"              :: String), "param" .= models]
-  toJSON StrategyRandom{..} = object ["command" .= ("model_strat_random" :: String), "param" .= models]
-  toJSON StrategyFIFO{..}   = object ["command" .= ("model_strat_fifo"   :: String), "param" .= models]
-  toJSON StrategyFILO{..}   = object ["command" .= ("model_strat_filo"   :: String), "param" .= models]
+  toJSON RestartServer      = object' ["command" .= ("restart"            :: String)                   ]
+  toJSON ClearServer        = object' ["command" .= ("clear"              :: String)                   ]
+  toJSON RestartModel{..}   = object' ["command" .= ("restart"            :: String), "param" .= models]
+  toJSON ClearModel{..}     = object' ["command" .= ("clear"              :: String), "param" .= models]
+  toJSON StrategyRandom{..} = object' ["command" .= ("model_strat_random" :: String), "param" .= models]
+  toJSON StrategyFIFO{..}   = object' ["command" .= ("model_strat_fifo"   :: String), "param" .= models]
+  toJSON StrategyFILO{..}   = object' ["command" .= ("model_strat_filo"   :: String), "param" .= models]
         
 
 data Result =
@@ -90,10 +91,10 @@ instance FromJSON Result where
     where
       parseError o =
         do
-          code    <- o .: "result"
-          message <- o .: "additional"
+          code    <- o .:  "result"
+          message <- o .:? "additional"
           return Error{..}
 
 instance ToJSON Result where
-  toJSON Success   = object [                                          ]
-  toJSON Error{..} = object ["result" .= code , "additional" .= message]
+  toJSON Success   = object' [                                          ]
+  toJSON Error{..} = object' ["result" .= code , "additional" .= message]

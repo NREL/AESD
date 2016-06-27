@@ -9,15 +9,15 @@ module CESDS.Types.Work (
 , Priority
 , Submission(..)
 , SubmissionResult(..)
-, Status(..)
+, WorkStatus(..)
 ) where
 
 
-import CESDS.Types (Generation, Identifier)
-import CESDS.Types.Result (ResultIdentifier)
+import CESDS.Types (Generation, Identifier, object')
+import CESDS.Types.Record (RecordIdentifier)
 import CESDS.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>))
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.=), object, withObject)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
 import Data.Scientific (Scientific)
 import Data.Text (Text)
 import GHC.Generics (Generic)
@@ -46,15 +46,15 @@ instance FromJSON Submission where
   parseJSON =
     withObject "WORK_SUBMISSION" $ \o ->
       do
-        explicitVariables <- o .: "explicit"
-        randomVariables   <- o .: "random"
-        timeout           <- o .: "timeout"
-        priority          <- o .: "priority"
+        explicitVariables <- o .:  "explicit"
+        randomVariables   <- o .:  "random"
+        timeout           <- o .:? "timeout"
+        priority          <- o .:? "priority"
         return Submission{..}
 
 instance ToJSON Submission where
   toJSON Submission{..} =
-    object
+    object'
       [
         "explicit" .= explicitVariables
       , "random"   .= randomVariables
@@ -83,9 +83,9 @@ instance FromJSON SubmissionResult where
     where
       parseSubmitted o =
         do
-          identifier          <- o .: "work_id"
-          generation          <- o .: "generation"
-          estimatedCompletion <- o .: "estimated_completion"
+          identifier          <- o .:  "work_id"
+          generation          <- o .:  "generation"
+          estimatedCompletion <- o .:? "estimated_completion"
           return Submitted{..}
       parseError o =
         do
@@ -94,20 +94,20 @@ instance FromJSON SubmissionResult where
 
 instance ToJSON SubmissionResult where
   toJSON Submitted{..} =
-    object
+    object'
       [
         "work_id"              .= identifier
       , "generation"           .= generation
       , "estimated_completion" .= estimatedCompletion
       ]
   toJSON SubmissionError{..} =
-    object
+    object'
       [
         "error" .= message
       ]
 
 
-data Status =
+data WorkStatus =
     Pending
     {
       workIdentifier :: WorkIdentifier
@@ -119,7 +119,7 @@ data Status =
   | Success
     {
       workIdentifier   :: WorkIdentifier
-    , resultIdentifier :: ResultIdentifier
+    , recordIdentifier :: RecordIdentifier
     }
   | Failure
     {
@@ -128,7 +128,7 @@ data Status =
     }
     deriving (Eq, Generic, Read, Show)
 
-instance FromJSON Status where
+instance FromJSON WorkStatus where
   parseJSON = 
     withObject "WORK_STATUS" $ \o ->
       do
@@ -140,28 +140,28 @@ instance FromJSON Status where
           "failed"   -> Failure <$> o .: "work_id" <*> o .: "additional"
           _          -> fail $ "invalid WORK_STATUS \"" ++ status ++ "\""
         
-instance ToJSON Status where
+instance ToJSON WorkStatus where
   toJSON Pending{..} =
-    object
+    object'
       [
         "status"  .= ("pending" :: String)
       , "work_id" .= workIdentifier
       ]
   toJSON Running{..} =
-    object
+    object'
       [
         "status"  .= ("running" :: String)
       , "work_id" .= workIdentifier
       ]
   toJSON Success{..} =
-    object
+    object'
       [
         "status"    .= ("success" :: String)
       , "work_id"   .= workIdentifier
-      , "result_id" .= resultIdentifier       
+      , "result_id" .= recordIdentifier       
       ]
   toJSON Failure{..} =
-    object
+    object'
       [
         "status"     .= ("failed" :: String)
       , "work_id"    .= workIdentifier

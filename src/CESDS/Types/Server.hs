@@ -11,9 +11,9 @@ module CESDS.Types.Server (
 ) where
 
 
-import CESDS.Types (Identifier)
+import CESDS.Types (Identifier, object')
 import CESDS.Types.Model (ModelIdentifier)
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Value(String), (.:), (.=), object, withObject, withText)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Value(String), (.:), (.=), withObject, withText)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -46,7 +46,7 @@ instance FromJSON Server where
 
 instance ToJSON Server where
   toJSON Server{..} =
-    object
+    object'
       [
         "server_id" .= identifier
       , "version"   .= version
