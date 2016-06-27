@@ -29,7 +29,7 @@ instance Arbitrary Scientific where
   arbitrary =
     oneof
       [
-        fromFloatDigits <$> (arbitrary :: Gen Double)
+        fromFloatDigits   <$> (arbitrary :: Gen Double )
       , flip scientific 0 <$> (arbitrary :: Gen Integer)
       ]
 
@@ -39,10 +39,10 @@ instance Arbitrary Value where
     oneof
       [
         Object . H.fromList <$> resize 4 arbitrary
-      , Array . V.fromList <$> arbitrary
-      , String <$> arbitrary
-      , Number <$> arbitrary
-      , Bool   <$> arbitrary
+      , Array . V.fromList  <$>          arbitrary
+      , String              <$>          arbitrary
+      , Number              <$>          arbitrary
+      , Bool                <$>          arbitrary
       , return Null
       ]
       
