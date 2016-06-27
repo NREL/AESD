@@ -41,7 +41,10 @@ instance ToJSON Color where
 
 
 newtype Tags = Tags {unTags :: [Pair]}
-  deriving (Eq, Generic, Read, Show)
+  deriving (Generic, Read, Show)
+
+instance Eq Tags where
+  Tags x == Tags y = object x == object y
 
 instance FromJSON Tags where
   parseJSON =

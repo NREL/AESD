@@ -1,5 +1,5 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE RecordWildCards     #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -13,16 +13,17 @@ import CESDS.Types (Color, Tags(..))
 import CESDS.Types.Model (Model(..))
 import Control.Arrow ((&&&))
 import Control.Monad (unless)
-import Data.Aeson (FromJSON, ToJSON, Value(..), decode, encode)
+import Data.Aeson (Result(Success), decode, encode)
+import Data.Aeson.Types (FromJSON, Result(Success), ToJSON, Value(..), fromJSON, object)
 import Data.Colour.SRGB (sRGB24)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, isJust)
 import Data.Scientific (Scientific, fromFloatDigits, scientific)
 import Data.Text (Text, pack)
 import Network.URI (URI, parseURI)
 import System.Exit (exitFailure)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (Gen, choose, elements, listOf1, oneof, resize, sample)
-import Test.QuickCheck.Property (Property, property)
+import Test.QuickCheck.Gen (Gen, choose, elements, generate, listOf1, oneof, resize, sample)
+import Test.QuickCheck.Property (Property, ioProperty, property)
 import Test.QuickCheck.Test (isSuccess, quickCheckResult)
 
 import qualified Data.HashMap.Strict as H (fromList)
@@ -37,16 +38,15 @@ checkEncodeDecode :: (Eq a, FromJSON a, ToJSON a) => a -> Property
 checkEncodeDecode = property . uncurry (==) . (Just &&& decode . encode)
 
 
-instance Arbitrary Color where
-  arbitrary = sRGB24 <$> arbitrary <*> arbitrary <*> arbitrary
-
-
-instance Arbitrary URI where
-  arbitrary = -- FIXME: Make this more rigorous, even though it is good enough for testing this package.
-    fromJust
-      . parseURI
-      . ("http://" ++)
-      <$> listOf1 (elements $ ['a'..'z'] ++ ['0'..'9'])
+checkParse :: (Value -> Result a)  -> Gen Value -> Property
+checkParse p g =
+  ioProperty
+    $ do
+      v <- generate g
+      return
+        $ case p v of
+            Success _ -> True
+            _         -> False
 
 
 instance Arbitrary Text where
@@ -67,12 +67,16 @@ instance Arbitrary Value where
     oneof
       [
         Object . H.fromList <$> resize 4 arbitrary
-      , Array . V.fromList <$> (arbitrary :: Gen [Value])
+      , Array . V.fromList <$> arbitrary
       , String <$> arbitrary
       , Number <$> arbitrary
       , Bool   <$> arbitrary
       , return Null
       ]
+
+
+instance Arbitrary Color where
+  arbitrary = sRGB24 <$> arbitrary <*> arbitrary <*> arbitrary
 
 
 prop_color_io :: Color -> Property
@@ -81,6 +85,14 @@ prop_color_io = checkShowRead
 
 prop_color_json :: Color -> Property
 prop_color_json = checkEncodeDecode
+
+
+instance Arbitrary URI where
+  arbitrary = -- FIXME: Make this more rigorous, even though it is good enough for testing this package.
+    fromJust
+      . parseURI
+      . ("http://" ++)
+      <$> listOf1 (elements $ ['a'..'z'] ++ ['0'..'9'])
 
 
 prop_uri_io :: URI -> Property
@@ -114,6 +126,19 @@ prop_model_json :: Model -> Property
 prop_model_json = checkEncodeDecode
 
 
+arbitraryModel :: Gen Value
+arbitraryModel =
+  do
+    return
+      $ object
+          [
+          ]
+
+
+prop_model_parse :: Property
+prop_model_parse = checkParse (fromJSON :: Value -> Result Model) arbitraryModel
+
+
 main :: IO ()
 main =
   do
@@ -125,5 +150,6 @@ main =
         , quickCheckResult prop_uri_io
         , quickCheckResult prop_uri_json
         , quickCheckResult prop_model_json
+--      , quickCheckResult prop_model_parse
         ]
     unless (all isSuccess results) exitFailure
