@@ -13,12 +13,13 @@ module CESDS.Types (
 ) where
 
 
-import Data.Aeson (Value(String))
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), withText)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Pair, Value(String), object, withObject, withText)
 import Data.Colour.SRGB (Colour, sRGB24reads, sRGB24shows)
 import Data.Text (Text, pack, unpack)
 import GHC.Generics (Generic)
 import Network.URI (URI, parseURI)
+
+import qualified Data.HashMap.Strict as H (toList)
 
 
 type Identifier = Text
@@ -39,8 +40,15 @@ instance ToJSON Color where
   toJSON = String . pack . show
 
 
-newtype Tags = Tags {unTags :: [(Identifier, Value)]}
-  deriving (Eq, FromJSON, Generic, Read, Show, ToJSON)
+newtype Tags = Tags {unTags :: [Pair]}
+  deriving (Eq, Generic, Read, Show)
+
+instance FromJSON Tags where
+  parseJSON =
+    withObject "tags" $ return . Tags . H.toList
+
+instance ToJSON Tags where
+  toJSON = object . unTags
 
 
 type Generation = Int

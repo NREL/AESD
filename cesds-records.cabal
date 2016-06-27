@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                cesds-records
-version:             0.1.3.2
+version:             0.1.3.3
 -- synopsis:            
 -- description:         
 license:             AllRightsReserved
@@ -35,6 +35,8 @@ library
                ,       scientific
                ,       scotty
                ,       text
+               ,       unordered-containers
+               ,       vector
                ,       websockets
   hs-source-dirs:      src
   default-language:    Haskell2010
@@ -51,6 +53,8 @@ test-suite cesds-json-parsing
                ,       scientific
                ,       scotty
                ,       text
+               ,       unordered-containers
+               ,       vector
                ,       websockets
   buildable       : True               
   type            : exitcode-stdio-1.0 

@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -15,13 +16,17 @@ import Control.Monad (unless)
 import Data.Aeson (FromJSON, ToJSON, Value(..), decode, encode)
 import Data.Colour.SRGB (sRGB24)
 import Data.Maybe (fromJust)
+import Data.Scientific (Scientific, fromFloatDigits, scientific)
 import Data.Text (Text, pack)
 import Network.URI (URI, parseURI)
 import System.Exit (exitFailure)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (Gen, choose, elements, listOf, listOf1, sample)
+import Test.QuickCheck.Gen (Gen, choose, elements, listOf1, oneof, resize, sample)
 import Test.QuickCheck.Property (Property, property)
 import Test.QuickCheck.Test (isSuccess, quickCheckResult)
+
+import qualified Data.HashMap.Strict as H (fromList)
+import qualified Data.Vector as V (fromList)
 
 
 checkShowRead :: (Eq a, Read a, Show a) => a -> Property
@@ -36,20 +41,46 @@ instance Arbitrary Color where
   arbitrary = sRGB24 <$> arbitrary <*> arbitrary <*> arbitrary
 
 
+instance Arbitrary URI where
+  arbitrary = -- FIXME: Make this more rigorous, even though it is good enough for testing this package.
+    fromJust
+      . parseURI
+      . ("http://" ++)
+      <$> listOf1 (elements $ ['a'..'z'] ++ ['0'..'9'])
+
+
+instance Arbitrary Text where
+  arbitrary = pack <$> listOf1 (elements $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'])
+
+
+instance Arbitrary Scientific where
+  arbitrary =
+    oneof
+      [
+        fromFloatDigits <$> (arbitrary :: Gen Double)
+      , flip scientific 0 <$> (arbitrary :: Gen Integer)
+      ]
+
+
+instance Arbitrary Value where
+  arbitrary =
+    oneof
+      [
+        Object . H.fromList <$> resize 4 arbitrary
+      , Array . V.fromList <$> (arbitrary :: Gen [Value])
+      , String <$> arbitrary
+      , Number <$> arbitrary
+      , Bool   <$> arbitrary
+      , return Null
+      ]
+
+
 prop_color_io :: Color -> Property
 prop_color_io = checkShowRead
 
 
 prop_color_json :: Color -> Property
 prop_color_json = checkEncodeDecode
-
-
-instance Arbitrary URI where
-  arbitrary = -- FIXME: Make this more rigorous, even though it is good enough for testing this package.
-    fromJust
-      . parseURI
-      . ("http://" ++)
-      <$> listOf1 (choose ('a', 'z'))
 
 
 prop_uri_io :: URI -> Property
@@ -60,17 +91,23 @@ prop_uri_json :: URI -> Property
 prop_uri_json = checkEncodeDecode
 
 
-instance Arbitrary Text where
-  arbitrary = pack <$> listOf1 (elements $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'])
-
-
 instance Arbitrary Tags where
-  arbitrary = Tags <$> listOf ((,) <$> arbitrary <*> (String <$> arbitrary)) -- FIXME: Make this more rigorous.
-      
+  arbitrary = Tags <$> resize 4 arbitrary
 
 
 instance Arbitrary Model where
-  arbitrary = Model <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+  arbitrary =
+    do
+      identifier  <- arbitrary
+      uri         <- arbitrary
+      name        <- arbitrary
+      description <- arbitrary
+      tags        <- arbitrary
+      generation  <- arbitrary
+      variables   <- listOf1 arbitrary
+      primaryKey  <- elements variables
+      timeKey     <- elements $ Nothing : map Just variables
+      return Model{..}
 
 
 prop_model_json :: Model -> Property
@@ -80,8 +117,6 @@ prop_model_json = checkEncodeDecode
 main :: IO ()
 main =
   do
-    sample $ encode <$> (arbitrary :: Gen Model)
-    sample (arbitrary :: Gen Model)
     results <-
       sequence
         [
