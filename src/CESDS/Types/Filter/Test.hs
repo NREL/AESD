@@ -24,11 +24,11 @@ instance Arbitrary SelectionExpression where
   arbitrary =
     frequency
       [
-        (0, NotSelection       <$> arbitrary                          )
-      , (0, UnionSelection     <$> arbitrary <*>            arbitrary )
-      , (0, IntersectSelection <$> arbitrary <*>            arbitrary )
-      , (5, ValueSelection     <$> arbitrary <*>            arbitrary )
-      , (1, DomainSelection    <$> arbitrary <*> (patch <$> arbitrary))
+        (1, NotSelection       <$> arbitrary                          )
+      , (1, UnionSelection     <$> arbitrary <*>            arbitrary )
+      , (1, IntersectSelection <$> arbitrary <*>            arbitrary )
+      , (2, ValueSelection     <$> arbitrary <*>            arbitrary )
+      , (5, DomainSelection    <$> arbitrary <*> (patch <$> arbitrary))
       ]
     where
       patch :: Domain -> Domain

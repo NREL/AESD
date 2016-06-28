@@ -8,11 +8,11 @@ module CESDS.Types.Server.Test (
 import CESDS.Types.Test ()
 import CESDS.Types.Server (Server(..), Status(..))
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (oneof)
+import Test.QuickCheck.Gen (oneof, resize)
 
 
 instance Arbitrary Server where
-  arbitrary = Server <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+  arbitrary = Server <$> arbitrary <*> arbitrary <*> resize 4 arbitrary <*> arbitrary
 
 
 instance Arbitrary Status where
