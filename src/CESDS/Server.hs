@@ -7,23 +7,31 @@ module CESDS.Server (
   Service(..)
 , runService
 , Port
+, ServerM(..)
+, serverM
+, gets
+, modifys
 ) where
 
 
-import CESDS.Types.Server (Server)
 import Control.Concurrent.STM (TVar, atomically, modifyTVar', newTVarIO, readTVarIO)
 import Control.Monad (liftM)
 import Control.Monad.Reader (MonadIO, MonadReader, MonadTrans, ReaderT(runReaderT), ask, lift, liftIO)
+import Data.Aeson (eitherDecode')
 import Data.Default (def)
-import Data.Text.Lazy (Text)
+import Data.Text.Lazy (Text, pack)
 import Network.Wai.Handler.Warp (Port, setPort)
-import Web.Scotty.Trans (ScottyT, Options(..), get, json, scottyOptsT)
+import Web.Scotty.Trans (ScottyT, Options(..), body, get, json, post, scottyOptsT, text)
+
+import qualified CESDS.Types.Command as CESDS (Command, Result)
+import qualified CESDS.Types.Server as CESDS (Server)
 
 
 data Service s =
   Service
   {
-    getServer :: s -> Server
+    getServer  :: ServerM s CESDS.Server
+  , postServer :: CESDS.Command -> ServerM s CESDS.Result
   }
 
 
@@ -32,7 +40,13 @@ runService port Service{..} initial =
   runApplication port initial
     $ do
       get "/server"
-        $ json =<< serverM (gets getServer)
+        $ json =<< serverM getServer
+      post "/server"
+        $ do
+          b <- eitherDecode' <$> body
+          case b of
+            Right c -> json =<< serverM (postServer c)
+            Left  e -> text $ pack e
 
 
 newtype ServerM s a = ServerM {runServerM :: ReaderT (TVar s) IO a}

@@ -1,5 +1,9 @@
 # Revision history for cesds-records
 
+## 0.1.5.1  -- 2016-06-28
+
+* Implemented server restart.
+
 ## 0.1.4.0  -- 2016-06-27
 
 * JSON test cases.

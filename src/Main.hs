@@ -7,11 +7,13 @@ module Main (
 ) where
 
 
-import CESDS.Server (Service(..), runService)
+import CESDS.Server (ServerM, Service(..), gets, modifys, runService)
+import CESDS.Types.Command (Command(..), Result(..))
 import CESDS.Types.Server (Server)
 import CESDS.Types.Server.Test ()
+import Control.Monad.Reader (liftIO)
 import Test.QuickCheck.Arbitrary (arbitrary)
-import Test.QuickCheck.Gen (generate)
+import Test.QuickCheck.Gen (frequency, generate)
 
 
 data ServerState =
@@ -21,10 +23,27 @@ data ServerState =
   }
 
 
+randomOutcome :: Int -> ServerM ServerState Bool
+randomOutcome success =
+  liftIO
+    . generate
+    $ frequency [(success, return True), (1, return False)]
+
+
 service :: Service ServerState
 service =
   let
-    getServer = server
+    getServer = gets server
+    postServer RestartServer =
+      do
+        outcome <- randomOutcome 9
+        if outcome
+          then do
+                 server' <- liftIO $ generate arbitrary
+                 modifys $ \s -> s {server = server'}
+                 return Success
+          else return $ Error "failed" $ Just "random failure for testing"
+    postServer _ = return $ Error "not implemented" Nothing
   in
     Service{..}
 
@@ -41,8 +60,6 @@ main = runService 8090 service =<< initialize
 
 
 {-
-
-GET /server - - SERVER
 
 POST /server - COMMAND COMMAND_RESULT
 
