@@ -16,9 +16,9 @@ import Control.Monad.Reader (liftIO)
 import Test.QuickCheck.Arbitrary (arbitrary)
 import Test.QuickCheck.Gen (frequency, generate)
 
-import qualified CESDS.Types.Command as Command
-import qualified CESDS.Types.Model as Model
-import qualified CESDS.Types.Server as Server
+import qualified CESDS.Types.Command as Command (Command(..), Result(..))
+import qualified CESDS.Types.Model as Model (Model(..))
+import qualified CESDS.Types.Server as Server (Server(..))
 
 
 data ServerState =
@@ -33,17 +33,21 @@ service :: Service ServerState
 service =
   let
     getServer = gets server
-    postServer Command.RestartServer =
-      do
-        outcome <- randomOutcome 9
-        if outcome
-          then do
-                 server' <- liftIO $ generate arbitrary
-                 modifys $ \s -> s {server = server'}
-                 return Command.Success
-          else return $ Command.Error "failed" $ Just "random failure for testing"
-    postServer _ = return $ Command.Error "not implemented" Nothing
+    postServer (Command.Restart _) =
+      randomFailure
+        $ do
+          new <- liftIO initialize
+          modifys $ const new
+          return Command.Success
+    postServer _ = notImplemented
     getModel identifier = gets (lookup identifier . models)
+    postModel (Command.Restart _) identifier =
+      randomFailure
+        $ maybe
+          (return $ Command.Error "model not found" Nothing)
+          (const $ return Command.Success)
+        =<< gets (lookup identifier . models)
+    postModel _ _ = notImplemented
   in
     Service{..}
 
@@ -68,6 +72,19 @@ main :: IO ()
 main = runService 8090 service =<< initialize
 
 
+notImplemented :: ServerM ServerState Command.Result
+notImplemented = return $ Command.Error "not implemented" Nothing
+
+
+randomFailure :: ServerM ServerState Command.Result -> ServerM ServerState Command.Result
+randomFailure x =
+  do
+    outcome <- randomOutcome 9
+    if outcome
+      then x
+      else return $ Command.Error "failed" $ Just "random failure for testing"
+
+
 randomOutcome :: Int -> ServerM ServerState Bool
 randomOutcome success =
   liftIO
@@ -76,10 +93,6 @@ randomOutcome success =
 
 
 {-
-
-GET /server/MODEL_ID - - MODEL
-
-POST /server/MODEL_ID  - COMMAND COMMAND_RESULT
 
 GET /server/MODEL_ID/recods from=GENERATION to=GENERATION primary_key=RECORD_ID result_id= multually explclusi - [RECORD]
 

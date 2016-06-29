@@ -8,20 +8,18 @@ module CESDS.Types.Command.Test (
 import CESDS.Types.Test ()
 import CESDS.Types.Command (Command(..), Result(..))
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (oneof)
+import Test.QuickCheck.Gen (oneof, resize)
 
 
 instance Arbitrary Command where
   arbitrary =
     oneof
       [
-        return RestartServer
-      , return ClearServer
-      , RestartModel   <$> arbitrary
-      , ClearModel     <$> arbitrary
-      , StrategyRandom <$> arbitrary
-      , StrategyFIFO   <$> arbitrary
-      , StrategyFILO   <$> arbitrary
+        Restart        <$> resize 4 arbitrary
+      , Clear          <$> resize 4 arbitrary
+      , StrategyRandom <$> resize 4 arbitrary
+      , StrategyFIFO   <$> resize 4 arbitrary
+      , StrategyFILO   <$> resize 4 arbitrary
       ]
 
 

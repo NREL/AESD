@@ -1,6 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE TupleSections              #-}
 
 
 module CESDS.Server (
@@ -14,15 +15,17 @@ module CESDS.Server (
 ) where
 
 
+import CESDS.Types.Server (APIError(APIError))
 import Control.Concurrent.STM (TVar, atomically, modifyTVar', newTVarIO, readTVarIO)
 import Control.Monad (liftM)
 import Control.Monad.Reader (MonadIO, MonadReader, MonadTrans, ReaderT(runReaderT), ask, lift, liftIO)
-import Data.Aeson (eitherDecode')
+import Data.Aeson (FromJSON, eitherDecode')
 import Data.Default (def)
-import Data.Text.Lazy (Text, pack)
-import Network.HTTP.Types (status404)
+import Data.Text (pack)
+import Data.Text.Lazy (Text)
+import Network.HTTP.Types (Status, badRequest400, notFound404)
 import Network.Wai.Handler.Warp (Port, setPort)
-import Web.Scotty.Trans (ActionT, ScottyT, Options(..), body, capture, get, json, param, post, scottyOptsT, status, text)
+import Web.Scotty.Trans (ActionT, ScottyT, Options(..), body, capture, get, json, param, post, scottyOptsT, status)
 
 import qualified CESDS.Types.Command as CESDS (Command, Result)
 import qualified CESDS.Types.Model as CESDS (Model, ModelIdentifier)
@@ -35,6 +38,7 @@ data Service s =
     getServer  :: ServerM s CESDS.Server
   , postServer :: CESDS.Command -> ServerM s CESDS.Result
   , getModel   :: CESDS.ModelIdentifier -> ServerM s (Maybe CESDS.Model)
+  , postModel  :: CESDS.Command -> CESDS.ModelIdentifier -> ServerM s CESDS.Result
   }
 
 
@@ -44,22 +48,27 @@ runService port Service{..} initial =
     $ do
       get "/server"
         $ json =<< serverM getServer
-      post "/server"
-        $ do
-          b <- eitherDecode' <$> body
-          case b of
-            Right c -> json =<< serverM (postServer c)
-            Left  e -> text $ pack e
+      post "/server" . withBody
+        $ (json =<<) . serverM . postServer
       get (capture "/server/:model")
-        $ maybeApiError json =<< serverM . getModel =<< param "model"
+        $ maybeApiError (notFound404, "model not found") json =<< serverM . getModel =<< param "model"
+      post (capture "/server/:model") . withBody
+        $ (json =<<) . (param "model" >>=) . (serverM .) . postModel
 
 
-maybeApiError :: Monad m => (a -> ActionT Text m ()) -> Maybe a -> ActionT Text m ()
-maybeApiError = maybe apiError
+withBody :: (FromJSON a, MonadIO m) => (a -> ActionT Text m ()) -> ActionT Text m ()
+withBody f =
+  either (apiError . (badRequest400, )) f
+    =<< eitherDecode'
+    <$> body
 
 
-apiError :: Monad m => ActionT Text m ()
-apiError = text "API_ERROR" >> status status404
+maybeApiError :: Monad m => (Status, String) -> (a -> ActionT Text m ()) -> Maybe a -> ActionT Text m ()
+maybeApiError = maybe . apiError
+
+
+apiError :: Monad m => (Status, String) -> ActionT Text m ()
+apiError (s, e) = json (APIError $ pack e) >> status s
 
 
 newtype ServerM s a = ServerM {runServerM :: ReaderT (TVar s) IO a}

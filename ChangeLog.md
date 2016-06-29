@@ -1,5 +1,9 @@
 # Revision history for cesds-records
 
+## 0.1.5.5  -- 2016-06-28
+
+* Consistent error reporting.
+
 ## 0.1.5.4  -- 2016-06-28
 
 * Added `APIError`.
