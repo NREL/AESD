@@ -8,6 +8,7 @@ module CESDS.Types.Server (
 , APIVersion
 , Server(..)
 , Status(..)
+, APIError(..)
 ) where
 
 
@@ -79,3 +80,21 @@ instance ToJSON Status where
   toJSON Broken          = String "broken"
   toJSON OnFire          = String "on_fire"
   toJSON OtherStatus{..} = String message
+
+
+data APIError =
+  APIError
+  {
+    apiError :: Text
+  }
+    deriving (Eq, Generic, Read, Show)
+
+instance FromJSON APIError where
+  parseJSON =
+    withObject "API_ERROR" $ \o ->
+      do
+        apiError <- o .: "api_error"
+        return APIError{..}
+      
+instance ToJSON APIError where
+  toJSON APIError{..} = object' ["api_error" .= apiError]

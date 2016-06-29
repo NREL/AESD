@@ -19,7 +19,7 @@ import CESDS.Types.Model (Model)
 import CESDS.Types.Model.Test ()
 import CESDS.Types.Record (Record)
 import CESDS.Types.Record.Test ()
-import CESDS.Types.Server (Server, Status)
+import CESDS.Types.Server (APIError, Server, Status)
 import CESDS.Types.Server.Test ()
 import CESDS.Types.Test ()
 import CESDS.Types.Variable (Display, Domain, Units, Variable)
@@ -82,6 +82,10 @@ prop_model_json :: Model -> Property
 prop_model_json = label "Model JSON" . checkEncodeDecode
 
 
+prop_api_json :: APIError -> Property
+prop_api_json = label "APIError JSON" . checkEncodeDecode
+
+
 prop_status_json :: Status -> Property
 prop_status_json = label "Status JSON" . checkEncodeDecode
 
@@ -142,6 +146,7 @@ main =
         , quickCheckResult prop_units_json
         , quickCheckResult prop_variable_json
         , quickCheckResult prop_model_json
+        , quickCheckResult prop_api_json
         , quickCheckResult prop_status_json
         , quickCheckResult prop_server_json
         , quickCheckResult prop_result_json

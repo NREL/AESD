@@ -6,9 +6,9 @@ module CESDS.Types.Server.Test (
 
 
 import CESDS.Types.Test ()
-import CESDS.Types.Server (Server(..), Status(..))
+import CESDS.Types.Server (APIError(..), Server(..), Status(..))
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (oneof, resize)
+import Test.QuickCheck.Gen (frequency, resize)
 
 
 instance Arbitrary Server where
@@ -17,10 +17,14 @@ instance Arbitrary Server where
 
 instance Arbitrary Status where
   arbitrary =
-    oneof
+    frequency
       [
-        return Okay
-      , return Broken
-      , return OnFire
-      , OtherStatus <$> arbitrary
+        (7, return Okay              )
+      , (1, return Broken            )
+      , (1, return OnFire            )
+      , (1, OtherStatus <$> arbitrary)
       ]  
+
+
+instance Arbitrary APIError where
+  arbitrary = APIError <$> arbitrary
