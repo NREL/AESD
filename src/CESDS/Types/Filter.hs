@@ -10,13 +10,12 @@ module CESDS.Types.Filter (
 ) where
 
 
-import CESDS.Types (Color, Identifier, Tags, object')
+import CESDS.Types (Color, Identifier, Tags, Val, object')
 import CESDS.Types.Variable (Domain(..), VariableIdentifier)
 import Control.Applicative ((<|>))
 import Control.Monad (when)
 import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
 import Data.Maybe (fromMaybe)
-import Data.Scientific (Scientific)
 import Data.Text (Text, pack)
 import GHC.Generics (Generic)
 
@@ -89,7 +88,7 @@ data SelectionExpression =
   | ValueSelection
     {
       variable :: VariableIdentifier
-    , value    :: Scientific
+    , value    :: Val
     }
   | DomainSelection
     {

@@ -17,7 +17,14 @@ import Test.QuickCheck.Gen (frequency)
 
 
 instance Arbitrary Filter where
-  arbitrary = Filter <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+  arbitrary =
+    Filter
+      <$> arbitrary
+      <*> arbitrary
+      <*> arbitrary
+      <*> arbitrary
+      <*> arbitrary
+      <*> arbitrary
 
 
 instance Arbitrary SelectionExpression where
@@ -32,5 +39,5 @@ instance Arbitrary SelectionExpression where
       ]
     where
       patch :: Domain -> Domain
-      patch   Set{..}    = Set {options = Just $ fromMaybe [] options}
       patch i@Interval{} = i
+      patch   Set{..}    = Set {options = Just $ fromMaybe [] options}

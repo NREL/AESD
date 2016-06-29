@@ -1,21 +1,27 @@
-{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
 module CESDS.Types.Test (
+  arbitraryVal
 ) where
 
 
-import CESDS.Types (Color, Tags(..))
+import CESDS.Types (Color, Tags(..), Val(..))
+import CESDS.Types.Variable (Domain(..))
 import Data.Aeson.Types (Value(..))
 import Data.Colour.SRGB (sRGB24)
+import Data.Function (on)
+import Data.List (nubBy)
 import Data.Maybe (fromJust)
-import Data.Scientific (Scientific, fromFloatDigits, scientific)
+import Data.Scientific (Scientific, fromFloatDigits, scientific, toRealFloat)
 import Data.Text (Text, pack)
 import Network.URI (URI, parseURI)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (Gen, elements, listOf1, oneof, resize)
+import Test.QuickCheck.Gen (Gen, choose, elements, listOf1, oneof, resize)
 
 import qualified Data.HashMap.Strict as H (fromList)
 import qualified Data.Vector as V (fromList)
@@ -39,7 +45,7 @@ instance Arbitrary Value where
     oneof
       [
         Object . H.fromList <$> resize 4 arbitrary
-      , Array . V.fromList  <$>          arbitrary
+      , Array  . V.fromList <$> resize 4 arbitrary
       , String              <$>          arbitrary
       , Number              <$>          arbitrary
       , Bool                <$>          arbitrary
@@ -48,7 +54,7 @@ instance Arbitrary Value where
       
 
 instance Arbitrary Tags where
-  arbitrary = Tags <$> resize 4 arbitrary
+  arbitrary = Tags . nubBy ((==) `on` fst) <$> resize 4 arbitrary
 
 
 instance Arbitrary Color where
@@ -61,3 +67,26 @@ instance Arbitrary URI where
       . parseURI
       . ("http://" ++)
       <$> listOf1 (elements $ ['a'..'z'] ++ ['0'..'9'])
+
+
+arbitraryVal :: Domain -> Gen Val
+arbitraryVal Interval{..} =
+  Continuous <$>
+    case (lowerBound, upperBound) of
+      (Nothing, Nothing) -> arbitrary
+      (Nothing, Just u ) -> fromFloatDigits <$> choose (toRealFloat $ minimum [0, 2 * u], toRealFloat   u                  :: Double)
+      (Just l , Nothing) -> fromFloatDigits <$> choose (toRealFloat   l                 , toRealFloat $ maximum [0, 2 * l] :: Double)
+      (Just l , Just u ) -> fromFloatDigits <$> choose (toRealFloat   l                 , toRealFloat   u                  :: Double)
+arbitraryVal Set{..} =
+  case options of
+    Nothing -> return $ Discrete ""
+    Just xs -> Discrete <$> elements xs
+
+
+instance Arbitrary Val where
+  arbitrary =
+    oneof
+      [
+        Continuous <$> arbitrary
+      , Discrete   <$> arbitrary
+      ]

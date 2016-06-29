@@ -32,8 +32,6 @@ import Data.Aeson (decode, encode)
 import Data.Aeson.Types (FromJSON, ToJSON)
 import Network.URI (URI)
 import System.Exit (exitFailure)
-import Test.QuickCheck.Arbitrary (Arbitrary(arbitrary))
-import Test.QuickCheck.Gen (Gen, sample)
 import Test.QuickCheck.Property (Property, label, property)
 import Test.QuickCheck.Test (isSuccess, quickCheckResult)
 
@@ -133,7 +131,6 @@ prop_filter_json = label "Filter JSON" . checkEncodeDecode
 main :: IO ()
 main =
   do
-    sample (arbitrary :: Gen URI)
     results <-
       sequence
         [

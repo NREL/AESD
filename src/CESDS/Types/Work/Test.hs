@@ -7,12 +7,18 @@ module CESDS.Types.Work.Test (
 
 import CESDS.Types.Test ()
 import CESDS.Types.Work (Submission(..), SubmissionResult(..), WorkStatus(..))
+import Data.List (nub)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (oneof)
+import Test.QuickCheck.Gen (oneof, resize)
 
 
 instance Arbitrary Submission where
-  arbitrary = Submission <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+  arbitrary =
+    Submission
+      <$> (nub <$> resize 4 arbitrary)
+      <*> (nub <$> resize 4 arbitrary)
+      <*> arbitrary
+      <*> arbitrary
 
 
 instance Arbitrary SubmissionResult where

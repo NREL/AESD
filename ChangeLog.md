@@ -1,5 +1,9 @@
 # Revision history for cesds-records
 
+## 0.1.6.0  -- 2016-06-29
+
+* fixed data types for records.
+
 ## 0.1.5.5  -- 2016-06-28
 
 * Consistent error reporting.

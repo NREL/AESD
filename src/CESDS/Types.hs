@@ -10,17 +10,18 @@ module CESDS.Types (
 , Color
 , Tags(..)
 , Generation
+, Val(..)
 , object'
 ) where
 
 
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Pair, Value(Null, String), object, withObject, withText)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Pair, Value(Null, Number, String), object, withObject, withText)
 import Data.Colour.SRGB (Colour, sRGB24reads, sRGB24shows)
+import Data.HashMap.Strict (toList)
+import Data.Scientific (Scientific)
 import Data.Text (Text, pack, unpack)
 import GHC.Generics (Generic)
 import Network.URI (URI, parseURI)
-
-import qualified Data.HashMap.Strict as H (toList)
 
 
 type Identifier = Text
@@ -49,7 +50,7 @@ instance Eq Tags where
 
 instance FromJSON Tags where
   parseJSON =
-    withObject "tags" $ return . Tags . H.toList
+    withObject "tags" $ return . Tags . toList
 
 instance ToJSON Tags where
   toJSON = object . unTags
@@ -68,6 +69,21 @@ instance FromJSON URI where
 
 instance ToJSON URI where
   toJSON = String . pack . show
+
+
+data Val =
+    Continuous Scientific
+  | Discrete   Text
+    deriving (Eq, Read, Show)
+
+instance FromJSON Val where
+  parseJSON (Number x) = return $ Continuous x
+  parseJSON (String x) = return $ Discrete   x
+  parseJSON x          = fail $ "invalid value \"" ++ show x ++ "\""
+
+instance ToJSON Val where
+  toJSON (Continuous x) = Number x
+  toJSON (Discrete   x) = String x
 
 
 object' :: [Pair] -> Value

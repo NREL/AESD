@@ -17,8 +17,7 @@ import CESDS.Types (Generation, Identifier, object')
 import CESDS.Types.Record (RecordIdentifier)
 import CESDS.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>))
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
-import Data.Scientific (Scientific)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Value, (.:), (.:?), (.=), withObject)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -35,7 +34,7 @@ type Priority = Int
 data Submission =
   Submission
   {
-    explicitVariables :: [(VariableIdentifier, Scientific)]
+    explicitVariables :: [(VariableIdentifier, Value)]
   , randomVariables   :: [VariableIdentifier]
   , timeout           :: Maybe Duration
   , priority          :: Maybe Priority
