@@ -20,10 +20,12 @@ import Control.Monad.Reader (MonadIO, MonadReader, MonadTrans, ReaderT(runReader
 import Data.Aeson (eitherDecode')
 import Data.Default (def)
 import Data.Text.Lazy (Text, pack)
+import Network.HTTP.Types (status404)
 import Network.Wai.Handler.Warp (Port, setPort)
-import Web.Scotty.Trans (ScottyT, Options(..), body, get, json, post, scottyOptsT, text)
+import Web.Scotty.Trans (ActionT, ScottyT, Options(..), body, capture, get, json, param, post, scottyOptsT, status, text)
 
 import qualified CESDS.Types.Command as CESDS (Command, Result)
+import qualified CESDS.Types.Model as CESDS (Model, ModelIdentifier)
 import qualified CESDS.Types.Server as CESDS (Server)
 
 
@@ -32,6 +34,7 @@ data Service s =
   {
     getServer  :: ServerM s CESDS.Server
   , postServer :: CESDS.Command -> ServerM s CESDS.Result
+  , getModel   :: CESDS.ModelIdentifier -> ServerM s (Maybe CESDS.Model)
   }
 
 
@@ -47,6 +50,16 @@ runService port Service{..} initial =
           case b of
             Right c -> json =<< serverM (postServer c)
             Left  e -> text $ pack e
+      get (capture "/server/:model")
+        $ maybeApiError json =<< serverM . getModel =<< param "model"
+
+
+maybeApiError :: Monad m => (a -> ActionT Text m ()) -> Maybe a -> ActionT Text m ()
+maybeApiError = maybe apiError
+
+
+apiError :: Monad m => ActionT Text m ()
+apiError = text "API_ERROR" >> status status404
 
 
 newtype ServerM s a = ServerM {runServerM :: ReaderT (TVar s) IO a}

@@ -1,5 +1,9 @@
 # Revision history for cesds-records
 
+## 0.1.5.3  -- 2016-06-28
+
+* Implemented model retrieval.
+
 ## 0.1.5.1  -- 2016-06-28
 
 * Implemented server restart.
