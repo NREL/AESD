@@ -6,6 +6,7 @@
 
 module CESDS.Server (
   Service(..)
+, RecordFilter
 , runService
 , Port
 , ServerM(..)
@@ -25,10 +26,12 @@ import Data.Text (pack)
 import Data.Text.Lazy (Text)
 import Network.HTTP.Types (Status, badRequest400, notFound404)
 import Network.Wai.Handler.Warp (Port, setPort)
-import Web.Scotty.Trans (ActionT, ScottyT, Options(..), body, capture, get, json, param, post, scottyOptsT, status)
+import Web.Scotty.Trans (ActionT, Parsable, ScottyT, Options(..), body, capture, get, json, param, params, post, scottyOptsT, status)
 
+import qualified CESDS.Types as CESDS (Generation)
 import qualified CESDS.Types.Command as CESDS (Command, Result)
 import qualified CESDS.Types.Model as CESDS (Model, ModelIdentifier)
+import qualified CESDS.Types.Record as CESDS (Record, RecordIdentifier)
 import qualified CESDS.Types.Server as CESDS (Server)
 
 
@@ -39,7 +42,11 @@ data Service s =
   , postServer :: CESDS.Command -> ServerM s CESDS.Result
   , getModel   :: CESDS.ModelIdentifier -> ServerM s (Maybe CESDS.Model)
   , postModel  :: CESDS.Command -> CESDS.ModelIdentifier -> ServerM s CESDS.Result
+  , getRecords :: RecordFilter -> CESDS.ModelIdentifier -> ServerM s [CESDS.Record]
   }
+
+
+type RecordFilter = (Maybe CESDS.Generation, Maybe CESDS.Generation, Maybe Text, Maybe CESDS.RecordIdentifier)
 
 
 runService :: Port -> Service s -> s -> IO ()
@@ -54,6 +61,22 @@ runService port Service{..} initial =
         $ maybeApiError (notFound404, "model not found") json =<< serverM . getModel =<< param "model"
       post (capture "/server/:model") . withBody
         $ (json =<<) . (param "model" >>=) . (serverM .) . postModel
+      get (capture "/server/:model/records")
+        $ do
+            m <- param "model"
+            ps <- map fst <$> params
+            f <- maybeParam ps "from"
+            t <- maybeParam ps "to"
+            k <- maybeParam ps "primary_key"
+            r <- maybeParam ps "result_id"
+            json =<< serverM (getRecords (f, t, k, r) m)
+
+
+maybeParam :: (Monad m, Parsable a) => [Text] -> Text -> ActionT Text m (Maybe a)
+maybeParam ps p =
+  if p `elem` ps
+    then Just <$> param p
+    else return Nothing
 
 
 withBody :: (FromJSON a, MonadIO m) => (a -> ActionT Text m ()) -> ActionT Text m ()

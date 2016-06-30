@@ -1,26 +1,32 @@
+{-# LANGUAGE RecordWildCards #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
 module CESDS.Types.Variable.Test (
+  arbitraryVariable
 ) where
 
 
 import CESDS.Types.Test ()
-import CESDS.Types.Variable (Display(..), Domain(..), Variable(..), Units(..))
+import CESDS.Types.Variable (Display(..), Domain(..), Variable(..), VariableIdentifier, Units(..))
 import Data.List (nub)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (oneof, suchThat)
+import Test.QuickCheck.Gen (Gen, oneof, suchThat)
  
-  
+ 
+arbitraryVariable :: VariableIdentifier -> Gen Variable
+arbitraryVariable identifier =
+  do
+    display <- arbitrary
+    domain  <- arbitrary
+    units   <- arbitrary
+    isInput <- arbitrary
+    return Variable{..}
+
+ 
 instance Arbitrary Variable where
-  arbitrary =
-    Variable
-      <$> arbitrary
-      <*> arbitrary
-      <*> arbitrary
-      <*> arbitrary
-      <*> arbitrary
+  arbitrary = arbitraryVariable =<< arbitrary
 
  
 instance Arbitrary Display where

@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TupleSections     #-}
 
 
 module Main (
@@ -9,12 +10,17 @@ module Main (
 
 import CESDS.Server (ServerM, Service(..), gets, modifys, runService)
 import CESDS.Types.Model (Model, ModelIdentifier)
-import CESDS.Types.Model.Test ()
+import CESDS.Types.Model.Test (arbitraryModel)
+import CESDS.Types.Record (Record, RecordIdentifier)
+import CESDS.Types.Record.Test (arbitraryRecord)
 import CESDS.Types.Server (Server)
 import CESDS.Types.Server.Test ()
+import CESDS.Types.Variable (Variable, VariableIdentifier)
+import CESDS.Types.Variable.Test (arbitraryVariable)
 import Control.Monad.Reader (liftIO)
-import Test.QuickCheck.Arbitrary (arbitrary)
-import Test.QuickCheck.Gen (frequency, generate)
+import Data.Maybe (fromMaybe)
+import Test.QuickCheck.Arbitrary (Arbitrary(..))
+import Test.QuickCheck.Gen (frequency, generate, listOf)
 
 import qualified CESDS.Types.Command as Command (Command(..), Result(..))
 import qualified CESDS.Types.Model as Model (Model(..))
@@ -25,8 +31,49 @@ data ServerState =
   ServerState
   {
     server :: Server
-  , models :: [(ModelIdentifier, Model)]
+  , models :: [(ModelIdentifier, ModelState)]
   }
+    deriving (Eq, Read, Show)
+
+instance Arbitrary ServerState where
+  arbitrary =
+    do
+      server <- arbitrary
+      models <-
+        sequence
+          [
+            do
+              model <- arbitraryModel identifier
+              variables <-
+                sequence
+                  [
+                    (variable, ) <$> arbitraryVariable variable
+                  |
+                    variable <- Model.variables model
+                  ]
+              records <- listOf $ do
+                                    k <- arbitrary
+                                    v <- arbitraryRecord $ map snd variables
+                                    return (k, v)
+              return (identifier, ModelState{..})
+          |
+            identifier <- Server.models server
+          ]
+      return ServerState{..}
+
+
+data ModelState =
+  ModelState
+  {
+    model     :: Model
+  , variables :: [(VariableIdentifier, Variable)]
+  , records   :: [(RecordIdentifier, Record)]
+  }
+    deriving (Eq, Read, Show)
+
+
+initialize :: IO ServerState
+initialize = generate arbitrary
 
 
 service :: Service ServerState
@@ -40,7 +87,7 @@ service =
           modifys $ const new
           return Command.Success
     postServer _ = notImplemented
-    getModel identifier = gets (lookup identifier . models)
+    getModel identifier = gets (fmap model . lookup identifier . models)
     postModel (Command.Restart _) identifier =
       randomFailure
         $ maybe
@@ -48,24 +95,16 @@ service =
           (const $ return Command.Success)
         =<< gets (lookup identifier . models)
     postModel _ _ = notImplemented
+    getRecords (f, t, k, r) identifier =
+      let
+      in
+        gets
+          $ fromMaybe []
+          . fmap (map snd . records)
+          . lookup identifier
+          . models
   in
     Service{..}
-
-
-initialize :: IO ServerState
-initialize =
-  do
-    server <- generate arbitrary
-    models <-
-      sequence
-        [
-          do
-            model <- generate arbitrary
-            return (identifier, model {Model.identifier = identifier})
-        |
-          identifier <- Server.models server
-        ]
-    return ServerState{..}
 
 
 main :: IO ()
