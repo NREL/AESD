@@ -6,7 +6,8 @@
 
 module CESDS.Server (
   Service(..)
-, RecordFilter
+, WorkFilter(..)
+, RecordFilter(..)
 , runService
 , Port
 , ServerM(..)
@@ -33,6 +34,7 @@ import qualified CESDS.Types.Command as CESDS (Command, Result)
 import qualified CESDS.Types.Model as CESDS (Model, ModelIdentifier)
 import qualified CESDS.Types.Record as CESDS (Record, RecordIdentifier)
 import qualified CESDS.Types.Server as CESDS (Server)
+import qualified CESDS.Types.Work as CESDS (WorkIdentifier, WorkStatus)
 
 
 data Service s =
@@ -42,11 +44,31 @@ data Service s =
   , postServer :: CESDS.Command -> ServerM s CESDS.Result
   , getModel   :: CESDS.ModelIdentifier -> ServerM s (Maybe CESDS.Model)
   , postModel  :: CESDS.Command -> CESDS.ModelIdentifier -> ServerM s CESDS.Result
+  , getWorks   :: WorkFilter -> CESDS.ModelIdentifier -> ServerM s [CESDS.WorkStatus]
   , getRecords :: RecordFilter -> CESDS.ModelIdentifier -> ServerM s [CESDS.Record]
   }
 
 
-type RecordFilter = (Maybe CESDS.Generation, Maybe CESDS.Generation, Maybe Text, Maybe CESDS.RecordIdentifier)
+data WorkFilter =
+  WorkFilter
+  {
+    wfFrom   :: Maybe CESDS.Generation
+  , wfTo     :: Maybe CESDS.Generation
+  , wfStatus :: Maybe Text
+  , wfWork   :: Maybe CESDS.WorkIdentifier
+  }
+    deriving (Eq, Read, Show)
+
+
+data RecordFilter = 
+  RecordFilter
+  {
+    rfFrom   :: Maybe CESDS.Generation
+  , rfTo     :: Maybe CESDS.Generation
+  , rfKey    :: Maybe Text
+  , rfRecord :: Maybe CESDS.RecordIdentifier
+  }
+    deriving (Eq, Read, Show)
 
 
 runService :: Port -> Service s -> s -> IO ()
@@ -61,15 +83,24 @@ runService port Service{..} initial =
         $ maybeApiError (notFound404, "model not found") json =<< serverM . getModel =<< param "model"
       post (capture "/server/:model") . withBody
         $ (json =<<) . (param "model" >>=) . (serverM .) . postModel
+      get (capture "/server/:model/work")
+        $ do
+            model <- param "model"
+            parameters <- map fst <$> params
+            wfFrom   <- maybeParam parameters "from"
+            wfTo     <- maybeParam parameters "to"
+            wfStatus <- maybeParam parameters "status"
+            wfWork   <- maybeParam parameters "work_id"
+            json =<< serverM (getWorks WorkFilter{..} model)
       get (capture "/server/:model/records")
         $ do
-            m <- param "model"
-            ps <- map fst <$> params
-            f <- maybeParam ps "from"
-            t <- maybeParam ps "to"
-            k <- maybeParam ps "primary_key"
-            r <- maybeParam ps "result_id"
-            json =<< serverM (getRecords (f, t, k, r) m)
+            model <- param "model"
+            parameters <- map fst <$> params
+            rfFrom   <- maybeParam parameters "from"
+            rfTo     <- maybeParam parameters "to"
+            rfKey    <- maybeParam parameters "primary_key"
+            rfRecord <- maybeParam parameters "result_id"
+            json =<< serverM (getRecords RecordFilter{..} model)
 
 
 maybeParam :: (Monad m, Parsable a) => [Text] -> Text -> ActionT Text m (Maybe a)

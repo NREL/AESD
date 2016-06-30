@@ -9,6 +9,7 @@ module Main (
 
 
 import CESDS.Server (ServerM, Service(..), gets, modifys, runService)
+import CESDS.Types (Generation)
 import CESDS.Types.Model (Model, ModelIdentifier)
 import CESDS.Types.Model.Test (arbitraryModel)
 import CESDS.Types.Record (Record, RecordIdentifier)
@@ -17,10 +18,12 @@ import CESDS.Types.Server (Server)
 import CESDS.Types.Server.Test ()
 import CESDS.Types.Variable (Variable, VariableIdentifier)
 import CESDS.Types.Variable.Test (arbitraryVariable)
+import CESDS.Types.Work (WorkStatus)
+import CESDS.Types.Work.Test ()
 import Control.Monad.Reader (liftIO)
 import Data.Maybe (fromMaybe)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (frequency, generate, listOf)
+import Test.QuickCheck.Gen (Gen, frequency, generate, listOf)
 
 import qualified CESDS.Types.Command as Command (Command(..), Result(..))
 import qualified CESDS.Types.Model as Model (Model(..))
@@ -44,6 +47,7 @@ instance Arbitrary ServerState where
           [
             do
               model <- arbitraryModel identifier
+              let generation = Model.generation model
               variables <-
                 sequence
                   [
@@ -51,10 +55,11 @@ instance Arbitrary ServerState where
                   |
                     variable <- Model.variables model
                   ]
+              works <- listOf $ arbitraryWorkState generation
               records <- listOf $ do
                                     k <- arbitrary
                                     v <- arbitraryRecord $ map snd variables
-                                    return (k, v)
+                                    return ((Model.generation model, k), v)
               return (identifier, ModelState{..})
           |
             identifier <- Server.models server
@@ -67,9 +72,43 @@ data ModelState =
   {
     model     :: Model
   , variables :: [(VariableIdentifier, Variable)]
-  , records   :: [(RecordIdentifier, Record)]
+  , works     :: [WorkState]
+  , records   :: [RecordState]
   }
     deriving (Eq, Read, Show)
+
+
+data WorkState =
+  WorkState
+  {
+    workGeneration :: Generation
+  , workStatus     :: WorkStatus
+  }
+    deriving (Eq, Read, Show)
+
+
+arbitraryWorkState :: Generation -> Gen WorkState
+arbitraryWorkState workGeneration =
+  do
+    workStatus <- arbitrary
+    return WorkState{..}
+
+
+data RecordState =
+  RecordState
+  {
+    recordGeneration :: Generation
+  , recordIdentifier :: RecordIdentifier
+  , record           :: Record
+  }
+    deriving (Eq, Read, Show)
+
+
+arbitraryRecordState :: Generation -> RecordIdentifier -> [Variable] -> Gen WorkState
+arbitraryRecordState recordGeneration recordIdentifier variables =
+  do
+    record <- arbitraryRecord variables
+    return RecordState{..}
 
 
 initialize :: IO ServerState
@@ -95,6 +134,14 @@ service =
           (const $ return Command.Success)
         =<< gets (lookup identifier . models)
     postModel _ _ = notImplemented
+    getWorks (f, t, s, w) identifier =
+      let
+      in
+        gets
+          $ fromMaybe []
+          . fmap (map snd . works)
+          . lookup identifier
+          . models
     getRecords (f, t, k, r) identifier =
       let
       in
@@ -132,10 +179,6 @@ randomOutcome success =
 
 
 {-
-
-GET /server/MODEL_ID/recods from=GENERATION to=GENERATION primary_key=RECORD_ID result_id= multually explclusi - [RECORD]
-
-GET /server/MODEL_ID/work status=WORK_STATUS from=GENERATION work_id=WORK_ID [WORK_STATUS_RESULT]
 
 POST /server/MODEL_ID/work WORK_SUBMISSION WORK_SUBMISSION_RESULT
 
