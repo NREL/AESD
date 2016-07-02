@@ -13,12 +13,14 @@ module CESDS.Server (
 , ServerM(..)
 , serverM
 , gets
+, sets
 , modifys
+, modifysIO
 ) where
 
 
 import CESDS.Types.Server (APIError(APIError))
-import Control.Concurrent.STM (TVar, atomically, modifyTVar', newTVarIO, readTVarIO)
+import Control.Concurrent.STM (TVar, atomically, modifyTVar', newTVarIO, readTVarIO, writeTVar)
 import Control.Monad (liftM)
 import Control.Monad.Reader (MonadIO, MonadReader, MonadTrans, ReaderT(runReaderT), ask, lift, liftIO)
 import Data.Aeson (FromJSON, eitherDecode')
@@ -140,10 +142,23 @@ gets :: (s -> a) -> ServerM s a
 gets f = liftM f $ ask >>= liftIO . readTVarIO
 
 
+sets :: s -> ServerM s ()
+sets = (ask >>=) . ((liftIO . atomically) .) . flip writeTVar
+
+
 modifys :: (s -> s) -> ServerM s ()
 modifys f = ask >>= liftIO . atomically . flip modifyTVar' f
 
 
+modifysIO :: (s -> IO s) -> ServerM s ()
+modifysIO f = -- FIXME: rewrite in pointfree style
+  do
+    sTVar <- ask
+    s <- liftIO $ readTVarIO sTVar
+    s' <- liftIO $ f s
+    liftIO . atomically $ writeTVar sTVar s'
+
+ 
 type Application s = ScottyT Text (ServerM s) ()
 
       

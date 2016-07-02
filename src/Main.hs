@@ -8,7 +8,7 @@ module Main (
 ) where
 
 
-import CESDS.Server (RecordFilter(..), ServerM, Service(..), WorkFilter(..), gets, modifys, runService)
+import CESDS.Server (RecordFilter(..), ServerM, Service(..), WorkFilter(..), gets, modifys, modifysIO, runService, sets)
 import CESDS.Types (Generation, valAsString)
 import CESDS.Types.Model (Model, ModelIdentifier)
 import CESDS.Types.Model.Test (arbitraryModel)
@@ -16,11 +16,10 @@ import CESDS.Types.Record (Record, RecordIdentifier)
 import CESDS.Types.Record.Test (arbitraryRecord)
 import CESDS.Types.Server (Server)
 import CESDS.Types.Server.Test ()
-import CESDS.Types.Variable (Variable, VariableIdentifier)
 import CESDS.Types.Variable.Test ()
 import CESDS.Types.Work (WorkStatus, maybeRecordIdentifier)
 import CESDS.Types.Work.Test ()
-import Control.Monad (foldM, liftM2)
+import Control.Monad (foldM)
 import Control.Monad.Reader (liftIO)
 import Data.Function (on)
 import Data.List (find, nubBy)
@@ -34,7 +33,7 @@ import qualified CESDS.Types.Model as Model (Model(..))
 import qualified CESDS.Types.Record as Record (Record(..))
 import qualified CESDS.Types.Server as Server (Server(..))
 import qualified CESDS.Types.Variable as Variable (Variable(..))
-import qualified CESDS.Types.Work as Work (Submission(..), SubmissionResult(..), WorkStatus(..), hasStatus)
+import qualified CESDS.Types.Work as Work (Submission(..), SubmissionResult(..), WorkStatus(..), hasStatus, isSuccess)
 
 
 data ServerState =
@@ -64,58 +63,98 @@ data ModelState =
   {
     model     :: Model
   , works     :: [WorkState]
-  , records   :: [RecordState]
   }
     deriving (Eq, Read, Show)
+
+
+ageModels :: ServerState -> IO ServerState
+ageModels serverState@ServerState{..} =
+  do
+    models' <-
+      sequence
+        [
+          (modelIdentifier, ) <$> ageModel model
+        |
+          (modelIdentifier, model) <- models
+        ]
+    return serverState {models = models'}
+
+
+ageModel :: ModelState -> IO ModelState
+ageModel modelState@ModelState{..} =
+  do
+    works' <-
+      sequence
+        [
+          do
+            r <- generate $ choose (0, 1) :: IO Double
+            return $
+              workState
+              {
+                workStatus = case workStatus of
+                  Work.Pending{..} -> if r < 0.25 then Work.Running workIdentifier else workStatus
+                  Work.Running{..} -> if r < 0.50
+                                        then if r < 0.10
+                                               then Work.Failure workIdentifier "random failure"
+                                               else Work.Success workIdentifier recordIdentifier
+                                        else workStatus
+                  _                -> workStatus
+              }
+        |
+          workState@WorkState{..} <- works
+        ]
+    return modelState {works = works'}
 
 
 arbitraryModelState :: ModelIdentifier -> Gen ModelState
 arbitraryModelState modelIdentifier =
   do
-    modelState <- ModelState <$> arbitraryModel modelIdentifier <*> return [] <*> return []
+    modelState <- ModelState <$> arbitraryModel modelIdentifier <*> return []
     let
-      su = Work.Submission [] (map Variable.identifier . Model.variables $ model modelState) Nothing Nothing
+      submission = Work.Submission [] (map Variable.identifier . Model.variables $ model modelState) Nothing Nothing
     n <- choose (0, 4) :: Gen Int
-    foldM (const . addArbitraryWork su) modelState [1..n]
+    foldM (const . addArbitraryWork submission) modelState [1..n]
 
 
 addArbitraryWork :: Work.Submission -> ModelState -> Gen ModelState
-addArbitraryWork su ms@ModelState{..} =
+addArbitraryWork submission@Work.Submission{..} modelState@ModelState{..} =
   do
-    ws <- arbitraryWorkState $ Model.generation model
     let
-      workIdentifier = Work.workIdentifier . workStatus
-      recordIdentifier = maybeRecordIdentifier . workStatus
-    if workIdentifier ws `elem` map workIdentifier works || recordIdentifier ws `elem` map recordIdentifier works
-      then addArbitraryWork su ms
-      else liftM2 maybe return (addArbitraryRecordState su) (ms {works = ws : works}) (recordIdentifier ws)
+      Model.Model{..} = model
+      workGeneration = generation
+    workStatus <- arbitrary
+    recordIdentifier <- maybe arbitrary return $ maybeRecordIdentifier workStatus
+    record' <- arbitraryRecord variables
+    let
+      record =
+        Record.Record
+          [
+            (k , fromMaybe v $ k `lookup` explicitVariables)
+          |
+            (k, v) <- Record.unRecord record'
+          ]
+      recordKey = valAsString . snd . fromJust . find ((== primaryKey) . fst) $ Record.unRecord record
+    let
+      w = WorkState{..}
+      fWorkIdentifier = Work.workIdentifier . Main.workStatus
+      fRecordIdentifier = maybeRecordIdentifier . Main.workStatus
+    if fWorkIdentifier w `elem` map (Work.workIdentifier . Main.workStatus) works
+        || fRecordIdentifier w `elem` map fRecordIdentifier works
+        || recordKey `elem` map Main.recordKey works
+      then addArbitraryWork submission modelState
+      else return modelState {works = w : works}
 
 
 data WorkState =
   WorkState
   {
-    workGeneration :: Generation
-  , workStatus     :: WorkStatus
+    workGeneration   :: Generation
+  , workStatus       :: WorkStatus
+  , recordIdentifier :: RecordIdentifier
+  , recordKey        :: String
+  , record           :: Record
   }
     deriving (Eq, Read, Show)
-
-
-arbitraryWorkState :: Generation -> Gen WorkState
-arbitraryWorkState workGeneration =
-  do
-    workStatus <- arbitrary
-    return WorkState{..}
-
-
-addArbitraryRecordState :: Work.Submission -> ModelState -> RecordIdentifier -> Gen ModelState
-addArbitraryRecordState su ms@ModelState{..} recordIdentifier =
-  do
-    let
-      Model.Model{..} = model
-    rs <- arbitraryRecordState su generation recordIdentifier variables primaryKey
-    if recordKey rs `elem` map recordKey records
-      then addArbitraryRecordState su ms recordIdentifier
-      else return ms {records = rs : records}
 
 
 submitWork :: ModelState -> Work.Submission -> IO (ModelState, Work.SubmissionResult)
@@ -151,42 +190,16 @@ filterWorkState WorkFilter{..} =
         && maybe True (flip Work.hasStatus workStatus . pack) wfStatus
 
 
-data RecordState =
-  RecordState
-  {
-    recordGeneration :: Generation
-  , recordIdentifier :: RecordIdentifier
-  , recordKey        :: String
-  , record           :: Record
-  }
-    deriving (Eq, Read, Show)
-
-
-filterRecordState :: RecordFilter -> [RecordState] -> [RecordState]
+filterRecordState :: RecordFilter -> [WorkState] -> [WorkState]
 filterRecordState RecordFilter{..} =
   filter f
     where
-      f RecordState{..} =
-           maybeCompare rfFrom   (<=) recordGeneration
-        && maybeCompare rfTo     (>=) recordGeneration
+      f WorkState{..} =
+           Work.isSuccess workStatus
+        && maybeCompare rfFrom   (<=) workGeneration
+        && maybeCompare rfTo     (>=) workGeneration
         && maybeCompare rfRecord (==) recordIdentifier 
         && maybeCompare rfKey    (==) recordKey
-
-
-arbitraryRecordState :: Work.Submission -> Generation -> RecordIdentifier -> [Variable] -> VariableIdentifier -> Gen RecordState
-arbitraryRecordState Work.Submission{..} recordGeneration recordIdentifier variables key =
-  do
-    record' <- arbitraryRecord variables
-    let
-       record =
-         Record.Record
-           [
-             (k , fromMaybe v $ k `lookup` explicitVariables)
-           |
-             (k, v) <- Record.unRecord record'
-           ]
-       recordKey = valAsString . snd . fromJust . find ((== key) . fst) $ Record.unRecord record
-    return RecordState{..}
 
 
 initialize :: IO ServerState
@@ -202,7 +215,7 @@ service =
       randomFailure
         $ do
           new <- liftIO initialize
-          modifys $ const new
+          sets new
           return Command.Success
     postServer _ =
       notImplemented
@@ -220,12 +233,14 @@ service =
     postModel _ _ =
       notImplemented
     getWorks workFilter identifier =
-      gets
-        $ maybe
-          []
-          (map workStatus . filterWorkState workFilter . works)
-        . lookup identifier
-        . models
+      do
+        modifysIO ageModels
+        gets
+          $ maybe
+            []
+            (map workStatus . filterWorkState workFilter . works)
+          . lookup identifier
+          . models
     postWork submission identifier =
       maybe
         (return $ Work.SubmissionError "model not found")
@@ -238,12 +253,14 @@ service =
         )
         =<< gets (lookup identifier . models)
     getRecords recordFilter identifier =
-      gets
-        $ maybe
-          []
-          (map record . filterRecordState recordFilter . records)
-        . lookup identifier
-        . models
+      do
+        modifysIO ageModels
+        gets
+          $ maybe
+            []
+            (map record . filterRecordState recordFilter . works)
+          . lookup identifier
+          . models
   in
     Service{..}
 

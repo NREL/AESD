@@ -13,6 +13,7 @@ module CESDS.Types.Work (
 , WorkStatus(..)
 , maybeRecordIdentifier
 , hasStatus
+, isSuccess
 ) where
 
 
@@ -205,3 +206,8 @@ hasStatus "running" Running{..} = True
 hasStatus "success" Success{..} = True
 hasStatus "failed"  Failure{..} = True
 hasStatus _         _           = False
+
+
+isSuccess :: WorkStatus -> Bool
+isSuccess Success{} = True
+isSuccess _         = False
