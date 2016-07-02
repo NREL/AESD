@@ -22,8 +22,9 @@ import CESDS.Types.Work (WorkStatus, maybeRecordIdentifier)
 import CESDS.Types.Work.Test ()
 import Control.Monad (foldM, liftM2)
 import Control.Monad.Reader (liftIO)
-import Data.List (find)
-import Data.Maybe (fromJust, isNothing)
+import Data.Function (on)
+import Data.List (find, nubBy)
+import Data.Maybe (fromJust, fromMaybe, isNothing)
 import Data.Text (pack)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
 import Test.QuickCheck.Gen (Gen, choose, frequency, generate)
@@ -32,7 +33,8 @@ import qualified CESDS.Types.Command as Command (Command(..), Result(..))
 import qualified CESDS.Types.Model as Model (Model(..))
 import qualified CESDS.Types.Record as Record (Record(..))
 import qualified CESDS.Types.Server as Server (Server(..))
-import qualified CESDS.Types.Work as Work (WorkStatus(..), hasStatus)
+import qualified CESDS.Types.Variable as Variable (Variable(..))
+import qualified CESDS.Types.Work as Work (Submission(..), SubmissionResult(..), WorkStatus(..), hasStatus)
 
 
 data ServerState =
@@ -71,20 +73,22 @@ arbitraryModelState :: ModelIdentifier -> Gen ModelState
 arbitraryModelState modelIdentifier =
   do
     modelState <- ModelState <$> arbitraryModel modelIdentifier <*> return [] <*> return []
+    let
+      su = Work.Submission [] (map Variable.identifier . Model.variables $ model modelState) Nothing Nothing
     n <- choose (0, 4) :: Gen Int
-    foldM (const . addArbitraryWork) modelState [1..n]
+    foldM (const . addArbitraryWork su) modelState [1..n]
 
 
-addArbitraryWork :: ModelState -> Gen ModelState
-addArbitraryWork ms@ModelState{..} =
+addArbitraryWork :: Work.Submission -> ModelState -> Gen ModelState
+addArbitraryWork su ms@ModelState{..} =
   do
     ws <- arbitraryWorkState $ Model.generation model
     let
       workIdentifier = Work.workIdentifier . workStatus
       recordIdentifier = maybeRecordIdentifier . workStatus
     if workIdentifier ws `elem` map workIdentifier works || recordIdentifier ws `elem` map recordIdentifier works
-      then addArbitraryWork ms
-      else liftM2 maybe return addArbitraryRecordState (ms {works = ws : works}) (recordIdentifier ws)
+      then addArbitraryWork su ms
+      else liftM2 maybe return (addArbitraryRecordState su) (ms {works = ws : works}) (recordIdentifier ws)
 
 
 data WorkState =
@@ -103,16 +107,34 @@ arbitraryWorkState workGeneration =
     return WorkState{..}
 
 
-addArbitraryRecordState :: ModelState -> RecordIdentifier -> Gen ModelState
-addArbitraryRecordState ms@ModelState{..} recordIdentifier =
+addArbitraryRecordState :: Work.Submission -> ModelState -> RecordIdentifier -> Gen ModelState
+addArbitraryRecordState su ms@ModelState{..} recordIdentifier =
   do
     let
       Model.Model{..} = model
-    rs <- arbitraryRecordState generation recordIdentifier variables primaryKey
+    rs <- arbitraryRecordState su generation recordIdentifier variables primaryKey
     if recordKey rs `elem` map recordKey records
-      then addArbitraryRecordState ms recordIdentifier
+      then addArbitraryRecordState su ms recordIdentifier
       else return ms {records = rs : records}
 
+
+submitWork :: ModelState -> Work.Submission -> IO (ModelState, Work.SubmissionResult)
+submitWork ms@ModelState{..} su =
+  do
+    let
+      generation' = Model.generation model + 1
+    ms' <- generate $ addArbitraryWork su $ ms {model = model {Model.generation = generation'}}
+    return
+      (
+        ms'
+      , Work.Submitted
+        {
+          identifier          = Work.workIdentifier . workStatus $ head $ Main.works ms'
+        , generation          = generation'
+        , estimatedCompletion = Nothing
+        }
+      )
+    
 
 maybeCompare :: Maybe a -> (Maybe a -> Maybe a -> Bool) -> a -> Bool
 maybeCompare x f y = isNothing x || x `f` Just y
@@ -151,11 +173,18 @@ filterRecordState RecordFilter{..} =
         && maybeCompare rfKey    (==) recordKey
 
 
-arbitraryRecordState :: Generation -> RecordIdentifier -> [Variable] -> VariableIdentifier -> Gen RecordState
-arbitraryRecordState recordGeneration recordIdentifier variables key =
+arbitraryRecordState :: Work.Submission -> Generation -> RecordIdentifier -> [Variable] -> VariableIdentifier -> Gen RecordState
+arbitraryRecordState Work.Submission{..} recordGeneration recordIdentifier variables key =
   do
-    record <- arbitraryRecord variables
+    record' <- arbitraryRecord variables
     let
+       record =
+         Record.Record
+           [
+             (k , fromMaybe v $ k `lookup` explicitVariables)
+           |
+             (k, v) <- Record.unRecord record'
+           ]
        recordKey = valAsString . snd . fromJust . find ((== key) . fst) $ Record.unRecord record
     return RecordState{..}
 
@@ -197,6 +226,17 @@ service =
           (map workStatus . filterWorkState workFilter . works)
         . lookup identifier
         . models
+    postWork submission identifier =
+      maybe
+        (return $ Work.SubmissionError "model not found")
+        (
+          \ms ->
+            do
+              (ms', sr) <- liftIO $ submitWork ms submission
+              modifys $ \s@ServerState{..} -> s {models = nubBy ((==) `on` fst) $ (identifier, ms') : models}
+              return sr
+        )
+        =<< gets (lookup identifier . models)
     getRecords recordFilter identifier =
       gets
         $ maybe
@@ -233,8 +273,6 @@ randomOutcome success =
 
 
 {-
-
-POST /server/MODEL_ID/work WORK_SUBMISSION WORK_SUBMISSION_RESULT
 
 GET /server/MODEL/bookmark_metas TAG_ID multiple BOOKMARK_META
 

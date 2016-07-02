@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TupleSections     #-}
 
 
 module CESDS.Types.Work (
@@ -15,11 +16,15 @@ module CESDS.Types.Work (
 ) where
 
 
-import CESDS.Types (Generation, Identifier, object')
+import CESDS.Types (Generation, Identifier, Val, object')
 import CESDS.Types.Record (RecordIdentifier)
 import CESDS.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>))
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Value, (.:), (.:?), (.=), withObject)
+import Control.Arrow (second)
+import Data.Aeson.Types (FromJSON(parseJSON), Parser, ToJSON(toJSON), Value, (.:), (.:?), (.=), object, withObject)
+import Data.Function (on)
+import Data.HashMap.Strict (toList)
+import Data.List (sort, sortBy)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -36,18 +41,37 @@ type Priority = Int
 data Submission =
   Submission
   {
-    explicitVariables :: [(VariableIdentifier, Value)]
+    explicitVariables :: [(VariableIdentifier, Val)]
   , randomVariables   :: [VariableIdentifier]
   , timeout           :: Maybe Duration
   , priority          :: Maybe Priority
   }
-    deriving (Eq, Generic, Read, Show)
+    deriving (Generic, Read, Show)
 
+instance Eq Submission where
+  x == y =
+      sortBy (compare `on` fst) (explicitVariables x) == sortBy (compare `on` fst) (explicitVariables y)
+      && sort (randomVariables x) == sort (randomVariables y)
+      && timeout x == timeout y
+      && priority x == priority y
 instance FromJSON Submission where
   parseJSON =
     withObject "WORK_SUBMISSION" $ \o ->
       do
-        explicitVariables <- o .:  "explicit"
+        let
+          parseExplicit :: Value -> Parser [(Text, Val)]
+          parseExplicit =
+            withObject "WORK_SUBMISSION explicit" $ \o'' ->
+              do
+                let
+                  o' = toList o''
+                sequence
+                  [
+                    (k, ) <$> parseJSON v
+                  |
+                    (k, v) <- o'
+                  ]
+        explicitVariables <- (o .: "explicit") >>= parseExplicit
         randomVariables   <- o .:  "random"
         timeout           <- o .:? "timeout"
         priority          <- o .:? "priority"
@@ -57,7 +81,7 @@ instance ToJSON Submission where
   toJSON Submission{..} =
     object'
       [
-        "explicit" .= explicitVariables
+        "explicit" .= object (map (second toJSON) explicitVariables)
       , "random"   .= randomVariables
       , "timeout"  .= timeout
       , "priority" .= priority

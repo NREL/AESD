@@ -7,7 +7,8 @@ module CESDS.Types.Work.Test (
 
 import CESDS.Types.Test ()
 import CESDS.Types.Work (Submission(..), SubmissionResult(..), WorkStatus(..))
-import Data.List (nub)
+import Data.Function (on)
+import Data.List (nub, sortBy)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
 import Test.QuickCheck.Gen (oneof, resize)
 
@@ -15,7 +16,7 @@ import Test.QuickCheck.Gen (oneof, resize)
 instance Arbitrary Submission where
   arbitrary =
     Submission
-      <$> (nub <$> resize 4 arbitrary)
+      <$> (nub . sortBy (compare `on` fst) <$> resize 4 arbitrary)
       <*> (nub <$> resize 4 arbitrary)
       <*> arbitrary
       <*> arbitrary

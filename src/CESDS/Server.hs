@@ -34,7 +34,7 @@ import qualified CESDS.Types.Command as CESDS (Command, Result)
 import qualified CESDS.Types.Model as CESDS (Model, ModelIdentifier)
 import qualified CESDS.Types.Record as CESDS (Record, RecordIdentifier)
 import qualified CESDS.Types.Server as CESDS (Server)
-import qualified CESDS.Types.Work as CESDS (WorkIdentifier, WorkStatus)
+import qualified CESDS.Types.Work as CESDS (Submission, SubmissionResult, WorkIdentifier, WorkStatus)
 
 
 data Service s =
@@ -45,6 +45,7 @@ data Service s =
   , getModel   :: CESDS.ModelIdentifier -> ServerM s (Maybe CESDS.Model)
   , postModel  :: CESDS.Command -> CESDS.ModelIdentifier -> ServerM s CESDS.Result
   , getWorks   :: WorkFilter -> CESDS.ModelIdentifier -> ServerM s [CESDS.WorkStatus]
+  , postWork   :: CESDS.Submission -> CESDS.ModelIdentifier -> ServerM s CESDS.SubmissionResult
   , getRecords :: RecordFilter -> CESDS.ModelIdentifier -> ServerM s [CESDS.Record]
   }
 
@@ -92,6 +93,8 @@ runService port Service{..} initial =
             wfStatus <- maybeParam parameters "status"
             wfWork   <- maybeParam parameters "work_id"
             json =<< serverM (getWorks WorkFilter{..} model)
+      post (capture "/server/:model/work") . withBody
+        $ (json =<<) . (param "model" >>=) . (serverM .) . postWork
       get (capture "/server/:model/records")
         $ do
             model <- param "model"
