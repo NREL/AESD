@@ -29,7 +29,7 @@ import Data.Text (pack)
 import Data.Text.Lazy (Text)
 import Network.HTTP.Types (Status, badRequest400, notFound404)
 import Network.Wai.Handler.Warp (Port, setPort)
-import Web.Scotty.Trans (ActionT, Parsable, ScottyT, Options(..), body, capture, get, json, param, params, post, scottyOptsT, status)
+import Web.Scotty.Trans (ActionT, Parsable, ScottyT, Options(..), body, get, json, notFound, param, params, post, scottyOptsT, status)
 
 import qualified CESDS.Types as CESDS (Generation)
 import qualified CESDS.Types.Command as CESDS (Command, Result)
@@ -82,11 +82,11 @@ runService port Service{..} initial =
         $ json =<< serverM getServer
       post "/server" . withBody
         $ (json =<<) . serverM . postServer
-      get (capture "/server/:model")
+      get "/server/:model"
         $ maybeApiError (notFound404, "model not found") json =<< serverM . getModel =<< param "model"
-      post (capture "/server/:model") . withBody
+      post "/server/:model" . withBody
         $ (json =<<) . (param "model" >>=) . (serverM .) . postModel
-      get (capture "/server/:model/work")
+      get "/server/:model/work"
         $ do
             model <- param "model"
             parameters <- map fst <$> params
@@ -95,9 +95,9 @@ runService port Service{..} initial =
             wfStatus <- maybeParam parameters "status"
             wfWork   <- maybeParam parameters "work_id"
             json =<< serverM (getWorks WorkFilter{..} model)
-      post (capture "/server/:model/work") . withBody
+      post "/server/:model/work" . withBody
         $ (json =<<) . (param "model" >>=) . (serverM .) . postWork
-      get (capture "/server/:model/records")
+      get "/server/:model/records"
         $ do
             model <- param "model"
             parameters <- map fst <$> params
@@ -106,6 +106,8 @@ runService port Service{..} initial =
             rfKey    <- maybeParam parameters "primary_key"
             rfRecord <- maybeParam parameters "result_id"
             json =<< serverM (getRecords RecordFilter{..} model)
+      notFound
+        $ apiError (badRequest400, "invalid request")
 
 
 maybeParam :: (Monad m, Parsable a) => [Text] -> Text -> ActionT Text m (Maybe a)
