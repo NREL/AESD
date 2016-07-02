@@ -22,12 +22,14 @@ module CESDS.Server (
 import CESDS.Types.Server (APIError(APIError))
 import Control.Concurrent.STM (TVar, atomically, modifyTVar', newTVarIO, readTVarIO, writeTVar)
 import Control.Monad (liftM)
+import Control.Monad.Except (ExceptT, MonadError, runExceptT)
 import Control.Monad.Reader (MonadIO, MonadReader, MonadTrans, ReaderT(runReaderT), ask, lift, liftIO)
 import Data.Aeson (FromJSON, eitherDecode')
 import Data.Default (def)
 import Data.Text (pack)
 import Data.Text.Lazy (Text)
 import Network.HTTP.Types (Status, badRequest400, notFound404)
+import Network.Wai (Response)
 import Network.Wai.Handler.Warp (Port, setPort)
 import Web.Scotty.Trans (ActionT, Parsable, ScottyT, Options(..), body, get, json, notFound, param, params, post, scottyOptsT, status)
 
@@ -38,6 +40,7 @@ import qualified CESDS.Types.Record as CESDS (Record, RecordIdentifier)
 import qualified CESDS.Types.Server as CESDS (Server)
 import qualified CESDS.Types.Work as CESDS (Submission, SubmissionResult, WorkIdentifier, WorkStatus)
 
+import qualified Network.Wai.Util as Wai (json)
 
 data Service s =
   Service
@@ -132,8 +135,8 @@ apiError :: Monad m => (Status, String) -> ActionT Text m ()
 apiError (s, e) = json (APIError $ pack e) >> status s
 
 
-newtype ServerM s a = ServerM {runServerM :: ReaderT (TVar s) IO a}
-  deriving (Applicative, Functor, Monad, MonadIO, MonadReader (TVar s))
+newtype ServerM s a = ServerM {runServerM :: ExceptT String (ReaderT (TVar s) IO) a}
+  deriving (Applicative, Functor, MonadError String, Monad, MonadIO, MonadReader (TVar s))
 
 
 serverM :: MonadTrans t => ServerM s a -> t (ServerM s) a
@@ -169,8 +172,12 @@ runApplication port initial application =
   do
     sync <- newTVarIO initial
     let
-      runActionToIO m = runReaderT (runServerM m) sync
-    scottyOptsT (options port) runActionToIO application
+      runActionToIO m = runReaderT (runExceptT (runServerM m)) sync
+    scottyOptsT (options port) ((exceptResponse =<<) . runActionToIO) application
+
+
+exceptResponse :: Either String Response -> IO Response
+exceptResponse = either (Wai.json badRequest400 [] . APIError . pack) return
 
 
 options :: Port -> Options

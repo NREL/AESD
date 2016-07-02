@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                cesds-records
-version:             0.1.7.2
+version:             0.1.7.3
 -- synopsis:            
 -- description:         
 license:             AllRightsReserved
@@ -43,6 +43,8 @@ library
                ,       transformers
                ,       unordered-containers
                ,       vector
+               ,       wai
+               ,       wai-util
                ,       warp
                ,       websockets
   hs-source-dirs:      src
@@ -74,6 +76,8 @@ test-suite cesds-json-parsing
                ,       text
                ,       unordered-containers
                ,       vector
+               ,       wai
+               ,       wai-util
                ,       warp
                ,       websockets
   buildable       : True               
@@ -110,6 +114,8 @@ executable cesds-server
                ,       transformers
                ,       unordered-containers
                ,       vector
+               ,       wai
+               ,       wai-util
                ,       warp
                ,       websockets
   buildable       : True               
