@@ -11,6 +11,7 @@ module CESDS.Types (
 , Tags(..)
 , Generation
 , Val(..)
+, valAsString
 , object'
 ) where
 
@@ -84,6 +85,11 @@ instance FromJSON Val where
 instance ToJSON Val where
   toJSON (Continuous x) = Number x
   toJSON (Discrete   x) = String x
+
+
+valAsString :: Val -> String
+valAsString (Continuous x) = show x
+valAsString (Discrete   x) = unpack x
 
 
 object' :: [Pair] -> Value

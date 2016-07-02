@@ -10,6 +10,8 @@ module CESDS.Types.Work (
 , Submission(..)
 , SubmissionResult(..)
 , WorkStatus(..)
+, maybeRecordIdentifier
+, hasStatus
 ) where
 
 
@@ -166,3 +168,16 @@ instance ToJSON WorkStatus where
       , "work_id"    .= workIdentifier
       , "additional" .= reason    
       ]
+
+
+maybeRecordIdentifier :: WorkStatus -> Maybe RecordIdentifier
+maybeRecordIdentifier Success{..} = Just recordIdentifier
+maybeRecordIdentifier _           = Nothing
+
+
+hasStatus :: Text -> WorkStatus -> Bool
+hasStatus "pending" Pending{..} = True
+hasStatus "running" Running{..} = True
+hasStatus "success" Success{..} = True
+hasStatus "failed"  Failure{..} = True
+hasStatus _         _           = False

@@ -54,7 +54,7 @@ data WorkFilter =
   {
     wfFrom   :: Maybe CESDS.Generation
   , wfTo     :: Maybe CESDS.Generation
-  , wfStatus :: Maybe Text
+  , wfStatus :: Maybe String
   , wfWork   :: Maybe CESDS.WorkIdentifier
   }
     deriving (Eq, Read, Show)
@@ -65,7 +65,7 @@ data RecordFilter =
   {
     rfFrom   :: Maybe CESDS.Generation
   , rfTo     :: Maybe CESDS.Generation
-  , rfKey    :: Maybe Text
+  , rfKey    :: Maybe String
   , rfRecord :: Maybe CESDS.RecordIdentifier
   }
     deriving (Eq, Read, Show)

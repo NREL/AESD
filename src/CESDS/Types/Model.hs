@@ -10,7 +10,7 @@ module CESDS.Types.Model (
 
 
 import CESDS.Types (Generation, Identifier, Tags, object')
-import CESDS.Types.Variable (VariableIdentifier)
+import CESDS.Types.Variable (Variable, VariableIdentifier)
 import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
 import Data.Text (Text)
 import GHC.Generics (Generic)
@@ -29,7 +29,7 @@ data Model =
   , description :: Maybe Text
   , tags        :: Tags
   , generation  :: Generation
-  , variables   :: [VariableIdentifier]
+  , variables   :: [Variable]
   , primaryKey  :: VariableIdentifier
   , timeKey     :: Maybe VariableIdentifier
   }

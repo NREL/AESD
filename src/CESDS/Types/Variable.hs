@@ -8,6 +8,8 @@ module CESDS.Types.Variable (
 , Variable(..)
 , Display(..)
 , Domain(..)
+, isSet
+, isInterval
 , SetValue
 , Units(..)
 ) where
@@ -122,6 +124,16 @@ instance FromJSON Domain where
 instance ToJSON Domain where
   toJSON Interval{..} = object' ["interval" .= object' ["bounds"  .= [lowerBound, upperBound]]]
   toJSON Set{..}      = object' ["set"      .= object' ["options" .= options                 ]]
+
+
+isSet :: Domain -> Bool
+isSet Set{} = True
+isSet _     = False
+
+
+isInterval :: Domain -> Bool
+isInterval Interval{} = True
+isInterval _          = False
 
 
 type SetValue = Text

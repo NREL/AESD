@@ -4,29 +4,25 @@
 
 
 module CESDS.Types.Variable.Test (
-  arbitraryVariable
 ) where
 
 
 import CESDS.Types.Test ()
-import CESDS.Types.Variable (Display(..), Domain(..), Variable(..), VariableIdentifier, Units(..))
+import CESDS.Types.Variable (Display(..), Domain(..), Variable(..), Units(..), isSet)
 import Data.List (nub)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (Gen, oneof, suchThat)
+import Test.QuickCheck.Gen (listOf1, oneof, suchThat)
  
- 
-arbitraryVariable :: VariableIdentifier -> Gen Variable
-arbitraryVariable identifier =
-  do
-    display <- arbitrary
-    domain  <- arbitrary
-    units   <- arbitrary
-    isInput <- arbitrary
-    return Variable{..}
-
  
 instance Arbitrary Variable where
-  arbitrary = arbitraryVariable =<< arbitrary
+  arbitrary =
+    do
+      identifier <- arbitrary
+      display    <- arbitrary
+      domain     <- arbitrary
+      units      <- if isSet domain then return Nothing else arbitrary
+      isInput    <- arbitrary
+      return Variable{..}
 
  
 instance Arbitrary Display where
@@ -42,7 +38,7 @@ instance Arbitrary Domain where
     oneof
       [
         uncurry Interval <$> suchThat arbitrary ordered
-      , Set . fmap nub <$> arbitrary
+      , Set . fmap nub <$> oneof [return Nothing, Just <$>listOf1 arbitrary]
       ]
     where
       ordered (Just l, Just u) = l < u
