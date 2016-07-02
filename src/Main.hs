@@ -20,13 +20,13 @@ import CESDS.Types.Variable (Variable, VariableIdentifier)
 import CESDS.Types.Variable.Test ()
 import CESDS.Types.Work (WorkStatus, maybeRecordIdentifier)
 import CESDS.Types.Work.Test ()
+import Control.Monad (foldM, liftM2)
 import Control.Monad.Reader (liftIO)
 import Data.List (find)
-import Data.Maybe (fromJust, isJust, isNothing)
+import Data.Maybe (fromJust, isNothing)
 import Data.Text (pack)
-import Debug.Trace (trace)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (Gen, frequency, generate, listOf)
+import Test.QuickCheck.Gen (Gen, choose, frequency, generate)
 
 import qualified CESDS.Types.Command as Command (Command(..), Result(..))
 import qualified CESDS.Types.Model as Model (Model(..))
@@ -50,25 +50,9 @@ instance Arbitrary ServerState where
       models <-
         sequence
           [
-            do
-              model <- arbitraryModel identifier
-              let generation = Model.generation model
-              works <- listOf $ arbitraryWorkState generation
-              records <-
-                sequence
-                  [
-                    arbitraryRecordState
-                      generation
-                      (fromJust $ maybeRecordIdentifier workStatus)
-                      (Model.variables model)
-                      (Model.primaryKey model)
-                  |
-                    WorkState{..} <- works
-                  , isJust $ maybeRecordIdentifier workStatus
-                  ]
-              return (identifier, ModelState{..})
+            (modelIdentifier, ) <$> arbitraryModelState modelIdentifier
           |
-            identifier <- Server.models server
+            modelIdentifier <- Server.models server
           ]
       return ServerState{..}
 
@@ -81,6 +65,26 @@ data ModelState =
   , records   :: [RecordState]
   }
     deriving (Eq, Read, Show)
+
+
+arbitraryModelState :: ModelIdentifier -> Gen ModelState
+arbitraryModelState modelIdentifier =
+  do
+    modelState <- ModelState <$> arbitraryModel modelIdentifier <*> return [] <*> return []
+    n <- choose (0, 4) :: Gen Int
+    foldM (const . addArbitraryWork) modelState [1..n]
+
+
+addArbitraryWork :: ModelState -> Gen ModelState
+addArbitraryWork ms@ModelState{..} =
+  do
+    ws <- arbitraryWorkState $ Model.generation model
+    let
+      workIdentifier = Work.workIdentifier . workStatus
+      recordIdentifier = maybeRecordIdentifier . workStatus
+    if workIdentifier ws `elem` map workIdentifier works || recordIdentifier ws `elem` map recordIdentifier works
+      then addArbitraryWork ms
+      else liftM2 maybe return addArbitraryRecordState (ms {works = ws : works}) (recordIdentifier ws)
 
 
 data WorkState =
@@ -97,6 +101,17 @@ arbitraryWorkState workGeneration =
   do
     workStatus <- arbitrary
     return WorkState{..}
+
+
+addArbitraryRecordState :: ModelState -> RecordIdentifier -> Gen ModelState
+addArbitraryRecordState ms@ModelState{..} recordIdentifier =
+  do
+    let
+      Model.Model{..} = model
+    rs <- arbitraryRecordState generation recordIdentifier variables primaryKey
+    if recordKey rs `elem` map recordKey records
+      then addArbitraryRecordState ms recordIdentifier
+      else return ms {records = rs : records}
 
 
 maybeCompare :: Maybe a -> (Maybe a -> Maybe a -> Bool) -> a -> Bool
@@ -141,7 +156,7 @@ arbitraryRecordState recordGeneration recordIdentifier variables key =
   do
     record <- arbitraryRecord variables
     let
-       recordKey = (\x -> trace (show x) x) . valAsString . snd . fromJust . find ((== key) . fst) $ Record.unRecord record
+       recordKey = valAsString . snd . fromJust . find ((== key) . fst) $ Record.unRecord record
     return RecordState{..}
 
 
