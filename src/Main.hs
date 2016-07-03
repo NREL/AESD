@@ -412,7 +412,7 @@ randomFailure x =
     outcome <- randomOutcome 9
     if outcome
       then x
-      else return $ Command.Error "failed" $ Just "random failure for testing"
+      else return . Command.Error "failed" $ Just "random failure for testing"
 
 
 randomOutcome :: Int -> ServerM ServerState Bool

@@ -21,11 +21,12 @@ module CESDS.Server (
 
 import CESDS.Types.Server (APIError(APIError))
 import Control.Concurrent.STM (TVar, atomically, modifyTVar', newTVarIO, readTVarIO, writeTVar)
-import Control.Monad (liftM)
+import Control.Monad (liftM, unless)
 import Control.Monad.Except (ExceptT, MonadError, runExceptT)
 import Control.Monad.Reader (MonadIO, MonadReader, MonadTrans, ReaderT(runReaderT), ask, lift, liftIO)
 import Data.Aeson (FromJSON, eitherDecode')
 import Data.Default (def)
+import Data.List.Util (sameElements)
 import Network.HTTP.Types (Status, badRequest400, internalServerError500)
 import Network.Wai (Response)
 import Network.Wai.Handler.Warp (Port, {- setOnException, -} setOnExceptionResponse, setPort)
@@ -97,67 +98,94 @@ runService port Service{..} initial =
       post "/server" . withBody
         $ (json =<<) . serverM . postServer
       get "/server/:model"
-        $ json =<< serverM . getModel =<< param "model"
+        $ json =<< serverM . getModel =<< paramsModelOnly
       post "/server/:model" . withBody
-        $ (json =<<) . (param "model" >>=) . (serverM .) . postModel
+        $ (json =<<) . (paramsModelOnly >>=) . (serverM .) . postModel
       get "/server/:model/work"
         $ do
-            model <- param "model"
-            parameters <- map fst <$> params
-            wfFrom   <- maybeParam parameters "from"
-            wfTo     <- maybeParam parameters "to"
-            wfStatus <- maybeParam parameters "status"
-            wfWork   <- maybeParam parameters "work_id"
+            (model, wfFrom, wfTo, wfStatus, wfWork) <- params4 ("from", "to", "status", "work_id")
             json =<< serverM (getWorks WorkFilter{..} model)
       post "/server/:model/work" . withBody
-        $ (json =<<) . (param "model" >>=) . (serverM .) . postWork
+        $ (json =<<) . (paramsModelOnly >>=) . (serverM .) . postWork
       get "/server/:model/records"
         $ do
-            model <- param "model"
-            parameters <- map fst <$> params
-            rfFrom   <- maybeParam parameters "from"
-            rfTo     <- maybeParam parameters "to"
-            rfKey    <- maybeParam parameters "primary_key"
-            rfRecord <- maybeParam parameters "result_id"
+            (model, rfFrom, rfTo, rfKey, rfRecord) <- params4 ("from", "to", "primary_key", "result_id")
             json =<< serverM (getRecords RecordFilter{..} model)
       get "/server/:model/bookmark_metas"
         $ do
-            model <- param "model"
-            tags' <- tags
-            json =<< serverM (getBookmarkMetas tags' model)
+            (model, tags) <- paramsTags
+            json =<< serverM (getBookmarkMetas tags model)
       get "/server/:model/bookmarks"
         $ do
-            model <- param "model"
-            parameters <- map fst <$> params
-            bookmarkIdentifier <- maybeParam parameters "bookmark_id"
+            (model, bookmarkIdentifier) <- params1 "bookmark_id"
             json =<< serverM (getBookmarks bookmarkIdentifier model)
       post "/server/:model/bookmarks" . withBody
-        $ (json =<<) . (param "model" >>=) . (serverM .) . postBookmark
+        $ (json =<<) . (paramsModelOnly >>=) . (serverM .) . postBookmark
       get "/server/:model/filter_metas"
         $ do
-            model <- param "model"
-            tags' <- tags
-            json =<< serverM (getFilterMetas tags' model)
+            (model, tags) <- paramsTags
+            json =<< serverM (getFilterMetas tags model)
       get "/server/:model/filters"
         $ do
-            model <- param "model"
-            parameters <- map fst <$> params
-            filterIdentifier <- maybeParam parameters "filter_id"
+            (model, filterIdentifier) <- params1 "filter_id"
             json =<< serverM (getFilters filterIdentifier model)
       post "/server/:model/filters" . withBody
-        $ (json =<<) . (param "model" >>=) . (serverM .) . postFilter
+        $ (json =<<) . (paramsModelOnly >>=) . (serverM .) . postFilter
       notFound
         $ apiError (badRequest400, "invalid request")
 
 
-tags :: Monad m => ActionT LT.Text m CESDS.Tags
-tags =
+paramsModelOnly :: Monad m => ActionT LT.Text m CESDS.ModelIdentifier
+paramsModelOnly =
   do
+    modelIdentifier <- param "model"
+    parameters <- map fst <$> params
+    unless (sameElements ["model"] parameters)
+      $ raise "illegal parameters in URL"
+    return modelIdentifier
+
+
+paramsModel :: Monad m => ActionT LT.Text m (CESDS.ModelIdentifier, [LT.Text])
+paramsModel =
+  do
+    modelIdentifier <- param "model"
+    parameters <- map fst <$> params
+    return (modelIdentifier, parameters)
+
+
+params1 :: (Monad m, Parsable a) => LT.Text -> ActionT LT.Text m (CESDS.ModelIdentifier, Maybe a)
+params1 p1 =
+  do
+    (modelIdentifier, parameters) <- paramsModel
+    unless (sameElements ["model", p1] parameters)
+      $ raise "illegal parameters in URL"
+    v1 <- maybeParam parameters p1
+    return (modelIdentifier, v1)
+
+
+params4 :: (Monad m, Parsable a, Parsable b, Parsable c, Parsable d) => (LT.Text, LT.Text, LT.Text, LT.Text) -> ActionT LT.Text m (CESDS.ModelIdentifier, Maybe a, Maybe b, Maybe c, Maybe d)
+params4 (p1, p2, p3, p4) =
+  do
+    (modelIdentifier, parameters) <- paramsModel
+    unless (sameElements ["model", p1, p2, p3, p4] parameters)
+      $ raise "illegal parameters in URL"
+    v1 <- maybeParam parameters p1
+    v2 <- maybeParam parameters p2
+    v3 <- maybeParam parameters p3
+    v4 <- maybeParam parameters p4
+    return (modelIdentifier, v1, v2, v3, v4)
+
+
+paramsTags :: Monad m => ActionT LT.Text m (CESDS.ModelIdentifier, CESDS.Tags)
+paramsTags =
+  do
+    modelIdentifier <- param "model"
     parameters <- params
-    CESDS.Tags
+    (modelIdentifier, )
+      . CESDS.Tags
       <$> sequence
         [
-          case eitherDecode' $ LBS.pack $ LT.unpack v of
+          case eitherDecode' . LBS.pack $ LT.unpack v of
             Left msg -> raise $ LT.pack msg
             Right v' -> return (T.pack $ LT.unpack k, v')
         |
@@ -175,7 +203,7 @@ maybeParam ps p =
 
 withBody :: (FromJSON a, MonadIO m) => (a -> ActionT LT.Text m ()) -> ActionT LT.Text m ()
 withBody f =
-  either (apiError . (badRequest400, )) f
+  either (apiError . (badRequest400, ) . ("illegal JSON: " ++)) f
     =<< eitherDecode'
     <$> body
 
@@ -205,7 +233,7 @@ modifys f = ask >>= liftIO . atomically . flip modifyTVar' f
 
 
 modifysIO :: (s -> IO s) -> ServerM s ()
-modifysIO f = -- FIXME: rewrite in pointfree style
+modifysIO f = -- TODO: Rewrite in pointfree style.
   do
     sTVar <- ask
     s <- liftIO $ readTVarIO sTVar

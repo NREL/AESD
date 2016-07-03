@@ -4,11 +4,12 @@ module Data.List.Util (
 , replaceByFst
 , nubOn
 , noDuplicates
+, sameElements
 ) where
 
 
 import Data.Function (on)
-import Data.List ((\\), deleteBy, intersect, nub, nubBy)
+import Data.List ((\\), deleteBy, intersect, nub, nubBy, sort)
 
 
 hasSubset :: Eq a => [a] -> [a] -> Bool
@@ -29,3 +30,7 @@ nubOn f = nubBy ((==) `on` f)
 
 noDuplicates :: Eq a => [a] -> Bool
 noDuplicates x = length x == length (nub x)
+
+
+sameElements :: Ord a => [a] -> [a] -> Bool
+sameElements x y = sort x == sort y
