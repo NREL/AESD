@@ -9,7 +9,11 @@ module Main (
 
 
 import CESDS.Server (RecordFilter(..), ServerM, Service(..), WorkFilter(..), gets, modifys, modifysIO, runService, sets)
-import CESDS.Types (Generation, isContinuous, isDiscrete, valAsString)
+import CESDS.Types (Generation, Tags(..), isContinuous, isDiscrete, valAsString)
+import CESDS.Types.Bookmark (Bookmark, BookmarkIdentifier)
+import CESDS.Types.Bookmark.Test ()
+import CESDS.Types.Filter (Filter, FilterIdentifier)
+import CESDS.Types.Filter.Test ()
 import CESDS.Types.Model (Model, ModelIdentifier)
 import CESDS.Types.Model.Test (arbitraryModel)
 import CESDS.Types.Record (Record, RecordIdentifier)
@@ -18,19 +22,22 @@ import CESDS.Types.Server (Server)
 import CESDS.Types.Server.Test ()
 import CESDS.Types.Variable (isInterval, isSet)
 import CESDS.Types.Variable.Test ()
-import CESDS.Types.Work (WorkStatus, maybeRecordIdentifier)
+import CESDS.Types.Work (Submission, WorkStatus, maybeRecordIdentifier)
 import CESDS.Types.Work.Test ()
+import Control.Arrow (second)
 import Control.Monad (foldM, unless)
 import Control.Monad.Except (throwError)
 import Control.Monad.Reader (liftIO)
 import Data.Function (on)
 import Data.List ((\\), find, intersect, nub, nubBy, sort)
-import Data.Maybe (fromJust, fromMaybe, isNothing)
+import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
 import Data.Text (pack)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (Gen, choose, frequency, generate)
+import Test.QuickCheck.Gen (Gen, choose, frequency, generate, listOf, suchThat)
 
+import qualified CESDS.Types.Bookmark as Bookmark (Bookmark(..))
 import qualified CESDS.Types.Command as Command (Command(..), Result(..))
+import qualified CESDS.Types.Filter as Filter (Filter(..))
 import qualified CESDS.Types.Model as Model (Model(..))
 import qualified CESDS.Types.Record as Record (Record(..))
 import qualified CESDS.Types.Server as Server (Server(..))
@@ -65,6 +72,8 @@ data ModelState =
   {
     model     :: Model
   , works     :: [WorkState]
+  , bookmarks :: [Bookmark]
+  , filters   :: [Filter]
   }
     deriving (Eq, Read, Show)
 
@@ -111,7 +120,12 @@ ageModel modelState@ModelState{..} =
 arbitraryModelState :: ModelIdentifier -> Gen ModelState
 arbitraryModelState modelIdentifier =
   do
-    modelState <- ModelState <$> arbitraryModel modelIdentifier <*> return []
+    modelState <-
+      ModelState
+        <$> arbitraryModel modelIdentifier
+        <*> return []
+        <*> listOf arbitrary -- (nubBy ((==) `on` Bookmark.identifier) <$> listOf (suchThat arbitrary $ isJust . Bookmark.identifier))
+        <*> listOf arbitrary -- (nubBy ((==) `on` Filter.identifier) <$> listOf (suchThat arbitrary $ isJust . Filter.identifier))
     let
       submission = Work.Submission [] (map Variable.identifier . Model.variables $ model modelState) Nothing Nothing
     n <- choose (0, 4) :: Gen Int
@@ -159,14 +173,14 @@ data WorkState =
     deriving (Eq, Read, Show)
 
 
-submitWork :: ModelState -> Work.Submission -> ServerM s (ModelState, Work.SubmissionResult)
-submitWork ms@ModelState{..} su =
+submitWork :: ModelState -> Submission -> ServerM s (ModelState, Work.SubmissionResult)
+submitWork ms@ModelState{..} submission =
   do
     let
       generation' = Model.generation model + 1
       modelVariables = map Variable.identifier $ Model.variables model
-      explicitVariables' = sort . map fst $ Work.explicitVariables su
-      randomVariables' = sort $ Work.randomVariables su
+      explicitVariables' = sort . map fst $ Work.explicitVariables submission
+      randomVariables' = sort $ Work.randomVariables submission
       noDuplicates x = length x == length (nub x)
       x `hasSubset` y = null $ y \\ x
       x `doesntOverlap` y = null $ x `intersect` y
@@ -182,13 +196,13 @@ submitWork ms@ModelState{..} su =
       $ throwError "random variable not found among model variables"
     unless (explicitVariables' `doesntOverlap` randomVariables')
       $ throwError "explicit and random variables overlap"
-    unless (map Variable.identifier (filter (isInterval . Variable.domain) $ Model.variables model) `hasSubset` map fst (filter (isContinuous . snd) $ Work.explicitVariables su))
+    unless (map Variable.identifier (filter (isInterval . Variable.domain) $ Model.variables model) `hasSubset` map fst (filter (isContinuous . snd) $ Work.explicitVariables submission))
       $ throwError "continuous value specified for discrete variable"
-    unless (map Variable.identifier (filter (isSet . Variable.domain) $ Model.variables model) `hasSubset` map fst (filter (isDiscrete . snd) $ Work.explicitVariables su))
+    unless (map Variable.identifier (filter (isSet . Variable.domain) $ Model.variables model) `hasSubset` map fst (filter (isDiscrete . snd) $ Work.explicitVariables submission))
       $ throwError "discrete value specified for continuous variable"
-    unless (key `notElem` explicitVariables' || fmap valAsString (lookup key $ Work.explicitVariables su) `notElem` map Just recordKeys)
+    unless (key `notElem` explicitVariables' || fmap valAsString (lookup key $ Work.explicitVariables submission) `notElem` map Just recordKeys)
       $ throwError "primary key violation"
-    ms' <- liftIO $ generate $ addArbitraryWork su $ ms {model = model {Model.generation = generation'}}
+    ms' <- liftIO $ generate $ addArbitraryWork submission $ ms {model = model {Model.generation = generation'}}
     return
       (
         ms'
@@ -200,6 +214,36 @@ submitWork ms@ModelState{..} su =
         }
       )
     
+
+addBookmark :: ModelState -> Bookmark -> ServerM ServerState (ModelState, Bookmark)
+addBookmark ms@ModelState{..} bookmark =
+  do
+    -- FIXME: This implementation is incomplete.
+    let
+      x `hasSubset` y = null $ y \\ x
+    unless (Bookmark.identifier bookmark `notElem` map Bookmark.identifier bookmarks)
+      $ throwError "bookmark already exists"
+    unless (isJust $ Bookmark.records bookmark)
+      $ throwError "record identifiers not specified for bookmark"
+    unless (map recordIdentifier works `hasSubset` fromJust (Bookmark.records bookmark))
+      $ throwError "invalid record identifiers"
+    bookmarkIdentifier <- liftIO $ generate $ suchThat arbitrary (\x -> isJust x && x `notElem` map Bookmark.identifier bookmarks)
+    let
+      bookmark' = bookmark {Bookmark.identifier = bookmarkIdentifier}
+    return (ms {bookmarks = bookmark' : bookmarks}, bookmark')
+
+
+addFilter :: ModelState -> Filter -> ServerM ServerState (ModelState, Filter)
+addFilter ms@ModelState{..} filter' =
+  do
+    -- FIXME: This implementation is incomplete.
+    unless (Filter.identifier filter' `notElem` map Filter.identifier filters)
+      $ throwError "filter already exists"
+    filterIdentifier <- liftIO $ generate $ suchThat arbitrary (\x -> isJust x && x `notElem` map Filter.identifier filters)
+    let
+      filter'' = filter' {Filter.identifier = filterIdentifier}
+    return (ms {filters = filter'' : filters}, filter'')
+
 
 maybeCompare :: Maybe a -> (Maybe a -> Maybe a -> Bool) -> a -> Bool
 maybeCompare x f y = isNothing x || x `f` Just y
@@ -228,6 +272,20 @@ filterRecordState RecordFilter{..} =
         && maybeCompare rfKey    (==) recordKey
 
 
+filterBookmarks :: Tags -> Maybe BookmarkIdentifier -> [Bookmark] -> [Bookmark]
+filterBookmarks tags Nothing = filter ((`hasSubset` tags) . Bookmark.tags)
+  where
+    Tags x `hasSubset` Tags y = null $ y \\ x
+filterBookmarks tags bookmarkIdentifier = filterBookmarks tags Nothing . filter ((== bookmarkIdentifier) . Bookmark.identifier)
+
+
+filterFilters :: Tags -> Maybe FilterIdentifier -> [Filter] -> [Filter]
+filterFilters tags Nothing = filter ((`hasSubset` tags) . Filter.tags)
+  where
+    Tags x `hasSubset` Tags y = null $ y \\ x
+filterFilters tags filterIdentifier = filterFilters tags Nothing . filter ((== filterIdentifier) . Filter.identifier)
+
+
 initialize :: IO ServerState
 initialize = generate arbitrary
 
@@ -243,50 +301,118 @@ service =
           new <- liftIO initialize
           sets new
           return Command.Success
+    postServer (Command.Clear _) =
+      randomFailure
+        $ do
+          modifys $ \s@ServerState{..} -> s {models = map (second (\ms -> ms {works = [], bookmarks = [], filters = []})) models}
+          return Command.Success
     postServer _ =
       notImplemented
-    getModel identifier =
+    getModel modelIdentifier =
       do
-        modelState' <- gets $ lookup identifier . models
+        modelState' <- gets $ lookup modelIdentifier . models
         maybeModelNotFound
           (return . model)
           modelState'
-    postModel (Command.Restart _) identifier =
+    postModel (Command.Restart _) modelIdentifier =
       randomFailure
         $ do
-          model' <- gets $ lookup identifier . models
+          model' <- gets $ lookup modelIdentifier . models
           maybe
             (return $ Command.Error "model not found" Nothing)
             (const $ return Command.Success)
             model'
+    postModel (Command.Clear _) modelIdentifier =
+      randomFailure
+        $ do
+        modelState' <- gets $ lookup modelIdentifier . models
+        maybeModelNotFound
+          (
+            \ms ->
+              do
+                let
+                  ms' = ms {works = [], bookmarks = [], filters = []}
+                modifys $ \s@ServerState{..} -> s {models = nubBy ((==) `on` fst) $ (modelIdentifier, ms') : models}
+                return Command.Success
+          )
+          modelState'
     postModel _ _ =
-      notImplemented
-    getWorks workFilter identifier =
+      randomFailure
+        $ return Command.Success
+    getWorks workFilter modelIdentifier =
       do
         modifysIO ageModels
-        modelState' <- gets $ lookup identifier . models
+        modelState' <- gets $ lookup modelIdentifier . models
         maybeModelNotFound
           (return . map workStatus . filterWorkState workFilter . works)
           modelState'
-    postWork submission identifier =
+    postWork submission modelIdentifier =
       do
-        modelState' <- gets $ lookup identifier . models
+        modelState' <- gets $ lookup modelIdentifier . models
         maybe
           (return $ Work.SubmissionError "model not found")
           (
             \ms ->
               do
-                (ms', sr) <- submitWork ms submission
-                modifys $ \s@ServerState{..} -> s {models = nubBy ((==) `on` fst) $ (identifier, ms') : models}
-                return sr
+                (ms', submissionResult) <- submitWork ms submission
+                modifys $ \s@ServerState{..} -> s {models = nubBy ((==) `on` fst) $ (modelIdentifier, ms') : models}
+                return submissionResult
           )
           modelState'
-    getRecords recordFilter identifier =
+    getRecords recordFilter modelIdentifier =
       do
         modifysIO ageModels
-        modelState' <- gets $ lookup identifier . models
+        modelState' <- gets $ lookup modelIdentifier . models
         maybeModelNotFound
           (return . map record . filterRecordState recordFilter . works)
+          modelState'
+    getBookmarkMetas tags modelIdentifier =
+      do
+        modelState' <- gets $ lookup modelIdentifier . models
+        maybeModelNotFound
+          (return . map (\b -> b {Bookmark.records = Nothing}) . filterBookmarks tags Nothing . bookmarks)
+          modelState'
+    getBookmarks bookmarkIdentifier modelIdentifier =
+      do
+        modelState' <- gets $ lookup modelIdentifier . models
+        maybeModelNotFound
+          (return . filterBookmarks (Tags []) bookmarkIdentifier . bookmarks)
+          modelState'
+    postBookmark bookmark modelIdentifier =
+      do
+        modelState' <- gets $ lookup modelIdentifier . models
+        maybeModelNotFound
+          (
+            \ms ->
+              do
+                (ms', bm) <- addBookmark ms bookmark
+                modifys $ \s@ServerState{..} -> s {models = nubBy ((==) `on` fst) $ (modelIdentifier, ms') : models}
+                return bm
+          )
+          modelState'
+    getFilterMetas tags modelIdentifier =
+      do
+        modelState' <- gets $ lookup modelIdentifier . models
+        maybeModelNotFound
+          (return . map (\f -> f {Filter.expression = Nothing}) . filterFilters tags Nothing . filters)
+          modelState'
+    getFilters filterIdentifier modelIdentifier =
+      do
+        modelState' <- gets $ lookup modelIdentifier . models
+        maybeModelNotFound
+          (return . filterFilters (Tags []) filterIdentifier . filters)
+          modelState'
+    postFilter filter' modelIdentifier =
+      do
+        modelState' <- gets $ lookup modelIdentifier . models
+        maybeModelNotFound
+          (
+            \ms ->
+              do
+                (ms', fi) <- addFilter ms filter'
+                modifys $ \s@ServerState{..} -> s {models = nubBy ((==) `on` fst) $ (modelIdentifier, ms') : models}
+                return fi
+          )
           modelState'
   in
     Service{..}
@@ -318,20 +444,3 @@ randomOutcome success =
   liftIO
     . generate
     $ frequency [(success, return True), (1, return False)]
-
-
-{-
-
-GET /server/MODEL/bookmark_metas TAG_ID multiple BOOKMARK_META
-
-GET /server/MODEL/bookmarks bookmark_id=BOOKMARK_ID BOOKMARK
-
-POST /server/MODEL_ID/bookmarks BOOKMARK w/o ID BOOKMARK_META
-
-GET /server/MODEL_ID/filter_metas TAG_ID=TEXT multiple optional FILTER_META
-
-GET /server/MODEL_ID/filters filter_id=FILTER_ID optional FILTER
-
-POST /server/MODEL_ID/filters FILTER w/o ID FILTER_META
-
--}

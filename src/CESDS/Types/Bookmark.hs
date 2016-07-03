@@ -22,7 +22,7 @@ type BookmarkIdentifier = Identifier
 data Bookmark =
   Bookmark
   {
-    identifier :: BookmarkIdentifier
+    identifier :: Maybe BookmarkIdentifier
   , name       :: Text
   , size       :: Int
   , color      :: Maybe Color
@@ -38,7 +38,7 @@ instance FromJSON Bookmark where
         meta <- withObject "BOOKMARK_META"
                   (\o' ->
                     do
-                      identifier <- o' .:  "bookmark_id"
+                      identifier <- o' .:? "bookmark_id"
                       name       <- o' .:  "name"
                       size       <- o' .:  "size"
                       color      <- o' .:? "color"

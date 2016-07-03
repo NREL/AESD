@@ -26,7 +26,7 @@ type FilterIdentifier = Identifier
 data Filter =
   Filter
   {
-    identifier :: FilterIdentifier
+    identifier :: Maybe FilterIdentifier
   , name       :: Text
   , size       :: Maybe Int
   , color      :: Maybe Color
@@ -42,7 +42,7 @@ instance FromJSON Filter where
         meta <- withObject "FILTER_META"
                   (\o' ->
                     do
-                      identifier <- o' .:  "filter_id"
+                      identifier <- o' .:? "filter_id"
                       name       <- o' .:  "name"
                       size       <- o' .:? "size"
                       color      <- o' .:? "color"

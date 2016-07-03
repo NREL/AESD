@@ -55,6 +55,7 @@ instance Eq Submission where
       && sort (randomVariables x) == sort (randomVariables y)
       && timeout x == timeout y
       && priority x == priority y
+
 instance FromJSON Submission where
   parseJSON =
     withObject "WORK_SUBMISSION" $ \o ->
