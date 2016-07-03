@@ -28,9 +28,9 @@ import Data.Aeson (FromJSON, eitherDecode')
 import Data.Default (def)
 import Data.Text (pack)
 import Data.Text.Lazy (Text)
-import Network.HTTP.Types (Status, badRequest400, notFound404)
+import Network.HTTP.Types (Status, badRequest400, internalServerError500)
 import Network.Wai (Response)
-import Network.Wai.Handler.Warp (Port, setPort)
+import Network.Wai.Handler.Warp (Port, setOnException, setOnExceptionResponse, setPort)
 import Web.Scotty.Trans (ActionT, Parsable, ScottyT, Options(..), body, get, json, notFound, param, params, post, scottyOptsT, status)
 
 import qualified CESDS.Types as CESDS (Generation)
@@ -42,12 +42,13 @@ import qualified CESDS.Types.Work as CESDS (Submission, SubmissionResult, WorkId
 
 import qualified Network.Wai.Util as Wai (json)
 
+
 data Service s =
   Service
   {
     getServer  :: ServerM s CESDS.Server
   , postServer :: CESDS.Command -> ServerM s CESDS.Result
-  , getModel   :: CESDS.ModelIdentifier -> ServerM s (Maybe CESDS.Model)
+  , getModel   :: CESDS.ModelIdentifier -> ServerM s CESDS.Model
   , postModel  :: CESDS.Command -> CESDS.ModelIdentifier -> ServerM s CESDS.Result
   , getWorks   :: WorkFilter -> CESDS.ModelIdentifier -> ServerM s [CESDS.WorkStatus]
   , postWork   :: CESDS.Submission -> CESDS.ModelIdentifier -> ServerM s CESDS.SubmissionResult
@@ -86,7 +87,7 @@ runService port Service{..} initial =
       post "/server" . withBody
         $ (json =<<) . serverM . postServer
       get "/server/:model"
-        $ maybeApiError (notFound404, "model not found") json =<< serverM . getModel =<< param "model"
+        $ json =<< serverM . getModel =<< param "model"
       post "/server/:model" . withBody
         $ (json =<<) . (param "model" >>=) . (serverM .) . postModel
       get "/server/:model/work"
@@ -125,10 +126,6 @@ withBody f =
   either (apiError . (badRequest400, )) f
     =<< eitherDecode'
     <$> body
-
-
-maybeApiError :: Monad m => (Status, String) -> (a -> ActionT Text m ()) -> Maybe a -> ActionT Text m ()
-maybeApiError = maybe . apiError
 
 
 apiError :: Monad m => (Status, String) -> ActionT Text m ()
@@ -184,6 +181,10 @@ options :: Port -> Options
 options port =
   def
     {
-      settings = setPort port $ settings def
+      settings =
+        setPort port
+          $ setOnException (const $ putStrLn . ("Uncaught exception: " ++) . show)
+          $ setOnExceptionResponse (head . Wai.json internalServerError500 [] . APIError . pack . show)
+          $ settings def
     , verbose  = 0
     }

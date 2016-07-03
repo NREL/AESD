@@ -12,6 +12,8 @@ module CESDS.Types (
 , Generation
 , Val(..)
 , valAsString
+, isContinuous
+, isDiscrete
 , object'
 ) where
 
@@ -90,6 +92,16 @@ instance ToJSON Val where
 valAsString :: Val -> String
 valAsString (Continuous x) = show x
 valAsString (Discrete   x) = unpack x
+
+
+isContinuous :: Val -> Bool
+isContinuous (Continuous _) = True
+isContinuous _              = False
+
+
+isDiscrete :: Val -> Bool
+isDiscrete (Discrete _ ) = True
+isDiscrete _             = False
 
 
 object' :: [Pair] -> Value

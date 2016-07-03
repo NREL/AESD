@@ -9,21 +9,22 @@ module Main (
 
 
 import CESDS.Server (RecordFilter(..), ServerM, Service(..), WorkFilter(..), gets, modifys, modifysIO, runService, sets)
-import CESDS.Types (Generation, valAsString)
+import CESDS.Types (Generation, isContinuous, isDiscrete, valAsString)
 import CESDS.Types.Model (Model, ModelIdentifier)
 import CESDS.Types.Model.Test (arbitraryModel)
 import CESDS.Types.Record (Record, RecordIdentifier)
 import CESDS.Types.Record.Test (arbitraryRecord)
 import CESDS.Types.Server (Server)
 import CESDS.Types.Server.Test ()
+import CESDS.Types.Variable (isInterval, isSet)
 import CESDS.Types.Variable.Test ()
 import CESDS.Types.Work (WorkStatus, maybeRecordIdentifier)
 import CESDS.Types.Work.Test ()
-import Control.Monad (foldM)
+import Control.Monad (foldM, unless)
 import Control.Monad.Except (throwError)
 import Control.Monad.Reader (liftIO)
 import Data.Function (on)
-import Data.List (find, nubBy)
+import Data.List ((\\), find, intersect, nub, nubBy, sort)
 import Data.Maybe (fromJust, fromMaybe, isNothing)
 import Data.Text (pack)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
@@ -158,12 +159,36 @@ data WorkState =
     deriving (Eq, Read, Show)
 
 
-submitWork :: ModelState -> Work.Submission -> IO (ModelState, Work.SubmissionResult)
+submitWork :: ModelState -> Work.Submission -> ServerM s (ModelState, Work.SubmissionResult)
 submitWork ms@ModelState{..} su =
   do
     let
       generation' = Model.generation model + 1
-    ms' <- generate $ addArbitraryWork su $ ms {model = model {Model.generation = generation'}}
+      modelVariables = map Variable.identifier $ Model.variables model
+      explicitVariables' = sort . map fst $ Work.explicitVariables su
+      randomVariables' = sort $ Work.randomVariables su
+      noDuplicates x = length x == length (nub x)
+      x `hasSubset` y = null $ y \\ x
+      x `doesntOverlap` y = null $ x `intersect` y
+      key = Model.primaryKey model
+      recordKeys = map recordKey works
+    unless (noDuplicates explicitVariables')
+      $ throwError "duplicate explicit variables"
+    unless (modelVariables `hasSubset` explicitVariables')
+      $ throwError "explicit variable not found among model variables"
+    unless (noDuplicates randomVariables')
+      $ throwError "duplicate random variables"
+    unless (modelVariables `hasSubset` randomVariables')
+      $ throwError "random variable not found among model variables"
+    unless (explicitVariables' `doesntOverlap` randomVariables')
+      $ throwError "explicit and random variables overlap"
+    unless (map Variable.identifier (filter (isInterval . Variable.domain) $ Model.variables model) `hasSubset` map fst (filter (isContinuous . snd) $ Work.explicitVariables su))
+      $ throwError "continuous value specified for discrete variable"
+    unless (map Variable.identifier (filter (isSet . Variable.domain) $ Model.variables model) `hasSubset` map fst (filter (isDiscrete . snd) $ Work.explicitVariables su))
+      $ throwError "discrete value specified for continuous variable"
+    unless (key `notElem` explicitVariables' || fmap valAsString (lookup key $ Work.explicitVariables su) `notElem` map Just recordKeys)
+      $ throwError "primary key violation"
+    ms' <- liftIO $ generate $ addArbitraryWork su $ ms {model = model {Model.generation = generation'}}
     return
       (
         ms'
@@ -221,53 +246,58 @@ service =
     postServer _ =
       notImplemented
     getModel identifier =
-      gets
-        $ fmap model
-        . lookup identifier
-        . models
+      do
+        modelState' <- gets $ lookup identifier . models
+        maybeModelNotFound
+          (return . model)
+          modelState'
     postModel (Command.Restart _) identifier =
       randomFailure
-        $ maybe
-          (return $ Command.Error "model not found" Nothing)
-          (const $ return Command.Success)
-        =<< gets (lookup identifier . models)
+        $ do
+          model' <- gets $ lookup identifier . models
+          maybe
+            (return $ Command.Error "model not found" Nothing)
+            (const $ return Command.Success)
+            model'
     postModel _ _ =
       notImplemented
     getWorks workFilter identifier =
       do
         modifysIO ageModels
-        gets
-          $ maybe
-            []
-            (map workStatus . filterWorkState workFilter . works)
-          . lookup identifier
-          . models
+        modelState' <- gets $ lookup identifier . models
+        maybeModelNotFound
+          (return . map workStatus . filterWorkState workFilter . works)
+          modelState'
     postWork submission identifier =
-      maybe
-        (return $ Work.SubmissionError "model not found")
-        (
-          \ms ->
-            do
-              (ms', sr) <- liftIO $ submitWork ms submission
-              modifys $ \s@ServerState{..} -> s {models = nubBy ((==) `on` fst) $ (identifier, ms') : models}
-              return sr
-        )
-        =<< gets (lookup identifier . models)
+      do
+        modelState' <- gets $ lookup identifier . models
+        maybe
+          (return $ Work.SubmissionError "model not found")
+          (
+            \ms ->
+              do
+                (ms', sr) <- submitWork ms submission
+                modifys $ \s@ServerState{..} -> s {models = nubBy ((==) `on` fst) $ (identifier, ms') : models}
+                return sr
+          )
+          modelState'
     getRecords recordFilter identifier =
       do
         modifysIO ageModels
-        gets
-          $ maybe
-            []
-            (map record . filterRecordState recordFilter . works)
-          . lookup identifier
-          . models
+        modelState' <- gets $ lookup identifier . models
+        maybeModelNotFound
+          (return . map record . filterRecordState recordFilter . works)
+          modelState'
   in
     Service{..}
 
 
 main :: IO ()
 main = runService 8090 service =<< initialize
+
+
+maybeModelNotFound :: (a -> ServerM s b) -> Maybe a -> ServerM s b
+maybeModelNotFound = maybe $ throwError "model not found"
 
 
 notImplemented :: ServerM ServerState Command.Result
