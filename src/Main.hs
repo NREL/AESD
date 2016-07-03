@@ -28,8 +28,8 @@ import Control.Arrow (second)
 import Control.Monad (foldM, unless)
 import Control.Monad.Except (throwError)
 import Control.Monad.Reader (liftIO)
-import Data.Function (on)
-import Data.List ((\\), find, intersect, nub, nubBy, sort)
+import Data.List (find, sort)
+import Data.List.Util (disjoint, hasSubset, noDuplicates, nubOn, replaceByFst)
 import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
 import Data.Text (pack)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
@@ -124,8 +124,8 @@ arbitraryModelState modelIdentifier =
       ModelState
         <$> arbitraryModel modelIdentifier
         <*> return []
-        <*> listOf arbitrary -- (nubBy ((==) `on` Bookmark.identifier) <$> listOf (suchThat arbitrary $ isJust . Bookmark.identifier))
-        <*> listOf arbitrary -- (nubBy ((==) `on` Filter.identifier) <$> listOf (suchThat arbitrary $ isJust . Filter.identifier))
+        <*> (nubOn Bookmark.identifier <$> listOf (suchThat arbitrary $ isJust . Bookmark.identifier))
+        <*> (nubOn Filter.identifier   <$> listOf (suchThat arbitrary $ isJust . Filter.identifier  ))
     let
       submission = Work.Submission [] (map Variable.identifier . Model.variables $ model modelState) Nothing Nothing
     n <- choose (0, 4) :: Gen Int
@@ -181,9 +181,6 @@ submitWork ms@ModelState{..} submission =
       modelVariables = map Variable.identifier $ Model.variables model
       explicitVariables' = sort . map fst $ Work.explicitVariables submission
       randomVariables' = sort $ Work.randomVariables submission
-      noDuplicates x = length x == length (nub x)
-      x `hasSubset` y = null $ y \\ x
-      x `doesntOverlap` y = null $ x `intersect` y
       key = Model.primaryKey model
       recordKeys = map recordKey works
     unless (noDuplicates explicitVariables')
@@ -194,7 +191,7 @@ submitWork ms@ModelState{..} submission =
       $ throwError "duplicate random variables"
     unless (modelVariables `hasSubset` randomVariables')
       $ throwError "random variable not found among model variables"
-    unless (explicitVariables' `doesntOverlap` randomVariables')
+    unless (explicitVariables' `disjoint` randomVariables')
       $ throwError "explicit and random variables overlap"
     unless (map Variable.identifier (filter (isInterval . Variable.domain) $ Model.variables model) `hasSubset` map fst (filter (isContinuous . snd) $ Work.explicitVariables submission))
       $ throwError "continuous value specified for discrete variable"
@@ -219,8 +216,6 @@ addBookmark :: ModelState -> Bookmark -> ServerM ServerState (ModelState, Bookma
 addBookmark ms@ModelState{..} bookmark =
   do
     -- FIXME: This implementation is incomplete.
-    let
-      x `hasSubset` y = null $ y \\ x
     unless (Bookmark.identifier bookmark `notElem` map Bookmark.identifier bookmarks)
       $ throwError "bookmark already exists"
     unless (isJust $ Bookmark.records bookmark)
@@ -273,16 +268,12 @@ filterRecordState RecordFilter{..} =
 
 
 filterBookmarks :: Tags -> Maybe BookmarkIdentifier -> [Bookmark] -> [Bookmark]
-filterBookmarks tags Nothing = filter ((`hasSubset` tags) . Bookmark.tags)
-  where
-    Tags x `hasSubset` Tags y = null $ y \\ x
+filterBookmarks tags Nothing = filter ((`hasSubset` unTags tags) . unTags . Bookmark.tags)
 filterBookmarks tags bookmarkIdentifier = filterBookmarks tags Nothing . filter ((== bookmarkIdentifier) . Bookmark.identifier)
 
 
 filterFilters :: Tags -> Maybe FilterIdentifier -> [Filter] -> [Filter]
-filterFilters tags Nothing = filter ((`hasSubset` tags) . Filter.tags)
-  where
-    Tags x `hasSubset` Tags y = null $ y \\ x
+filterFilters tags Nothing = filter ((`hasSubset` unTags tags) . unTags . Filter.tags)
 filterFilters tags filterIdentifier = filterFilters tags Nothing . filter ((== filterIdentifier) . Filter.identifier)
 
 
@@ -304,7 +295,7 @@ service =
     postServer (Command.Clear _) =
       randomFailure
         $ do
-          modifys $ \s@ServerState{..} -> s {models = map (second (\ms -> ms {works = [], bookmarks = [], filters = []})) models}
+          modifys $ \s@ServerState{..} -> s {models = map (second clearModel) models}
           return Command.Success
     postServer _ =
       notImplemented
@@ -325,17 +316,10 @@ service =
     postModel (Command.Clear _) modelIdentifier =
       randomFailure
         $ do
-        modelState' <- gets $ lookup modelIdentifier . models
-        maybeModelNotFound
-          (
-            \ms ->
-              do
-                let
-                  ms' = ms {works = [], bookmarks = [], filters = []}
-                modifys $ \s@ServerState{..} -> s {models = nubBy ((==) `on` fst) $ (modelIdentifier, ms') : models}
-                return Command.Success
-          )
-          modelState'
+          modelState' <- gets $ lookup modelIdentifier . models
+          maybeModelNotFound
+            (replaceModel . (, Command.Success) . clearModel)
+            modelState'
     postModel _ _ =
       randomFailure
         $ return Command.Success
@@ -351,13 +335,7 @@ service =
         modelState' <- gets $ lookup modelIdentifier . models
         maybe
           (return $ Work.SubmissionError "model not found")
-          (
-            \ms ->
-              do
-                (ms', submissionResult) <- submitWork ms submission
-                modifys $ \s@ServerState{..} -> s {models = nubBy ((==) `on` fst) $ (modelIdentifier, ms') : models}
-                return submissionResult
-          )
+          ((replaceModel =<<) . flip submitWork submission)
           modelState'
     getRecords recordFilter modelIdentifier =
       do
@@ -382,13 +360,7 @@ service =
       do
         modelState' <- gets $ lookup modelIdentifier . models
         maybeModelNotFound
-          (
-            \ms ->
-              do
-                (ms', bm) <- addBookmark ms bookmark
-                modifys $ \s@ServerState{..} -> s {models = nubBy ((==) `on` fst) $ (modelIdentifier, ms') : models}
-                return bm
-          )
+          ((replaceModel =<<) . flip addBookmark bookmark)
           modelState'
     getFilterMetas tags modelIdentifier =
       do
@@ -406,16 +378,20 @@ service =
       do
         modelState' <- gets $ lookup modelIdentifier . models
         maybeModelNotFound
-          (
-            \ms ->
-              do
-                (ms', fi) <- addFilter ms filter'
-                modifys $ \s@ServerState{..} -> s {models = nubBy ((==) `on` fst) $ (modelIdentifier, ms') : models}
-                return fi
-          )
+          ((replaceModel =<<) . flip addFilter filter')
           modelState'
   in
     Service{..}
+
+
+clearModel :: ModelState -> ModelState
+clearModel modelState = modelState {works = [], bookmarks = [], filters = []}
+
+
+replaceModel :: (ModelState, a) -> ServerM ServerState a
+replaceModel (modelState@ModelState{..}, x) =
+  modifys (\s@ServerState{..} -> s {models = replaceByFst (Model.identifier model, modelState) models})
+    >> return x
 
 
 main :: IO ()

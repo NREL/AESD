@@ -1,5 +1,5 @@
 name:                cesds-records
-version:             0.1.8.0
+version:             0.1.8.1
 synopsis:            Implementation of CESDS record API
 description:         Implementation of CESDS record API.
 license:             AllRightsReserved
@@ -33,6 +33,7 @@ library
                     CESDS.Types.Server
                     CESDS.Types.Work
                     CESDS.Types.Variable
+                    Data.List.Util
   build-depends   : base >=4.8 && <4.9
                   , aeson
                   , bytestring
