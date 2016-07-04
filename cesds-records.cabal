@@ -12,14 +12,15 @@ build-type:          Simple
 cabal-version:       >= 1.10
 
 stability:           Stable
-homepage:            https://github.nrel.gov/haskell/cesds-reccords
-bug-reports:         https://github.nrel.gov/haskell/cesds-reccords/issues/
+homepage:            https://github.nrel.gov/haskell/cesds-records
+bug-reports:         https://github.nrel.gov/haskell/cesds-records/issues/
 
 extra-source-files:  ReadMe.md
+                     ChangeLog.md
 
 source-repository head
   type: git
-  location: https://github.nrel.gov/haskell/cesds-reccords.git
+  location: https://github.nrel.gov/haskell/cesds-records.git
  
 library
   hs-source-dirs  : src
