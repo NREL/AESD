@@ -10,26 +10,26 @@ module CESDS.Types.Filter.Test (
 
 
 import CESDS.Types.Test (arbitraryVal)
-import CESDS.Types.Filter (Filter(..), SelectionExpression(..))
+import CESDS.Types.Filter (Filter(..), FilterIdentifier, SelectionExpression(..))
 import CESDS.Types.Variable (Variable(..))
 import CESDS.Types.Variable.Test (arbitrarySubdomain)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (Gen, frequency, listOf1, oneof)
+import Test.QuickCheck.Gen (Gen, frequency, listOf1, oneof, suchThat)
 
 
-arbitraryFilter :: [Variable] -> Gen Filter
-arbitraryFilter variables =
+arbitraryFilter :: [Maybe FilterIdentifier] -> [Variable] -> Gen Filter
+arbitraryFilter veto variables =
     Filter
-      <$> arbitrary
+      <$> arbitrary `suchThat` (`notElem` veto)
       <*> arbitrary
-      <*> arbitrary
+      <*> arbitrary `suchThat` (> Just 0)
       <*> arbitrary
       <*> arbitrary
       <*> oneof [return Nothing, Just <$> arbitraryExpression variables]
 
 
 instance Arbitrary Filter where
-  arbitrary = arbitraryFilter =<< listOf1 arbitrary
+  arbitrary = arbitraryFilter [] =<< listOf1 arbitrary
 
 
 arbitraryExpression :: [Variable] -> Gen SelectionExpression

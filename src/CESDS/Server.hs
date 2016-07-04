@@ -44,7 +44,7 @@ import qualified CESDS.Types.Work as CESDS (Submission, SubmissionResult, WorkId
 
 import qualified Data.ByteString.Lazy.Char8 as LBS (pack)
 import qualified Data.Text as T (pack)
-import qualified Data.Text.Lazy as LT (Text, concat, intercalate, pack, unpack)
+import qualified Data.Text.Lazy as LT (Text, concat, head, intercalate, pack, unpack)
 import qualified Network.Wai.Util as Wai (json)
 
 
@@ -140,7 +140,7 @@ paramsModelOnly :: Monad m => ActionT LT.Text m CESDS.ModelIdentifier
 paramsModelOnly =
   do
     modelIdentifier <- param "model"
-    parameters <- map fst <$> params
+    parameters <- filter ((/= '{') . LT.head) . map fst <$> params
     unless (["model"] `hasSubset` parameters)
       . raise
       $ LT.concat ["illegal parameters in URL: ", LT.intercalate ", " $ parameters \\ ["model"]]

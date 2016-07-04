@@ -155,7 +155,7 @@ arbitraryModelState modelIdentifier =
     let
       records = map recordIdentifier $ works modelState'
     bookmarks' <- nubOn Bookmark.identifier . filter ((> 0) . Bookmark.size) <$> listOf (arbitraryBookmark [Nothing] records)
-    filters'   <- nubOn Filter.identifier   <$> listOf (arbitraryFilter . Model.variables $ model modelState)
+    filters'   <- nubOn Filter.identifier   <$> listOf (arbitraryFilter [Nothing] . Model.variables $ model modelState)
     return modelState' {bookmarks = bookmarks', filters = filters'}
 
 
@@ -281,7 +281,10 @@ filterFilters tags filterIdentifier = filterFilters tags Nothing . filter ((== f
 
 
 initialize :: IO ServerState
-initialize = generate arbitrary
+initialize =
+  do
+    s@ServerState{..} <- generate arbitrary
+    return s {server = server {Server.version = 1}}
 
 
 service :: Service ServerState

@@ -1,5 +1,5 @@
 name:                cesds-records
-version:             0.1.9.1
+version:             0.1.9.2
 synopsis:            Implementation of CESDS record API
 description:         Implementation of CESDS record API.
 license:             AllRightsReserved
