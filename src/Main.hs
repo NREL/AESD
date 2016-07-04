@@ -9,27 +9,26 @@ module Main (
 
 
 import CESDS.Server (RecordFilter(..), ServerM, Service(..), WorkFilter(..), gets, modifys, modifysIO, runService, sets)
-import CESDS.Types (Generation, Tags(..), isContinuous, isDiscrete, valAsString)
-import CESDS.Types.Bookmark (Bookmark, BookmarkIdentifier)
-import CESDS.Types.Bookmark.Test ()
-import CESDS.Types.Filter (Filter, FilterIdentifier)
-import CESDS.Types.Filter.Test ()
-import CESDS.Types.Model (Model, ModelIdentifier)
+import CESDS.Types (Generation, Tags(..), valAsString)
+import CESDS.Types.Bookmark (Bookmark, BookmarkIdentifier, validateBookmark, validateBookmarks)
+import CESDS.Types.Bookmark.Test (arbitraryBookmark)
+import CESDS.Types.Filter (Filter, FilterIdentifier, validateFilter, validateFilters)
+import CESDS.Types.Filter.Test (arbitraryFilter)
+import CESDS.Types.Model (Model, ModelIdentifier, validateModel)
 import CESDS.Types.Model.Test (arbitraryModel)
 import CESDS.Types.Record (Record, RecordIdentifier)
 import CESDS.Types.Record.Test (arbitraryRecord)
 import CESDS.Types.Server (Server)
 import CESDS.Types.Server.Test ()
-import CESDS.Types.Variable (isInterval, isSet)
 import CESDS.Types.Variable.Test ()
-import CESDS.Types.Work (Submission, WorkStatus, maybeRecordIdentifier)
+import CESDS.Types.Work (Submission, WorkStatus, maybeRecordIdentifier, validateSubmission, validateWorkStatuses)
 import CESDS.Types.Work.Test ()
 import Control.Arrow (second)
 import Control.Monad (foldM, unless)
 import Control.Monad.Except (throwError)
 import Control.Monad.Reader (liftIO)
-import Data.List (find, sort)
-import Data.List.Util (disjoint, hasSubset, noDuplicates, nubOn, replaceByFst)
+import Data.List (find)
+import Data.List.Util (hasSubset, noDuplicates, nubOn, replaceByFst)
 import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
 import Data.Text (pack)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
@@ -67,6 +66,22 @@ instance Arbitrary ServerState where
       return ServerState{..}
 
 
+validateServerState :: ServerState -> ServerM s ()
+validateServerState ServerState{..} =
+  do
+    unless (noDuplicates $ map fst models)
+      $ throwError "duplicate model identifiers"
+    sequence_
+      [
+        do
+          unless (modelIdentifier == Model.identifier model)
+            $ throwError "corrupt model index"
+          validateModelState modelState
+      |
+        (modelIdentifier, modelState@ModelState{..}) <- models
+      ]
+
+
 data ModelState =
   ModelState
   {
@@ -76,6 +91,17 @@ data ModelState =
   , filters   :: [Filter]
   }
     deriving (Eq, Read, Show)
+
+
+validateModelState :: ModelState -> ServerM s ()
+validateModelState ModelState{..} =
+  do
+    validateModel [] model
+    validateWorkStatuses $ map workStatus works
+    let
+      recordIdentifiers = map recordIdentifier works
+    validateBookmarks recordIdentifiers bookmarks
+    validateFilters (Model.variables model) filters
 
 
 ageModels :: ServerState -> IO ServerState
@@ -120,16 +146,17 @@ ageModel modelState@ModelState{..} =
 arbitraryModelState :: ModelIdentifier -> Gen ModelState
 arbitraryModelState modelIdentifier =
   do
-    modelState <-
-      ModelState
-        <$> arbitraryModel modelIdentifier
-        <*> return []
-        <*> (nubOn Bookmark.identifier <$> listOf (suchThat arbitrary $ isJust . Bookmark.identifier))
-        <*> (nubOn Filter.identifier   <$> listOf (suchThat arbitrary $ isJust . Filter.identifier  ))
+    modelState <- ModelState <$> arbitraryModel modelIdentifier <*> return [] <*> return [] <*> return []
     let
-      submission = Work.Submission [] (map Variable.identifier . Model.variables $ model modelState) Nothing Nothing
+      variables = map Variable.identifier . Model.variables $ model modelState
+      submission = Work.Submission [] variables Nothing Nothing
     n <- choose (0, 4) :: Gen Int
-    foldM (const . addArbitraryWork submission) modelState [1..n]
+    modelState' <- foldM (const . addArbitraryWork submission) modelState [1..n]
+    let
+      records = map recordIdentifier $ works modelState'
+    bookmarks' <- nubOn Bookmark.identifier <$> listOf (arbitraryBookmark [Nothing] records)
+    filters'   <- nubOn Filter.identifier   <$> listOf (arbitraryFilter . Model.variables $ model modelState)
+    return modelState' {bookmarks = bookmarks', filters = filters'}
 
 
 addArbitraryWork :: Work.Submission -> ModelState -> Gen ModelState
@@ -178,27 +205,7 @@ submitWork ms@ModelState{..} submission =
   do
     let
       generation' = Model.generation model + 1
-      modelVariables = map Variable.identifier $ Model.variables model
-      explicitVariables' = sort . map fst $ Work.explicitVariables submission
-      randomVariables' = sort $ Work.randomVariables submission
-      key = Model.primaryKey model
-      recordKeys = map recordKey works
-    unless (noDuplicates explicitVariables')
-      $ throwError "duplicate explicit variables"
-    unless (modelVariables `hasSubset` explicitVariables')
-      $ throwError "explicit variable not found among model variables"
-    unless (noDuplicates randomVariables')
-      $ throwError "duplicate random variables"
-    unless (modelVariables `hasSubset` randomVariables')
-      $ throwError "random variable not found among model variables"
-    unless (explicitVariables' `disjoint` randomVariables')
-      $ throwError "explicit and random variables overlap"
-    unless (map Variable.identifier (filter (isInterval . Variable.domain) $ Model.variables model) `hasSubset` map fst (filter (isContinuous . snd) $ Work.explicitVariables submission))
-      $ throwError "continuous value specified for discrete variable"
-    unless (map Variable.identifier (filter (isSet . Variable.domain) $ Model.variables model) `hasSubset` map fst (filter (isDiscrete . snd) $ Work.explicitVariables submission))
-      $ throwError "discrete value specified for continuous variable"
-    unless (key `notElem` explicitVariables' || fmap valAsString (lookup key $ Work.explicitVariables submission) `notElem` map Just recordKeys)
-      $ throwError "primary key violation"
+    validateSubmission model (map recordKey works) submission
     ms' <- liftIO $ generate $ addArbitraryWork submission $ ms {model = model {Model.generation = generation'}}
     return
       (
@@ -215,26 +222,18 @@ submitWork ms@ModelState{..} submission =
 addBookmark :: ModelState -> Bookmark -> ServerM ServerState (ModelState, Bookmark)
 addBookmark ms@ModelState{..} bookmark =
   do
-    -- FIXME: This implementation is incomplete.
-    unless (Bookmark.identifier bookmark `notElem` map Bookmark.identifier bookmarks)
-      $ throwError "bookmark already exists"
-    unless (isJust $ Bookmark.records bookmark)
-      $ throwError "record identifiers not specified for bookmark"
-    unless (map recordIdentifier works `hasSubset` fromJust (Bookmark.records bookmark))
-      $ throwError "invalid record identifiers"
-    bookmarkIdentifier <- liftIO $ generate $ suchThat arbitrary (\x -> isJust x && x `notElem` map Bookmark.identifier bookmarks)
+    validateBookmark bookmarks (map recordIdentifier works) bookmark
+    bookmarkIdentifier <- liftIO $ generate $ arbitrary `suchThat` (\x -> isJust x && x `notElem` map Bookmark.identifier bookmarks)
     let
-      bookmark' = bookmark {Bookmark.identifier = bookmarkIdentifier}
+      bookmark' = bookmark {Bookmark.identifier = bookmarkIdentifier, Bookmark.size = length $ Bookmark.records bookmark}
     return (ms {bookmarks = bookmark' : bookmarks}, bookmark')
 
 
 addFilter :: ModelState -> Filter -> ServerM ServerState (ModelState, Filter)
 addFilter ms@ModelState{..} filter' =
   do
-    -- FIXME: This implementation is incomplete.
-    unless (Filter.identifier filter' `notElem` map Filter.identifier filters)
-      $ throwError "filter already exists"
-    filterIdentifier <- liftIO $ generate $ suchThat arbitrary (\x -> isJust x && x `notElem` map Filter.identifier filters)
+    validateFilter filters (Model.variables model) filter'
+    filterIdentifier <- liftIO $ generate $ arbitrary `suchThat` (\x -> isJust x && x `notElem` map Filter.identifier filters)
     let
       filter'' = filter' {Filter.identifier = filterIdentifier}
     return (ms {filters = filter'' : filters}, filter'')
@@ -285,7 +284,11 @@ service :: Service ServerState
 service =
   let
     getServer =
-      gets server
+      do
+        serverState@ServerState{..} <- gets id
+        liftIO $ print serverState
+        validateServerState serverState
+        return server
     postServer (Command.Restart _) =
       randomFailure
         $ do

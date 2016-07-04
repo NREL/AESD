@@ -6,12 +6,19 @@
 module CESDS.Types.Bookmark (
   BookmarkIdentifier
 , Bookmark(..)
+, validateBookmarks
+, validateBookmark
 ) where
 
 
 import CESDS.Types (Color, Identifier, Tags, object')
 import CESDS.Types.Record (RecordIdentifier)
+import Control.Monad (unless)
+import Control.Monad.Except (MonadError, throwError)
 import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
+import Data.List.Util (hasSubset, notDuplicatedIn)
+import Data.Maybe (fromMaybe)
+import Data.String (IsString)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -64,3 +71,19 @@ instance ToJSON Bookmark where
                     , "tags"        .= tags
                     ]
       ]
+
+
+validateBookmarks :: (IsString e, MonadError e m) => [RecordIdentifier] -> [Bookmark] -> m ()
+validateBookmarks recordIdentifiers bookmarks =
+  mapM_ (validateBookmark bookmarks recordIdentifiers) bookmarks
+
+
+validateBookmark :: (IsString e, MonadError e m) => [Bookmark] -> [RecordIdentifier]-> Bookmark -> m ()
+validateBookmark bookmarks recordIdentifiers bookmark =
+  do
+    unless (notDuplicatedIn identifier bookmark bookmarks)
+      $ throwError "duplicate bookmark identifier"
+    unless (maybe False (not . null) $ records bookmark)
+      $ throwError "no record identifiers in bookmark"
+    unless (recordIdentifiers `hasSubset` fromMaybe [] (records bookmark))
+      $ throwError "invalid record identifiers"

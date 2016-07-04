@@ -12,7 +12,6 @@ module CESDS.Types (
 , Generation
 , Val(..)
 , valAsString
-, isContinuous
 , isDiscrete
 , object'
 ) where
@@ -77,7 +76,7 @@ instance ToJSON URI where
 data Val =
     Continuous Scientific
   | Discrete   Text
-    deriving (Eq, Read, Show)
+    deriving (Eq, Ord, Read, Show)
 
 instance FromJSON Val where
   parseJSON (Number x) = return $ Continuous x
@@ -92,11 +91,6 @@ instance ToJSON Val where
 valAsString :: Val -> String
 valAsString (Continuous x) = show x
 valAsString (Discrete   x) = unpack x
-
-
-isContinuous :: Val -> Bool
-isContinuous (Continuous _) = True
-isContinuous _              = False
 
 
 isDiscrete :: Val -> Bool

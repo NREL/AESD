@@ -6,18 +6,25 @@
 module CESDS.Types.Filter (
   FilterIdentifier
 , Filter(..)
+, validateFilters
+, validateFilter
 , SelectionExpression(..)
+, validateSelectionExpression
 ) where
 
 
 import CESDS.Types (Color, Identifier, Tags, Val, object')
-import CESDS.Types.Variable (Domain(..), VariableIdentifier)
+import CESDS.Types.Variable (Domain(..), Variable, VariableIdentifier, canHaveVal, compatibleDomains, hasVariable)
 import Control.Applicative ((<|>))
-import Control.Monad (when)
+import Control.Monad (unless, when)
+import Control.Monad.Except (MonadError, throwError)
 import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
-import Data.Maybe (fromMaybe)
+import Data.List.Util (notDuplicatedIn)
+import Data.String (IsString)
 import Data.Text (Text, pack)
 import GHC.Generics (Generic)
+
+import qualified CESDS.Types.Variable as Variable (Variable(..))
 
 
 type FilterIdentifier = Identifier
@@ -68,6 +75,22 @@ instance ToJSON Filter where
                     , "tags"      .= tags
                     ]
       ]
+
+
+validateFilters :: (IsString e, MonadError e m) => [Variable] -> [Filter] -> m ()
+validateFilters variables filters =
+  mapM_ (validateFilter filters variables) filters
+
+
+validateFilter :: (IsString e, MonadError e m) => [Filter] -> [Variable] -> Filter -> m ()
+validateFilter filters variables filter' =
+  do
+    unless (notDuplicatedIn identifier filter' filters)
+      $ throwError "duplicate filter identifier"
+    maybe
+      (return ())
+      (validateSelectionExpression variables)
+      $ expression filter'
 
 
 data SelectionExpression =
@@ -170,5 +193,22 @@ instance ToJSON SelectionExpression where
       Set{..}      -> object'
                         [
                           "var" .= variable
-                        , "set" .= fromMaybe [] options
+                        , "set" .= options
                         ]
+
+
+validateSelectionExpression :: (IsString e, MonadError e m) => [Variable] -> SelectionExpression -> m ()
+validateSelectionExpression variables NotSelection{..} =
+  validateSelectionExpression variables right
+validateSelectionExpression variables UnionSelection{..} =
+  mapM_ (validateSelectionExpression variables) [left, right]
+validateSelectionExpression variables IntersectSelection{..} =
+  mapM_ (validateSelectionExpression variables) [left, right]
+validateSelectionExpression variables ValueSelection{..} =
+  do
+    variable' <- variables `hasVariable` variable
+    Variable.domain variable' `canHaveVal` value
+validateSelectionExpression variables DomainSelection{..} =
+  do
+    variable' <- variables `hasVariable` variable
+    Variable.domain variable' `compatibleDomains` domain

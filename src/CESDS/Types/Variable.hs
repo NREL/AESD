@@ -6,20 +6,28 @@
 module CESDS.Types.Variable (
   VariableIdentifier
 , Variable(..)
+, validateVariable
+, hasVariable
+, canHaveVal
 , Display(..)
 , Domain(..)
+, validateDomain
 , isSet
-, isInterval
 , SetValue
+, compatibleDomains
 , Units(..)
 ) where
 
 
-import CESDS.Types (Color, Identifier, object')
+import CESDS.Types (Color, Identifier, Val(..), object')
 import Control.Applicative ((<|>))
-import Control.Monad (when)
+import Control.Monad (unless, when)
+import Control.Monad.Except (MonadError, throwError)
 import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.!=), (.=), withObject)
+import Data.List (find)
+import Data.List.Util (notDuplicatedIn, sameElements)
 import Data.Scientific (Scientific)
+import Data.String (IsString)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -61,6 +69,32 @@ instance ToJSON Variable where
       ]
 
 
+validateVariable :: (IsString e, MonadError e m) => [VariableIdentifier] -> Variable -> m ()
+validateVariable variableIdentifiers Variable{..} =
+  do
+    unless (notDuplicatedIn id identifier variableIdentifiers)
+      $ throwError "duplicate variable identifiers"
+    validateDomain domain
+
+
+hasVariable :: (IsString e, MonadError e m) => [Variable] -> VariableIdentifier -> m Variable
+hasVariable variables variableIdentifier =
+  maybe
+    (throwError "missing variable")
+    return
+    $ find ((== variableIdentifier) . identifier) variables
+
+
+canHaveVal :: (IsString e, MonadError e m) => Domain -> Val -> m ()
+canHaveVal (Interval Nothing  Nothing ) (Continuous _) = return ()
+canHaveVal (Interval Nothing  (Just u)) (Continuous x) = unless (          x <= u) $ throwError "value not in domain"
+canHaveVal (Interval (Just l) Nothing ) (Continuous x) = unless (l <= x          ) $ throwError "value not in domain"
+canHaveVal (Interval (Just l) (Just u)) (Continuous x) = unless (l <= x && x <= u) $ throwError "value not in domain"
+canHaveVal (Set []                    ) (Discrete   _) = return ()
+canHaveVal (Set ys                    ) (Discrete   x) = unless (x `elem` ys)      $ throwError "value incompatible with domain"
+canHaveVal _                            _              =                             throwError "value not in domain"
+
+
 data Display =
   Display
   {
@@ -97,9 +131,14 @@ data Domain =
     }
   | Set 
     {
-      options :: Maybe [SetValue]
+      options :: [SetValue]
     }
-    deriving (Eq, Generic, Read, Show)
+    deriving (Generic, Read, Show)
+
+instance Eq Domain where
+  Interval xl xu == Interval yl yu = xl == yl && xu == yu
+  Set x          == Set y          = x `sameElements` y
+  _              == _              = False
 
 instance FromJSON Domain where
   parseJSON =
@@ -118,7 +157,7 @@ instance FromJSON Domain where
       parseSet =
         withObject "VAR domain set" $ \o' ->
           do
-            options <- o' .:? "options"
+            options <- o' .: "options"
             return Set{..}
 
 instance ToJSON Domain where
@@ -126,17 +165,23 @@ instance ToJSON Domain where
   toJSON Set{..}      = object' ["set"      .= object' ["options" .= options                 ]]
 
 
+validateDomain :: (IsString e, MonadError e m) => Domain -> m ()
+validateDomain (Interval (Just l) (Just u)) = unless (l <= u) $ throwError "lower bound greater than upper bound"
+validateDomain _                            = return ()
+
+
 isSet :: Domain -> Bool
 isSet Set{} = True
 isSet _     = False
 
 
-isInterval :: Domain -> Bool
-isInterval Interval{} = True
-isInterval _          = False
-
-
 type SetValue = Text
+
+
+compatibleDomains :: (IsString e, MonadError e m) => Domain -> Domain -> m ()
+compatibleDomains Interval{} Interval{} = return ()
+compatibleDomains Set{}      Set{}      = return ()
+compatibleDomains _          _          = throwError "incompatible domains"
 
 
 data Units =

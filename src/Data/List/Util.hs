@@ -5,6 +5,7 @@ module Data.List.Util (
 , nubOn
 , noDuplicates
 , sameElements
+, notDuplicatedIn
 ) where
 
 
@@ -34,3 +35,7 @@ noDuplicates x = length x == length (nub x)
 
 sameElements :: Ord a => [a] -> [a] -> Bool
 sameElements x y = sort x == sort y
+
+
+notDuplicatedIn :: Eq b => (a -> b) -> a -> [a] -> Bool
+notDuplicatedIn f x ys = f x `notElem` map f ys

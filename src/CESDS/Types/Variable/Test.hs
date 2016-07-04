@@ -4,14 +4,16 @@
 
 
 module CESDS.Types.Variable.Test (
+  arbitrarySubdomain
 ) where
 
 
-import CESDS.Types.Test ()
+import CESDS.Types (Val(Continuous))
+import CESDS.Types.Test (arbitraryVal)
 import CESDS.Types.Variable (Display(..), Domain(..), Variable(..), Units(..), isSet)
 import Data.List (nub)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (listOf1, oneof, suchThat)
+import Test.QuickCheck.Gen (Gen, elements, listOf1, oneof, sublistOf, suchThat)
  
  
 instance Arbitrary Variable where
@@ -37,13 +39,31 @@ instance Arbitrary Domain where
   arbitrary =
     oneof
       [
-        uncurry Interval <$> suchThat arbitrary ordered
-      , Set . fmap nub <$> oneof [return Nothing, Just <$>listOf1 arbitrary]
+        uncurry Interval <$> arbitrary `suchThat` ordered
+      , Set . nub <$> listOf1 arbitrary
       ]
     where
       ordered (Just l, Just u) = l < u
       ordered _                = True
 
+
+arbitrarySubdomain :: Domain -> Gen Domain
+arbitrarySubdomain i@Interval{..} =
+  do
+    Continuous x0 <- arbitraryVal i
+    Continuous x1 <- arbitraryVal i
+    let
+      xMin = minimum [x0, x1]
+      xMax = maximum [x0, x1]
+    case (lowerBound, upperBound) of
+      (Nothing, Nothing) -> Interval <$> elements [Nothing, Just xMin] <*> elements [Nothing, Just xMax]
+      (Nothing, Just _ ) -> Interval <$> elements [Nothing, Just xMin] <*> return   (         Just xMax)
+      (Just _ , Nothing) -> Interval <$> return   (         Just xMin) <*> elements [Nothing, Just xMax]
+      (Just _ , Just _ ) -> Interval <$> return   (         Just xMin) <*> return   (         Just xMax)
+arbitrarySubdomain Set{..} =
+  case options of
+    xs -> Set <$> sublistOf xs
+  
 
 instance Arbitrary Units where
   arbitrary =

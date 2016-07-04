@@ -10,24 +10,34 @@ module CESDS.Types.Work (
 , Priority
 , Submission(..)
 , SubmissionResult(..)
+, validateSubmission
 , WorkStatus(..)
+, validateWorkStatuses
 , maybeRecordIdentifier
 , hasStatus
 , isSuccess
 ) where
 
 
-import CESDS.Types (Generation, Identifier, Val, object')
+import CESDS.Types (Generation, Identifier, Val, object', valAsString)
 import CESDS.Types.Record (RecordIdentifier)
-import CESDS.Types.Variable (VariableIdentifier)
+import CESDS.Types.Variable (VariableIdentifier, canHaveVal, hasVariable)
 import Control.Applicative ((<|>))
 import Control.Arrow (second)
+import Control.Monad (unless)
+import Control.Monad.Except (MonadError, throwError)
 import Data.Aeson.Types (FromJSON(parseJSON), Parser, ToJSON(toJSON), Value, (.:), (.:?), (.=), object, withObject)
 import Data.Function (on)
 import Data.HashMap.Strict (toList)
 import Data.List (sort, sortBy)
+import Data.List.Util (disjoint, hasSubset, noDuplicates)
+import Data.Maybe (catMaybes)
+import Data.String (IsString)
 import Data.Text (Text)
 import GHC.Generics (Generic)
+
+import qualified CESDS.Types.Model as Model (Model(..))
+import qualified CESDS.Types.Variable as Variable (Variable(..))
 
 
 type WorkIdentifier = Identifier
@@ -134,6 +144,41 @@ instance ToJSON SubmissionResult where
       ]
 
 
+validateSubmission :: (IsString e, MonadError e m) => Model.Model -> [String] -> Submission -> m ()
+validateSubmission Model.Model{..} recordKeys Submission{..} =
+  do
+    let
+      modelVariables = map Variable.identifier variables
+      explicitVariables' = sort $ map fst explicitVariables
+      randomVariables' = sort randomVariables
+    unless (noDuplicates explicitVariables')
+      $ throwError "duplicate explicit variables"
+    unless (modelVariables `hasSubset` explicitVariables')
+      $ throwError "invalid explicit variable"
+    unless (noDuplicates randomVariables')
+      $ throwError "duplicate random variables"
+    unless (modelVariables `hasSubset` randomVariables')
+      $ throwError "invalid random variable"
+    unless (explicitVariables' `disjoint` randomVariables')
+      $ throwError "explicit and random variables overlap"
+    sequence_
+      [
+        do
+          variable <-variables `hasVariable` variableIdentifier
+          Variable.domain variable `canHaveVal` value
+          unless (variableIdentifier `notElem` explicitVariables' || valAsString value `notElem` recordKeys)
+            $ throwError "primary key violation"
+      |
+        (variableIdentifier, value) <- explicitVariables
+      ]
+    sequence_
+      [
+        variables `hasVariable` variableIdentifier
+      |
+        variableIdentifier <- randomVariables'
+      ]
+
+
 data WorkStatus =
     Pending
     {
@@ -194,6 +239,15 @@ instance ToJSON WorkStatus where
       , "work_id"    .= workIdentifier
       , "additional" .= reason    
       ]
+
+
+validateWorkStatuses :: (IsString e, MonadError e m) => [WorkStatus] -> m ()
+validateWorkStatuses workStatuses =
+  do
+    unless (noDuplicates $ map workIdentifier workStatuses)
+      $ throwError "duplicate work identifiers"
+    unless (noDuplicates . catMaybes $ map maybeRecordIdentifier workStatuses)
+      $ throwError "duplicate record identifiers in work"
 
 
 maybeRecordIdentifier :: WorkStatus -> Maybe RecordIdentifier

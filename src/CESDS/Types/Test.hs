@@ -79,8 +79,8 @@ arbitraryVal Interval{..} =
       (Just l , Just u ) -> fromFloatDigits <$> choose (toRealFloat   l                 , toRealFloat   u                  :: Double)
 arbitraryVal Set{..} =
   case options of
-    Nothing -> Discrete <$> arbitrary
-    Just xs -> Discrete <$> elements xs
+    [] -> Discrete <$> arbitrary
+    xs -> Discrete <$> elements xs
 
 
 instance Arbitrary Val where

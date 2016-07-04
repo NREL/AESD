@@ -26,7 +26,8 @@ import Control.Monad.Except (ExceptT, MonadError, runExceptT)
 import Control.Monad.Reader (MonadIO, MonadReader, MonadTrans, ReaderT(runReaderT), ask, lift, liftIO)
 import Data.Aeson (FromJSON, eitherDecode')
 import Data.Default (def)
-import Data.List.Util (sameElements)
+import Data.List ((\\))
+import Data.List.Util (hasSubset)
 import Network.HTTP.Types (Status, badRequest400, internalServerError500)
 import Network.Wai (Response)
 import Network.Wai.Handler.Warp (Port, {- setOnException, -} setOnExceptionResponse, setPort)
@@ -43,7 +44,7 @@ import qualified CESDS.Types.Work as CESDS (Submission, SubmissionResult, WorkId
 
 import qualified Data.ByteString.Lazy.Char8 as LBS (pack)
 import qualified Data.Text as T (pack)
-import qualified Data.Text.Lazy as LT (Text, pack, unpack)
+import qualified Data.Text.Lazy as LT (Text, concat, intercalate, pack, unpack)
 import qualified Network.Wai.Util as Wai (json)
 
 
@@ -103,32 +104,32 @@ runService port Service{..} initial =
         $ (json =<<) . (paramsModelOnly >>=) . (serverM .) . postModel
       get "/server/:model/work"
         $ do
-            (model, wfFrom, wfTo, wfStatus, wfWork) <- params4 ("from", "to", "status", "work_id")
-            json =<< serverM (getWorks WorkFilter{..} model)
+            (modelIdentifier, wfFrom, wfTo, wfStatus, wfWork) <- params4 ("from", "to", "status", "work_id")
+            json =<< serverM (getWorks WorkFilter{..} modelIdentifier)
       post "/server/:model/work" . withBody
         $ (json =<<) . (paramsModelOnly >>=) . (serverM .) . postWork
       get "/server/:model/records"
         $ do
-            (model, rfFrom, rfTo, rfKey, rfRecord) <- params4 ("from", "to", "primary_key", "result_id")
-            json =<< serverM (getRecords RecordFilter{..} model)
+            (modelIdentifier, rfFrom, rfTo, rfKey, rfRecord) <- params4 ("from", "to", "primary_key", "result_id")
+            json =<< serverM (getRecords RecordFilter{..} modelIdentifier)
       get "/server/:model/bookmark_metas"
         $ do
-            (model, tags) <- paramsTags
-            json =<< serverM (getBookmarkMetas tags model)
+            (modelIdentifier, tags) <- paramsTags
+            json =<< serverM (getBookmarkMetas tags modelIdentifier)
       get "/server/:model/bookmarks"
         $ do
-            (model, bookmarkIdentifier) <- params1 "bookmark_id"
-            json =<< serverM (getBookmarks bookmarkIdentifier model)
+            (modelIdentifier, bookmarkIdentifier) <- params1 "bookmark_id"
+            json =<< serverM (getBookmarks bookmarkIdentifier modelIdentifier)
       post "/server/:model/bookmarks" . withBody
         $ (json =<<) . (paramsModelOnly >>=) . (serverM .) . postBookmark
       get "/server/:model/filter_metas"
         $ do
-            (model, tags) <- paramsTags
-            json =<< serverM (getFilterMetas tags model)
+            (modelIdentifier, tags) <- paramsTags
+            json =<< serverM (getFilterMetas tags modelIdentifier)
       get "/server/:model/filters"
         $ do
-            (model, filterIdentifier) <- params1 "filter_id"
-            json =<< serverM (getFilters filterIdentifier model)
+            (modelIdentifier, filterIdentifier) <- params1 "filter_id"
+            json =<< serverM (getFilters filterIdentifier modelIdentifier)
       post "/server/:model/filters" . withBody
         $ (json =<<) . (paramsModelOnly >>=) . (serverM .) . postFilter
       notFound
@@ -140,8 +141,9 @@ paramsModelOnly =
   do
     modelIdentifier <- param "model"
     parameters <- map fst <$> params
-    unless (sameElements ["model"] parameters)
-      $ raise "illegal parameters in URL"
+    unless (["model"] `hasSubset` parameters)
+      . raise
+      $ LT.concat ["illegal parameters in URL: ", LT.intercalate ", " $ parameters \\ ["model"]]
     return modelIdentifier
 
 
@@ -157,8 +159,9 @@ params1 :: (Monad m, Parsable a) => LT.Text -> ActionT LT.Text m (CESDS.ModelIde
 params1 p1 =
   do
     (modelIdentifier, parameters) <- paramsModel
-    unless (sameElements ["model", p1] parameters)
-      $ raise "illegal parameters in URL"
+    unless (["model", p1] `hasSubset` parameters)
+      . raise
+      $ LT.concat ["illegal parameters in URL: ", LT.intercalate ", " $ parameters \\ ["model", p1]]
     v1 <- maybeParam parameters p1
     return (modelIdentifier, v1)
 
@@ -167,8 +170,9 @@ params4 :: (Monad m, Parsable a, Parsable b, Parsable c, Parsable d) => (LT.Text
 params4 (p1, p2, p3, p4) =
   do
     (modelIdentifier, parameters) <- paramsModel
-    unless (sameElements ["model", p1, p2, p3, p4] parameters)
-      $ raise "illegal parameters in URL"
+    unless (["model", p1, p2, p3, p4] `hasSubset` parameters)
+      . raise
+      $ LT.concat ["illegal parameters in URL: ", LT.intercalate ", " $ parameters \\ ["model", p1, p2, p3, p4]]
     v1 <- maybeParam parameters p1
     v2 <- maybeParam parameters p2
     v3 <- maybeParam parameters p3

@@ -4,40 +4,45 @@
 
 
 module CESDS.Types.Filter.Test (
+  arbitraryFilter
+, arbitraryExpression
 ) where
 
 
-import CESDS.Types.Test ()
+import CESDS.Types.Test (arbitraryVal)
 import CESDS.Types.Filter (Filter(..), SelectionExpression(..))
-import CESDS.Types.Variable (Domain(..))
-import CESDS.Types.Variable.Test ()
-import Data.Maybe (fromMaybe)
+import CESDS.Types.Variable (Variable(..))
+import CESDS.Types.Variable.Test (arbitrarySubdomain)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (frequency)
+import Test.QuickCheck.Gen (Gen, frequency, listOf1, oneof)
 
 
-instance Arbitrary Filter where
-  arbitrary =
+arbitraryFilter :: [Variable] -> Gen Filter
+arbitraryFilter variables =
     Filter
       <$> arbitrary
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
-      <*> arbitrary
+      <*> oneof [return Nothing, Just <$> arbitraryExpression variables]
+
+
+instance Arbitrary Filter where
+  arbitrary = arbitraryFilter =<< listOf1 arbitrary
+
+
+arbitraryExpression :: [Variable] -> Gen SelectionExpression
+arbitraryExpression variables =
+    frequency
+      [
+        (1, NotSelection       <$> arbitraryExpression variables                                          )
+      , (1, UnionSelection     <$> arbitraryExpression variables <*> arbitraryExpression variables        )
+      , (1, IntersectSelection <$> arbitraryExpression variables <*> arbitraryExpression variables        )
+      , (2, oneof [ValueSelection  identifier <$> arbitraryVal       domain   | Variable{..} <- variables])
+      , (5, oneof [DomainSelection identifier <$> arbitrarySubdomain domain   | Variable{..} <- variables])
+      ]
 
 
 instance Arbitrary SelectionExpression where
-  arbitrary =
-    frequency
-      [
-        (1, NotSelection       <$> arbitrary                          )
-      , (1, UnionSelection     <$> arbitrary <*>            arbitrary )
-      , (1, IntersectSelection <$> arbitrary <*>            arbitrary )
-      , (2, ValueSelection     <$> arbitrary <*>            arbitrary )
-      , (5, DomainSelection    <$> arbitrary <*> (patch <$> arbitrary))
-      ]
-    where
-      patch :: Domain -> Domain
-      patch i@Interval{} = i
-      patch   Set{..}    = Set {options = Just $ fromMaybe [] options}
+  arbitrary = arbitraryExpression =<< listOf1 arbitrary
