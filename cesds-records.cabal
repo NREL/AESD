@@ -1,5 +1,5 @@
 name:                cesds-records
-version:             0.1.9.2
+version:             0.1.9.3
 synopsis:            Implementation of CESDS record API
 description:         Implementation of CESDS record API.
 license:             AllRightsReserved
@@ -43,18 +43,15 @@ library
                   , http-types
                   , mtl
                   , network-uri
-                  , QuickCheck
                   , scientific
                   , scotty
                   , stm
                   , text
                   , transformers
                   , unordered-containers
-                  , vector
                   , wai
                   , wai-util
                   , warp
-                  , websockets
   default-language: Haskell2010
   ghc-options     : -Wall -O2
 
@@ -88,7 +85,6 @@ test-suite cesds-json-parsing
                   , wai
                   , wai-util
                   , warp
-                  , websockets
   buildable       : True               
   type            : exitcode-stdio-1.0 
   default-language: Haskell2010        
@@ -126,7 +122,6 @@ executable cesds-server
                   , wai
                   , wai-util
                   , warp
-                  , websockets
   buildable       : True               
   default-language: Haskell2010        
   ghc-options     : -Wall -O2          
