@@ -1,8 +1,19 @@
-# Example usage of CESDS API
+# CESDS Records API in Haskell
 
-Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal/cesds/commit/de659ed7be4c23223a661e6d60d27a4aa9045ee1.
+## Overview
 
-## Get server status
+This [Haskell package](cesds-records.cabal) contains . . .
+
+1.  a library for working with the CESDS Records API,
+2.  [a skeletal server](src/CESDS/Server.hs) for the REST API
+3.  [automated tests](src/TestJSON.hs) for the library, and
+4.  [an example server](src/Main.hs) that implements the REST API and provides random, but consistent data and validates input.
+
+This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/de659ed7be4c23223a661e6d60d27a4aa9045ee1.
+
+## Example usage of CESDS API
+
+### Get server status
 
 	$ curl -H GET 'http://localhost:8090/server'
 	
@@ -15,7 +26,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  "version":17
 	}
 
-## Attempt a request with malformed JSON
+### Attempt a request with malformed JSON
 
 	$ curl -H POST --data-ascii '{"command" : "restart}' 'http://localhost:8090/server'
 	
@@ -23,7 +34,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  "api_error":"illegal JSON: Error in $: not enough input"
 	}
 
-## Attempt a request with a missing parameter
+### Attempt a request with a missing parameter
 
 	$ curl -H POST --data-ascii '{"command" : "restart"}' 'http://localhost:8090/server'
 	
@@ -31,7 +42,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  "api_error":"illegal JSON: Error in $: key \"param\" not present"
 	}
 
-## Experience server failure
+### Experience server failure
 
 	$ curl -H POST --data-ascii '{"command" : "restart", "param" : []}' 'http://localhost:8090/server'
 	
@@ -40,7 +51,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  "additional":"random failure for testing"
 	}
 
-## Restart the server
+### Restart the server
 
 	$ curl -H POST --data-ascii '{"command" : "restart", "param" : []}' 'http://localhost:8090/server'
 	
@@ -59,7 +70,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  "version":2
 	}
 
-## Retrieve model information
+### Retrieve model information
 
 	$ curl -H GET 'http://localhost:8090/server/y'
 	
@@ -115,7 +126,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  }
 	}
 
-## Set the strategy for running simulations
+### Set the strategy for running simulations
 
 	$ curl -H POST --data-ascii '{"command" : "model_strat_fifo", "param" : []}' 'http://localhost:8090/server/y'
 	
@@ -128,7 +139,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	
 	{}
 
-## Retrieve records
+### Retrieve records
 
 	$ curl -H GET 'http://localhost:8090/server/y/records'
 	
@@ -139,7 +150,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  }
 	]
 
-## Attempt to submit malformed work
+### Attempt to submit malformed work
 
 	$ curl -H POST --data-ascii '{"explicit" : {"mj" : "z"}, "random" : ["iyIl"]}' 'http://localhost:8090/server/y/work'
 	
@@ -147,7 +158,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  "api_error":"value incompatible with domain"
 	}
 
-## List work and watch for it to complete
+### List work and watch for it to complete
 
 	$ curl -H GET 'http://localhost:8090/server/y/work'
 	
@@ -207,7 +218,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  }
 	]
 
-## Retrieve results
+### Retrieve results
 
 	$ curl -H GET 'http://localhost:8090/server/y/records?result_id=rT6y1XjaVfu'
 	
@@ -218,7 +229,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  }
 	]
 
-## Submit work
+### Submit work
 
 	$ curl -H POST --data-ascii '{"explicit" : {"iyIl" : 20}, "random" : []}' 'http://localhost:8090/server/y/work'
 	
@@ -227,7 +238,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  "generation":17
 	}
 
-## Attempt to submit work with duplicate primary keys
+### Attempt to submit work with duplicate primary keys
 
 	$ curl -H POST --data-ascii '{"explicit" : {"iyIl" : 20}, "random" : []}' 'http://localhost:8090/server/y/work'
 	
@@ -235,7 +246,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  "api_error":"primary key violation"
 	}
 
-## Query work and results
+### Query work and results
 
 	$ curl -H GET 'http://localhost:8090/server/y/work?from=17&to=1000'
 	
@@ -265,7 +276,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  }
 	]
 
-## List bookmark metadata
+### List bookmark metadata
 
 	$ curl -H GET 'http://localhost:8090/server/y/bookmark_metas'
 	
@@ -327,7 +338,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  }
 	]
 
-## List bookmarks
+### List bookmarks
 
 	$ curl -H GET 'http://localhost:8090/server/y/bookmarks'
 	
@@ -402,7 +413,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  }
 	]
 
-## Search bookmarks by tag
+### Search bookmarks by tag
 
 	$ curl -H GET 'http://localhost:8090/server/y/bookmark_metas?LyJE=true'
 	
@@ -426,7 +437,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  }
 	]
 
-## Add a bookmark
+### Add a bookmark
 
 	$ curl -H POST --data-ascii '{"meta" : {"name" : "test bookmark", "size" : 1, "tags" : {}}, "record_ids" : ["XLW4BKeij0M2MYrOIADKdkzb"]}' 'http://localhost:8090/server/y/bookmarks'
 	
@@ -443,7 +454,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  }
 	}
 
-## Retrieve a bookmark
+### Retrieve a bookmark
 
 	$ curl -H GET 'http://localhost:8090/server/y/bookmarks?bookmark_id=2JItRD3jfSGspm5yAnud8d5'
 	
@@ -463,7 +474,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  }
 	]
 
-## Attempt to add a bookmark incorrectly referencing records
+### Attempt to add a bookmark incorrectly referencing records
 
 	$ curl -H POST --data-ascii '{"meta" : {"name" : "test bookmark", "size" : 1, "tags" : {}}, "record_ids" : ["XLW4BKeij0M2MYrOIADxKdkzb"]}' 'http://localhost:8090/server/y/bookmarks'
 	
@@ -471,7 +482,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  "api_error":"invalid record identifiers"
 	}
 
-## List filter metadata
+### List filter metadata
 
 	$ curl -H GET 'http://localhost:8090/server/y/filter_metas'
 	
@@ -534,7 +545,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  }
 	]
 
-## Attempt to add a malformed filter
+### Attempt to add a malformed filter
 
 	$ curl -H POST --data-ascii '{"meta" : {"name" : "test filter", "tags" : {}}, "expr" : {"var" : "iyIl", "set" : ["Do", "tMU"]}}' 'http://localhost:8090/server/y/filters'
 	
@@ -548,7 +559,7 @@ Example usage of CESDS Record API, comforming to http://github.nrel.gov:kgruchal
 	  "api_error":"value not in domain"
 	}
 
-## Add a filter
+### Add a filter
 
 	$ curl -H POST --data-ascii '{"meta" : {"name" : "test filter", "tags" : {}}, "expr" : {"expr" : "union", "a" : {"var" : "mj", "set" : ["Do", "tMU"]}, "b" : {"var" : "iyIl", "interval" : [-4, null]}}}' 'http://localhost:8090/server/y/filters'
 	
