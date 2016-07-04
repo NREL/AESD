@@ -6,6 +6,7 @@ module Data.List.Util (
 , noDuplicates
 , sameElements
 , notDuplicatedIn
+, deleteOn
 ) where
 
 
@@ -39,3 +40,7 @@ sameElements x y = sort x == sort y
 
 notDuplicatedIn :: Eq b => (a -> b) -> a -> [a] -> Bool
 notDuplicatedIn f x ys = f x `notElem` map f ys
+
+
+deleteOn :: Eq b => (a -> b) -> a -> [a] -> [a]
+deleteOn f = deleteBy ((==) `on` f)

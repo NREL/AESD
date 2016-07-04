@@ -19,7 +19,7 @@ import Control.Applicative ((<|>))
 import Control.Monad (unless, when)
 import Control.Monad.Except (MonadError, throwError)
 import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
-import Data.List.Util (notDuplicatedIn)
+import Data.List.Util (deleteOn, noDuplicates, notDuplicatedIn)
 import Data.String (IsString)
 import Data.Text (Text, pack)
 import GHC.Generics (Generic)
@@ -79,7 +79,15 @@ instance ToJSON Filter where
 
 validateFilters :: (IsString e, MonadError e m) => [Variable] -> [Filter] -> m ()
 validateFilters variables filters =
-  mapM_ (validateFilter filters variables) filters
+  do
+    unless (noDuplicates $ map identifier filters)
+      $ throwError "duplicate filter identifiers"
+    sequence_
+      [
+        validateFilter (deleteOn identifier filter' filters) variables filter'
+      |
+        filter' <- filters
+      ]
 
 
 validateFilter :: (IsString e, MonadError e m) => [Filter] -> [Variable] -> Filter -> m ()

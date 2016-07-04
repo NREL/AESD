@@ -16,7 +16,7 @@ import CESDS.Types.Record (RecordIdentifier)
 import Control.Monad (unless)
 import Control.Monad.Except (MonadError, throwError)
 import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
-import Data.List.Util (hasSubset, notDuplicatedIn)
+import Data.List.Util (deleteOn, hasSubset, noDuplicates, notDuplicatedIn)
 import Data.Maybe (fromMaybe)
 import Data.String (IsString)
 import Data.Text (Text)
@@ -75,15 +75,25 @@ instance ToJSON Bookmark where
 
 validateBookmarks :: (IsString e, MonadError e m) => [RecordIdentifier] -> [Bookmark] -> m ()
 validateBookmarks recordIdentifiers bookmarks =
-  mapM_ (validateBookmark bookmarks recordIdentifiers) bookmarks
+  do
+    unless (noDuplicates $ map identifier bookmarks)
+      $ throwError "duplicate bookmark identifiers"
+    sequence_
+      [
+        validateBookmark (deleteOn identifier bookmark bookmarks) recordIdentifiers bookmark
+      |
+        bookmark <-  bookmarks
+      ]
 
 
 validateBookmark :: (IsString e, MonadError e m) => [Bookmark] -> [RecordIdentifier]-> Bookmark -> m ()
 validateBookmark bookmarks recordIdentifiers bookmark =
   do
     unless (notDuplicatedIn identifier bookmark bookmarks)
-      $ throwError "duplicate bookmark identifier"
+      $ throwError "duplicate bookmark identifiers"
     unless (maybe False (not . null) $ records bookmark)
       $ throwError "no record identifiers in bookmark"
+    unless (size bookmark == maybe 0 length (records bookmark))
+      $ throwError "incorrect bookmark size"
     unless (recordIdentifiers `hasSubset` fromMaybe [] (records bookmark))
       $ throwError "invalid record identifiers"

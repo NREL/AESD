@@ -24,7 +24,7 @@ arbitraryBookmark veto recordIdentifiers =
     records    <- oneof [return Nothing, Just . nub <$> resize 4 (sublistOf recordIdentifiers)]
     color      <- arbitrary
     tags       <- arbitrary
-    let size   = length records 
+    let size   = maybe 0 length records 
     return Bookmark{..}
 
 instance Arbitrary Bookmark where

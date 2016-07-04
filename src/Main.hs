@@ -154,7 +154,7 @@ arbitraryModelState modelIdentifier =
     modelState' <- foldM (const . addArbitraryWork submission) modelState [1..n]
     let
       records = map recordIdentifier $ works modelState'
-    bookmarks' <- nubOn Bookmark.identifier <$> listOf (arbitraryBookmark [Nothing] records)
+    bookmarks' <- nubOn Bookmark.identifier . filter ((> 0) . Bookmark.size) <$> listOf (arbitraryBookmark [Nothing] records)
     filters'   <- nubOn Filter.identifier   <$> listOf (arbitraryFilter . Model.variables $ model modelState)
     return modelState' {bookmarks = bookmarks', filters = filters'}
 
@@ -184,7 +184,11 @@ addArbitraryWork submission@Work.Submission{..} modelState@ModelState{..} =
     if fWorkIdentifier w `elem` map (Work.workIdentifier . Main.workStatus) works
         || fRecordIdentifier w `elem` map fRecordIdentifier works
         || recordKey `elem` map Main.recordKey works
-      then addArbitraryWork submission modelState
+      then do
+              f <- choose (0, 1) :: Gen Double
+              if f < 0.1
+                then return modelState
+                else addArbitraryWork submission modelState
       else return modelState {works = w : works}
 
 
@@ -286,7 +290,6 @@ service =
     getServer =
       do
         serverState@ServerState{..} <- gets id
-        liftIO $ print serverState
         validateServerState serverState
         return server
     postServer (Command.Restart _) =
