@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
@@ -9,14 +11,14 @@ import CESDS.Types.Test ()
 import CESDS.Types.Server (APIError(..), Server(..), Status(..))
 import Data.List (nub)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (frequency, resize)
+import Test.QuickCheck.Gen (frequency, resize, suchThat)
 
 
 instance Arbitrary Server where
   arbitrary =
     Server
-      <$> arbitrary
-      <*> arbitrary
+      <$> arbitrary `suchThat` (/= "")
+      <*> arbitrary `suchThat` (>= 0)
       <*> (nub <$> resize 4 arbitrary)
       <*> arbitrary
 

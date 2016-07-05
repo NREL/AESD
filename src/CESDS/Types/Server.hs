@@ -7,6 +7,7 @@ module CESDS.Types.Server (
   ServerIdentifier
 , APIVersion
 , Server(..)
+, validateServer
 , Status(..)
 , APIError(..)
 ) where
@@ -14,7 +15,11 @@ module CESDS.Types.Server (
 
 import CESDS.Types (Identifier, object')
 import CESDS.Types.Model (ModelIdentifier)
+import Control.Monad (unless)
+import Control.Monad.Except (MonadError, throwError)
 import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Value(String), (.:), (.=), withObject, withText)
+import Data.List.Util (noDuplicates)
+import Data.String (IsString)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -54,6 +59,17 @@ instance ToJSON Server where
       , "models"    .= models
       , "status"    .= status
       ]
+
+
+validateServer :: (IsString e, MonadError e m) => Server -> m ()
+validateServer Server{..} =
+  do
+    unless (identifier /= "")
+      $ throwError "empty server identifier"
+    unless (version >= 0)
+      $ throwError "illegal version number"
+    unless (noDuplicates models)
+      $ throwError "duplicate model identifiers"
 
 
 data Status =

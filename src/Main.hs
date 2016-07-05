@@ -18,7 +18,7 @@ import CESDS.Types.Model (Model, ModelIdentifier, validateModel)
 import CESDS.Types.Model.Test (arbitraryModel)
 import CESDS.Types.Record (Record, RecordIdentifier)
 import CESDS.Types.Record.Test (arbitraryRecord)
-import CESDS.Types.Server (Server)
+import CESDS.Types.Server (Server, validateServer)
 import CESDS.Types.Server.Test ()
 import CESDS.Types.Variable.Test ()
 import CESDS.Types.Work (Submission, WorkStatus, maybeRecordIdentifier, validateSubmission, validateWorkStatuses)
@@ -69,6 +69,7 @@ instance Arbitrary ServerState where
 validateServerState :: ServerState -> ServerM s ()
 validateServerState ServerState{..} =
   do
+    validateServer server
     unless (noDuplicates $ map fst models)
       $ throwError "duplicate model identifiers"
     sequence_
