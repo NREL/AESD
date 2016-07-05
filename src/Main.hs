@@ -22,7 +22,7 @@ import CESDS.Types.Server (Server, validateServer)
 import CESDS.Types.Server.Test ()
 import CESDS.Types.Variable.Test ()
 import CESDS.Types.Work (Submission, WorkStatus, maybeRecordIdentifier, validateSubmission, validateWorkStatuses)
-import CESDS.Types.Work.Test ()
+import CESDS.Types.Work.Test (arbitrarySubmission)
 import Control.Arrow (second)
 import Control.Monad (foldM, unless)
 import Control.Monad.Except (throwError)
@@ -40,7 +40,6 @@ import qualified CESDS.Types.Filter as Filter (Filter(..))
 import qualified CESDS.Types.Model as Model (Model(..))
 import qualified CESDS.Types.Record as Record (Record(..))
 import qualified CESDS.Types.Server as Server (Server(..))
-import qualified CESDS.Types.Variable as Variable (Variable(..))
 import qualified CESDS.Types.Work as Work (Submission(..), SubmissionResult(..), WorkStatus(..), hasStatus, isSuccess)
 
 
@@ -98,6 +97,7 @@ validateModelState :: ModelState -> ServerM s ()
 validateModelState ModelState{..} =
   do
     validateModel [] model
+--  mapM_ (validateSubmission model (map recordKey works)) $ map submission works
     validateWorkStatuses $ map workStatus works
     let
       recordIdentifiers = map recordIdentifier works
@@ -148,9 +148,7 @@ arbitraryModelState :: ModelIdentifier -> Gen ModelState
 arbitraryModelState modelIdentifier =
   do
     modelState <- ModelState <$> arbitraryModel modelIdentifier <*> return [] <*> return [] <*> return []
-    let
-      variables = map Variable.identifier . Model.variables $ model modelState
-      submission = Work.Submission [] variables Nothing Nothing
+    submission <- arbitrarySubmission . Model.variables $ model modelState
     n <- choose (0, 4) :: Gen Int
     modelState' <- foldM (const . addArbitraryWork submission) modelState [1..n]
     let
@@ -166,6 +164,7 @@ addArbitraryWork submission@Work.Submission{..} modelState@ModelState{..} =
     let
       Model.Model{..} = model
       workGeneration = generation
+      submissionKey = maybe "" (valAsString . snd) $ find ((== primaryKey) . fst) explicitVariables
     workStatus <- arbitrary
     recordIdentifier <- maybe arbitrary return $ maybeRecordIdentifier workStatus
     record' <- arbitraryRecord variables
@@ -182,7 +181,8 @@ addArbitraryWork submission@Work.Submission{..} modelState@ModelState{..} =
       w = WorkState{..}
       fWorkIdentifier = Work.workIdentifier . Main.workStatus
       fRecordIdentifier = maybeRecordIdentifier . Main.workStatus
-    if fWorkIdentifier w `elem` map (Work.workIdentifier . Main.workStatus) works
+    if submissionKey `elem` map Main.recordKey works
+        || fWorkIdentifier w `elem` map (Work.workIdentifier . Main.workStatus) works
         || fRecordIdentifier w `elem` map fRecordIdentifier works
         || recordKey `elem` map Main.recordKey works
       then do

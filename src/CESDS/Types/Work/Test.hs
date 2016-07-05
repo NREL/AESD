@@ -1,25 +1,44 @@
+{-# LANGUAGE RecordWildCards #-}
+
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
 module CESDS.Types.Work.Test (
+  arbitrarySubmission
 ) where
 
 
+import CESDS.Types.Record (Record(..))
+import CESDS.Types.Record.Test (arbitraryRecord)
 import CESDS.Types.Test ()
+import CESDS.Types.Variable (Variable)
+import CESDS.Types.Variable.Test ()
 import CESDS.Types.Work (Submission(..), SubmissionResult(..), WorkStatus(..))
-import Data.List (nub)
+import Data.List ((\\))
 import Data.List.Util (nubOn)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (oneof, resize)
+import Test.QuickCheck.Gen (Gen, oneof, resize, sublistOf)
+
+import qualified CESDS.Types.Variable as Variable (Variable(..))
 
 
+arbitrarySubmission :: [Variable] -> Gen Submission
+arbitrarySubmission variables = -- FIXME: This can generate submission with a primary key violation.
+  do
+    let
+      inputVariables = map Variable.identifier $ filter Variable.isInput variables
+    randomVariables <- sublistOf inputVariables
+    explicitVariables' <- sublistOf (inputVariables \\ randomVariables)
+    record <- arbitraryRecord variables
+    let
+      explicitVariables = filter ((`elem` explicitVariables') . fst) $ unRecord record
+    timeout <- arbitrary
+    priority <- arbitrary
+    return Submission{..}
+
+      
 instance Arbitrary Submission where
-  arbitrary =
-    Submission
-      <$> (nubOn fst <$> resize 4 arbitrary)
-      <*> (nub <$> resize 4 arbitrary)
-      <*> arbitrary
-      <*> arbitrary
+  arbitrary = arbitrarySubmission =<< (nubOn Variable.identifier <$> resize 4 arbitrary)
 
 
 instance Arbitrary SubmissionResult where

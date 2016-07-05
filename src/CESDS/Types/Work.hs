@@ -149,8 +149,11 @@ validateSubmission Model.Model{..} recordKeys Submission{..} =
   do
     let
       modelVariables = map Variable.identifier variables
+      inputVariables = map Variable.identifier $ filter Variable.isInput variables
       explicitVariables' = sort $ map fst explicitVariables
       randomVariables' = sort randomVariables
+    unless (null inputVariables || inputVariables `hasSubset` (explicitVariables' ++ randomVariables'))
+      $ throwError "cannot set value of output variable"
     unless (noDuplicates explicitVariables')
       $ throwError "duplicate explicit variables"
     unless (modelVariables `hasSubset` explicitVariables')
