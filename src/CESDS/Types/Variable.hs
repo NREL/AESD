@@ -157,7 +157,7 @@ instance FromJSON Domain where
       parseSet =
         withObject "VAR domain set" $ \o' ->
           do
-            options <- o' .: "options"
+            options <- o' .:? "options" .!= []
             return Set{..}
 
 instance ToJSON Domain where
