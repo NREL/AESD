@@ -14,7 +14,7 @@ import CESDS.Types.Variable.Test ()
 import Data.Function (on)
 import Data.List (nubBy)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (Gen, elements, listOf1, resize)
+import Test.QuickCheck.Gen (Gen, elements, listOf1, resize, suchThat)
 
 import qualified CESDS.Types.Variable as Variable (Variable(..))
 
@@ -27,6 +27,7 @@ arbitraryModel identifier =
       description <- arbitrary
       tags        <- arbitrary
       generation  <- arbitrary
+      recordCount <- arbitrary `suchThat` (>= 0)
       variables   <- nubBy ((==) `on` Variable.identifier) <$> resize 4 (listOf1 arbitrary)
       primaryKey  <- elements $ map Variable.identifier variables
       timeKey     <- elements $ Nothing : map (Just . Variable.identifier) variables

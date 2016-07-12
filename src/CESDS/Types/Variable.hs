@@ -21,8 +21,9 @@ module CESDS.Types.Variable (
 
 import CESDS.Types (Color, Identifier, Val(..), object')
 import Control.Applicative ((<|>))
-import Control.Monad (unless, when)
+import Control.Monad (when)
 import Control.Monad.Except (MonadError, throwError)
+import Control.Monad.Except.Util (assert)
 import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.!=), (.=), withObject)
 import Data.List (find)
 import Data.List.Util (notDuplicatedIn, sameElements)
@@ -51,7 +52,7 @@ instance FromJSON Variable where
     withObject "VAR" $ \o ->
       do
         identifier <- o .:  "var_id"
-        display    <- o .:  "disp"
+        display    <- o .:  "display"
         domain     <- o .:  "domain"
         units      <- o .:? "units"
         isInput    <- o .:  "is_input" .!= False
@@ -72,8 +73,7 @@ instance ToJSON Variable where
 validateVariable :: (IsString e, MonadError e m) => [VariableIdentifier] -> Variable -> m ()
 validateVariable variableIdentifiers Variable{..} =
   do
-    unless (notDuplicatedIn id identifier variableIdentifiers)
-      $ throwError "duplicate variable identifiers"
+    assert "duplicate variable identifiers" $ notDuplicatedIn id identifier variableIdentifiers
     validateDomain domain
 
 
@@ -87,12 +87,12 @@ hasVariable variables variableIdentifier =
 
 canHaveVal :: (IsString e, MonadError e m) => Domain -> Val -> m ()
 canHaveVal (Interval Nothing  Nothing ) (Continuous _) = return ()
-canHaveVal (Interval Nothing  (Just u)) (Continuous x) = unless (          x <= u) $ throwError "value not in domain"
-canHaveVal (Interval (Just l) Nothing ) (Continuous x) = unless (l <= x          ) $ throwError "value not in domain"
-canHaveVal (Interval (Just l) (Just u)) (Continuous x) = unless (l <= x && x <= u) $ throwError "value not in domain"
+canHaveVal (Interval Nothing  (Just u)) (Continuous x) = assert "value not in domain" $           x <= u
+canHaveVal (Interval (Just l) Nothing ) (Continuous x) = assert "value not in domain" $ l <= x          
+canHaveVal (Interval (Just l) (Just u)) (Continuous x) = assert "value not in domain" $ l <= x && x <= u
 canHaveVal (Set []                    ) (Discrete   _) = return ()
-canHaveVal (Set ys                    ) (Discrete   x) = unless (x `elem` ys)      $ throwError "value incompatible with domain"
-canHaveVal _                            _              =                             throwError "value not in domain"
+canHaveVal (Set ys                    ) (Discrete   x) = assert "value incompatible with domain" $ x `elem` ys
+canHaveVal _                            _              = throwError "value not in domain"
 
 
 data Display =
@@ -166,7 +166,7 @@ instance ToJSON Domain where
 
 
 validateDomain :: (IsString e, MonadError e m) => Domain -> m ()
-validateDomain (Interval (Just l) (Just u)) = unless (l <= u) $ throwError "lower bound greater than upper bound"
+validateDomain (Interval (Just l) (Just u)) = assert "lower bound greater than upper bound" $ l <= u
 validateDomain _                            = return ()
 
 
@@ -208,7 +208,7 @@ instance FromJSON Units where
           $ fail "VAR units SI must contain eight entries"
         let
           [lengthExponent, massExponent, timeExponent, currentExponent, temperatureExponent, molExponent, intensityExponent, angleExponent] = si
-        scale <- o .: "scale"
+        scale <- o .:? "scale" .!= 1
         return Units{..}
 
 instance ToJSON Units where
