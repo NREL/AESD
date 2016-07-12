@@ -282,10 +282,7 @@ filterFilters tags filterIdentifier = filterFilters tags Nothing . filter ((== f
 
 
 initialize :: IO ServerState
-initialize =
-  do
-    s@ServerState{..} <- generate arbitrary
-    return s {server = server {Server.version = 1}}
+initialize = generate arbitrary
 
 
 service :: Service ServerState

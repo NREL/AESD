@@ -18,7 +18,8 @@ instance Arbitrary Server where
   arbitrary =
     Server
       <$> arbitrary `suchThat` (/= "")
-      <*> arbitrary `suchThat` (>= 0)
+      <*> frequency [(49, return "record_server"), (1, arbitrary)]
+      <*> frequency [(49, return 0              ), (1, arbitrary)]
       <*> (nub <$> resize 4 arbitrary)
       <*> arbitrary
 
@@ -27,10 +28,8 @@ instance Arbitrary Status where
   arbitrary =
     frequency
       [
-        (7, return Okay              )
-      , (1, return Broken            )
-      , (1, return OnFire            )
-      , (1, OtherStatus <$> arbitrary)
+        (9, Okay    <$> arbitrary)
+      , (1, Failure <$> arbitrary)
       ]  
 
 

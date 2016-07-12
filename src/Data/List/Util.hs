@@ -7,6 +7,7 @@ module Data.List.Util (
 , sameElements
 , notDuplicatedIn
 , deleteOn
+, maybeList
 ) where
 
 
@@ -44,3 +45,8 @@ notDuplicatedIn f x ys = f x `notElem` map f ys
 
 deleteOn :: Eq b => (a -> b) -> a -> [a] -> [a]
 deleteOn f = deleteBy ((==) `on` f)
+
+
+maybeList :: [a] -> Maybe [a]
+maybeList [] = Nothing
+maybeList xs = Just xs

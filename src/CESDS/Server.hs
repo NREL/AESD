@@ -94,7 +94,7 @@ runService port Service{..} initial =
   runApplication port initial
     $ do
       defaultHandler $ \e -> apiError (badRequest400, LT.unpack e)
-      get "/server"
+      get "/"
         $ json =<< serverM getServer
       post "/server" . withBody
         $ (json =<<) . serverM . postServer

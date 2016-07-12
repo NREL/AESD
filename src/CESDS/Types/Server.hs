@@ -15,11 +15,13 @@ module CESDS.Types.Server (
 
 import CESDS.Types (Identifier, object')
 import CESDS.Types.Model (ModelIdentifier)
-import Control.Monad (unless)
-import Control.Monad.Except (MonadError, throwError)
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Value(String), (.:), (.=), withObject, withText)
+import Control.Monad.Except (MonadError)
+import Control.Monad.Except.Util (assert)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Value(String), (.:), (.:?), (.!=), (.=), withObject, withText)
+import Data.Default (Default(..))
 import Data.List.Util (noDuplicates)
 import Data.String (IsString)
+import Data.String.Util (maybeString)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -34,17 +36,30 @@ data Server =
   Server
   {
     identifier :: ServerIdentifier
+  , typ        :: Text
   , version    :: APIVersion
   , models     :: [ModelIdentifier]
   , status     :: Status
   }
     deriving (Eq, Generic, Read, Show)
 
+instance Default Server where
+  def =
+    Server
+    {
+      identifier = "unidentified"
+    , typ        = "record_server"
+    , version    = 0
+    , models     = []
+    , status     = def
+    }
+
 instance FromJSON Server where
   parseJSON =
     withObject "SERVER" $ \o ->
       do
         identifier <- o .: "server_id"
+        typ        <- o .: "server_type"
         version    <- o .: "version"
         models     <- o .: "models"
         status     <- o .: "status"
@@ -54,48 +69,51 @@ instance ToJSON Server where
   toJSON Server{..} =
     object'
       [
-        "server_id" .= identifier
-      , "version"   .= version
-      , "models"    .= models
-      , "status"    .= status
+        "server_id"   .= identifier
+      , "server_type" .= typ
+      , "version"     .= version
+      , "models"      .= models
+      , "status"      .= status
       ]
 
 
 validateServer :: (IsString e, MonadError e m) => Server -> m ()
 validateServer Server{..} =
   do
-    unless (identifier /= "")
-      $ throwError "empty server identifier"
-    unless (version >= 0)
-      $ throwError "illegal version number"
-    unless (noDuplicates models)
-      $ throwError "duplicate model identifiers"
+    assert "empty server identifier"     $ identifier /= ""
+    assert "illegal server type"         $ typ == "record_server"
+    assert "illegal version number"      $ version == 0
+    assert "duplicate model identifiers" $ noDuplicates models
 
 
 data Status =
     Okay
-  | Broken
-  | OnFire
-  | OtherStatus
+    {
+      message :: Text
+    }
+  | Failure
     {
       message :: Text
     }
     deriving (Eq, Generic, Read, Show)
 
+instance Default Status where
+  def = Okay ""
+
 instance FromJSON Status where
   parseJSON =
-    withText "SERVER_STATUS" $ \s ->
-      case s of
-        "ok"      -> return Okay
-        "broken"  -> return Broken
-        "on_fire" -> return OnFire
-        _         -> return $ OtherStatus s
+    withObject "SERVER_STATUS" $ \o ->
+      do
+        state   <- o .:   "state"
+        message <- o .:? "message" .!= ""
+        case state of
+          "ok"      -> return Okay{..}
+          "failure" -> return Failure{..}
+          _         -> fail $ "invalid server status: \"" ++ state ++ "\""
 
 instance ToJSON Status where
-  toJSON Okay            = String "ok"
-  toJSON Broken          = String "broken"
-  toJSON OnFire          = String "on_fire"
-  toJSON OtherStatus{..} = String message
+  toJSON Okay{..}    = object' ["state" .= String "ok"     , "message" .= maybeString message]
+  toJSON Failure{..} = object' ["state" .= String "failure", "message" .= maybeString message]
 
 
 data APIError =
@@ -107,10 +125,7 @@ data APIError =
 
 instance FromJSON APIError where
   parseJSON =
-    withObject "API_ERROR" $ \o ->
-      do
-        apiError <- o .: "api_error"
-        return APIError{..}
+    withText "API_ERROR" $ return . APIError
       
 instance ToJSON APIError where
-  toJSON APIError{..} = object' ["api_error" .= apiError]
+  toJSON APIError{..} = String apiError
