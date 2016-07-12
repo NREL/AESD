@@ -9,7 +9,6 @@ module CESDS.Types.Server (
 , Server(..)
 , validateServer
 , Status(..)
-, APIError(..)
 ) where
 
 
@@ -17,7 +16,7 @@ import CESDS.Types (Identifier, object')
 import CESDS.Types.Model (ModelIdentifier)
 import Control.Monad.Except (MonadError)
 import Control.Monad.Except.Util (assert)
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Value(String), (.:), (.:?), (.!=), (.=), withObject, withText)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Value(String), (.:), (.:?), (.!=), (.=), withObject)
 import Data.Default (Default(..))
 import Data.List.Util (noDuplicates)
 import Data.String (IsString)
@@ -114,18 +113,3 @@ instance FromJSON Status where
 instance ToJSON Status where
   toJSON Okay{..}    = object' ["state" .= String "ok"     , "message" .= maybeString message]
   toJSON Failure{..} = object' ["state" .= String "failure", "message" .= maybeString message]
-
-
-data APIError =
-  APIError
-  {
-    apiError :: Text
-  }
-    deriving (Eq, Generic, Read, Show)
-
-instance FromJSON APIError where
-  parseJSON =
-    withText "API_ERROR" $ return . APIError
-      
-instance ToJSON APIError where
-  toJSON APIError{..} = String apiError

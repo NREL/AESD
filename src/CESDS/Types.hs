@@ -10,6 +10,7 @@ module CESDS.Types (
 , Color
 , Tags(..)
 , Generation
+, isSimpleJSON
 , Val(..)
 , valAsString
 , isDiscrete
@@ -71,6 +72,12 @@ instance FromJSON URI where
 
 instance ToJSON URI where
   toJSON = String . pack . show
+
+
+isSimpleJSON :: Value -> Bool
+isSimpleJSON (String _) = True
+isSimpleJSON (Number _) = True
+isSimpleJSON _          = False
 
 
 data Val =

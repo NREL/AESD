@@ -5,28 +5,18 @@ module CESDS.Types.Command.Test (
 ) where
 
 
-import CESDS.Types.Test ()
+import CESDS.Types.Test (arbitrarySimpleJSON)
 import CESDS.Types.Command (Command(..), Result(..))
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (oneof, resize)
+import Test.QuickCheck.Gen (oneof, listOf, resize)
 
 
 instance Arbitrary Command where
   arbitrary =
     oneof
-      [
-        Restart        <$> resize 4 arbitrary
-      , Clear          <$> resize 4 arbitrary
-      , StrategyRandom <$> resize 4 arbitrary
-      , StrategyFIFO   <$> resize 4 arbitrary
-      , StrategyFILO   <$> resize 4 arbitrary
-      ]
+      $ map (<$> resize 4 (listOf arbitrarySimpleJSON))
+      [Restart, Clear, SetStrategy, GetStrategy]
 
 
 instance Arbitrary Result where
-  arbitrary =
-    oneof
-      [
-        return Success
-      , Error <$> arbitrary <*> arbitrary
-      ]
+  arbitrary = Result <$> arbitrary

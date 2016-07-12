@@ -5,13 +5,13 @@
 
 module CESDS.Types.Command (
   Command(..)
+, isServerCommand
 , Result(..)
 ) where
 
 
 import CESDS.Types (object')
-import Control.Applicative ((<|>))
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Value, (.:), (.:?), (.=), withObject)
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Value, (.:), (.:?), (.!=), (.=), withObject)
 import GHC.Generics (Generic)
 import Data.Text (Text)
 
@@ -25,15 +25,11 @@ data Command =
     {
       parameters :: [Value]
     }
-  | StrategyRandom
+  | SetStrategy
     {
       parameters :: [Value]
     }
-  | StrategyFIFO   
-    {
-      parameters :: [Value]
-    }
-  | StrategyFILO   
+  | GetStrategy
     {
       parameters :: [Value]
     }
@@ -43,43 +39,40 @@ instance FromJSON Command where
   parseJSON =
     withObject "COMMAND" $ \o ->
       do
-        command     <- o .: "command"
-        parameters  <- o .: "param"
+        command     <- o .:  "command"
+        parameters  <- o .:? "param"   .!= []
         case command of
          "restart"            -> return Restart{..}
          "clear"              -> return Clear{..}
-         "model_strat_random" -> return StrategyRandom{..}
-         "model_strat_fifo"   -> return StrategyFIFO{..}
-         "model_strat_filo"   -> return StrategyFILO{..}
+         "set_model_strategy" -> return SetStrategy{..}
+         "get_model_strategy" -> return GetStrategy{..}
          _                    -> fail $ "invalid COMMAND_OPTION \"" ++ command ++ "\""
 
 instance ToJSON Command where
-  toJSON Restart{..}        = object' ["command" .= ("restart"            :: String), "param" .= parameters]
-  toJSON Clear{..}          = object' ["command" .= ("clear"              :: String), "param" .= parameters]
-  toJSON StrategyRandom{..} = object' ["command" .= ("model_strat_random" :: String), "param" .= parameters]
-  toJSON StrategyFIFO{..}   = object' ["command" .= ("model_strat_fifo"   :: String), "param" .= parameters]
-  toJSON StrategyFILO{..}   = object' ["command" .= ("model_strat_filo"   :: String), "param" .= parameters]
+  toJSON Restart{..}      = object' ["command" .= ("restart"            :: String), "param" .= parameters]
+  toJSON Clear{..}        = object' ["command" .= ("clear"              :: String), "param" .= parameters]
+  toJSON SetStrategy{..}  = object' ["command" .= ("set_model_strategy" :: String), "param" .= parameters]
+  toJSON GetStrategy{..}  = object' ["command" .= ("get_model_strategy" :: String), "param" .= parameters]
+
+
+isServerCommand :: Command -> Bool
+isServerCommand Restart{} = True
+isServerCommand Clear{}   = True
+isServerCommand _         = False
         
 
 data Result =
-    Success
-  | Error
+    Result
     {
-      code    :: Text
-    , message :: Maybe Text
+      message :: Maybe Text
     }
     deriving (Eq, Generic, Read, Show)
 
 instance FromJSON Result where
   parseJSON = withObject "COMMAND_RESULT" $ \o ->
-    parseError o <|> return Success
-    where
-      parseError o =
-        do
-          code    <- o .:  "result"
-          message <- o .:? "additional"
-          return Error{..}
+    do
+      message <- o .:? "result"
+      return Result{..}
 
 instance ToJSON Result where
-  toJSON Success   = object' [                                          ]
-  toJSON Error{..} = object' ["result" .= code , "additional" .= message]
+  toJSON Result{..} = object' ["result" .= message]

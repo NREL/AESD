@@ -12,6 +12,7 @@ import CESDS.Server (RecordFilter(..), ServerM, Service(..), WorkFilter(..), get
 import CESDS.Types (Generation, Tags(..), valAsString)
 import CESDS.Types.Bookmark (Bookmark, BookmarkIdentifier, validateBookmark, validateBookmarks)
 import CESDS.Types.Bookmark.Test (arbitraryBookmark)
+import CESDS.Types.Command.Test ()
 import CESDS.Types.Filter (Filter, FilterIdentifier, validateFilter, validateFilters)
 import CESDS.Types.Filter.Test (arbitraryFilter)
 import CESDS.Types.Model (Model, ModelIdentifier, validateModel)
@@ -298,43 +299,44 @@ service =
         $ do
           new <- liftIO initialize
           sets new
-          return Command.Success
+          randomResult
     postServer (Command.Clear _) =
       randomFailure
         $ do
           modifys $ \s@ServerState{..} -> s {models = map (second clearModel) models}
-          return Command.Success
-    postServer _ =
-      notImplemented
+          randomResult
+    postServer _ = undefined
     getModel modelIdentifier =
       do
         modelState' <- gets $ lookup modelIdentifier . models
-        maybeModelNotFound
+        maybeNotFound "model"
           (return . model)
           modelState'
     postModel (Command.Restart _) modelIdentifier =
       randomFailure
         $ do
           model' <- gets $ lookup modelIdentifier . models
-          maybe
-            (return $ Command.Error "model not found" Nothing)
-            (const $ return Command.Success)
+          maybeNotFound "model"
+            (const . return . Command.Result $ Just "model successfully cleared")
             model'
     postModel (Command.Clear _) modelIdentifier =
       randomFailure
         $ do
           modelState' <- gets $ lookup modelIdentifier . models
-          maybeModelNotFound
-            (replaceModel . (, Command.Success) . clearModel)
+          maybeNotFound "model"
+            (replaceModel . (, Command.Result (Just "model successfully cleared")) . clearModel)
             modelState'
-    postModel _ _ =
+    postModel (Command.SetStrategy _) _ =
       randomFailure
-        $ return Command.Success
+        $ return (Command.Result $ Just "strategy request ignored")
+    postModel (Command.GetStrategy _) _ =
+      randomFailure
+        $ return (Command.Result $ Just "default strategy")
     getWorks workFilter modelIdentifier =
       do
         modifysIO ageModels
         modelState' <- gets $ lookup modelIdentifier . models
-        maybeModelNotFound
+        maybeNotFound "model"
           (return . map workStatus . filterWorkState workFilter . works)
           modelState'
     postWork submission modelIdentifier =
@@ -348,43 +350,43 @@ service =
       do
         modifysIO ageModels
         modelState' <- gets $ lookup modelIdentifier . models
-        maybeModelNotFound
+        maybeNotFound "model"
           (return . map record . filterRecordState recordFilter . works)
           modelState'
     getBookmarkMetas tags modelIdentifier =
       do
         modelState' <- gets $ lookup modelIdentifier . models
-        maybeModelNotFound
+        maybeNotFound "bookmark"
           (return . map (\b -> b {Bookmark.records = Nothing}) . filterBookmarks tags Nothing . bookmarks)
           modelState'
     getBookmarks bookmarkIdentifier modelIdentifier =
       do
         modelState' <- gets $ lookup modelIdentifier . models
-        maybeModelNotFound
+        maybeNotFound "bookmark"
           (return . filterBookmarks (Tags []) bookmarkIdentifier . bookmarks)
           modelState'
     postBookmark bookmark modelIdentifier =
       do
         modelState' <- gets $ lookup modelIdentifier . models
-        maybeModelNotFound
+        maybeNotFound "bookmark"
           ((replaceModel =<<) . flip addBookmark bookmark)
           modelState'
     getFilterMetas tags modelIdentifier =
       do
         modelState' <- gets $ lookup modelIdentifier . models
-        maybeModelNotFound
+        maybeNotFound "filter"
           (return . map (\f -> f {Filter.expression = Nothing}) . filterFilters tags Nothing . filters)
           modelState'
     getFilters filterIdentifier modelIdentifier =
       do
         modelState' <- gets $ lookup modelIdentifier . models
-        maybeModelNotFound
+        maybeNotFound "filter"
           (return . filterFilters (Tags []) filterIdentifier . filters)
           modelState'
     postFilter filter' modelIdentifier =
       do
         modelState' <- gets $ lookup modelIdentifier . models
-        maybeModelNotFound
+        maybeNotFound "filter"
           ((replaceModel =<<) . flip addFilter filter')
           modelState'
   in
@@ -405,12 +407,12 @@ main :: IO ()
 main = runService 8090 service =<< initialize
 
 
-maybeModelNotFound :: (a -> ServerM s b) -> Maybe a -> ServerM s b
-maybeModelNotFound = maybe $ throwError "model not found"
+maybeNotFound :: String -> (a -> ServerM s b) -> Maybe a -> ServerM s b
+maybeNotFound s = maybe $ throwError (s ++ " not found")
 
 
-notImplemented :: ServerM ServerState Command.Result
-notImplemented = return $ Command.Error "not implemented" Nothing
+randomResult :: ServerM ServerState Command.Result
+randomResult = liftIO $ generate arbitrary
 
 
 randomFailure :: ServerM ServerState Command.Result -> ServerM ServerState Command.Result
@@ -419,7 +421,7 @@ randomFailure x =
     outcome <- randomOutcome 9
     if outcome
       then x
-      else return . Command.Error "failed" $ Just "random failure for testing"
+      else return . Command.Result $ Just "random failure for testing"
 
 
 randomOutcome :: Int -> ServerM ServerState Bool

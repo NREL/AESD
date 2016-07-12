@@ -6,11 +6,12 @@
 
 
 module CESDS.Types.Test (
-  arbitraryVal
+  arbitrarySimpleJSON
+, arbitraryVal
 ) where
 
 
-import CESDS.Types (Color, Tags(..), Val(..))
+import CESDS.Types (Color, Tags(..), Val(..), isSimpleJSON)
 import CESDS.Types.Variable (Domain(..))
 import Data.Aeson.Types (Value(..))
 import Data.Colour.SRGB (sRGB24)
@@ -21,7 +22,7 @@ import Data.Scientific (Scientific, fromFloatDigits, scientific, toRealFloat)
 import Data.Text (Text, pack)
 import Network.URI (URI, parseURI)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (Gen, choose, elements, listOf1, oneof, resize)
+import Test.QuickCheck.Gen (Gen, choose, elements, listOf1, oneof, resize, suchThat)
 
 import qualified Data.HashMap.Strict as H (fromList)
 import qualified Data.Vector as V (fromList)
@@ -67,6 +68,10 @@ instance Arbitrary URI where
       . parseURI
       . ("http://" ++)
       <$> listOf1 (elements $ ['a'..'z'] ++ ['0'..'9'])
+
+
+arbitrarySimpleJSON :: Gen Value
+arbitrarySimpleJSON = arbitrary `suchThat` isSimpleJSON
 
 
 arbitraryVal :: Domain -> Gen Val

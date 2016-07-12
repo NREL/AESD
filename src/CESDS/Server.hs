@@ -19,7 +19,6 @@ module CESDS.Server (
 ) where
 
 
-import CESDS.Types.Server (APIError(APIError))
 import Control.Concurrent.STM (TVar, atomically, modifyTVar', newTVarIO, readTVarIO, writeTVar)
 import Control.Monad (liftM, unless)
 import Control.Monad.Except (ExceptT, MonadError, runExceptT)
@@ -31,7 +30,7 @@ import Data.List.Util (hasSubset)
 import Network.HTTP.Types (Status, badRequest400, internalServerError500)
 import Network.Wai (Response)
 import Network.Wai.Handler.Warp (Port, {- setOnException, -} setOnExceptionResponse, setPort)
-import Web.Scotty.Trans (ActionT, Parsable, ScottyT, Options(..), body, defaultHandler, get, json, notFound, param, params, post, raise, scottyOptsT, status)
+import Web.Scotty.Trans (ActionT, Parsable, ScottyT, Options(..), body, defaultHandler, get, json, notFound, param, params, post, raise, scottyOptsT, status, text)
 
 import qualified CESDS.Types as CESDS (Generation, Tags(..))
 import qualified CESDS.Types.Bookmark as CESDS (Bookmark, BookmarkIdentifier)
@@ -45,7 +44,7 @@ import qualified CESDS.Types.Work as CESDS (Submission, SubmissionResult, WorkId
 import qualified Data.ByteString.Lazy.Char8 as LBS (pack)
 import qualified Data.Text as T (pack)
 import qualified Data.Text.Lazy as LT (Text, concat, head, intercalate, pack, unpack)
-import qualified Network.Wai.Util as Wai (json)
+import qualified Network.Wai.Util as Wai (text)
 
 
 data Service s =
@@ -96,13 +95,13 @@ runService port Service{..} initial =
       defaultHandler $ \e -> apiError (badRequest400, LT.unpack e)
       get "/"
         $ json =<< serverM getServer
-      post "/server" . withBody
+      post "/command" . withBody
         $ (json =<<) . serverM . postServer
-      get "/server/:model"
+      get "/model/:model"
         $ json =<< serverM . getModel =<< paramsModelOnly
-      post "/server/:model" . withBody
+      post "/model/:model/command" . withBody
         $ (json =<<) . (paramsModelOnly >>=) . (serverM .) . postModel
-      get "/server/:model/work"
+      get "/command/:model/work"
         $ do
             (modelIdentifier, wfFrom, wfTo, wfStatus, wfWork) <- params4 ("from", "to", "status", "work_id")
             json =<< serverM (getWorks WorkFilter{..} modelIdentifier)
@@ -213,7 +212,7 @@ withBody f =
 
 
 apiError :: Monad m => (Status, String) -> ActionT LT.Text m ()
-apiError (s, e) = json (APIError $ T.pack e) >> status s
+apiError (s, e) = text (LT.pack e) >> status s
 
 
 newtype ServerM s a = ServerM {runServerM :: ExceptT String (ReaderT (TVar s) IO) a}
@@ -258,7 +257,7 @@ runApplication port initial application =
 
 
 exceptResponse :: Either String Response -> IO Response
-exceptResponse = either (Wai.json badRequest400 [] . APIError . T.pack) return
+exceptResponse = either (Wai.text badRequest400 [] . T.pack) return
 
 
 options :: Port -> Options
@@ -268,7 +267,7 @@ options port =
       settings =
         setPort port
 --        $ setOnException (const $ putStrLn . ("Uncaught exception: " ++) . show)
-          $ setOnExceptionResponse (head . Wai.json internalServerError500 [] . APIError . T.pack . show)
+          $ setOnExceptionResponse (head . Wai.text internalServerError500 [] . T.pack . show)
           $ settings def
     , verbose  = 0
     }

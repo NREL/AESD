@@ -8,7 +8,7 @@ module CESDS.Types.Server.Test (
 
 
 import CESDS.Types.Test ()
-import CESDS.Types.Server (APIError(..), Server(..), Status(..))
+import CESDS.Types.Server (Server(..), Status(..))
 import Data.List (nub)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
 import Test.QuickCheck.Gen (frequency, resize, suchThat)
@@ -31,7 +31,3 @@ instance Arbitrary Status where
         (9, Okay    <$> arbitrary)
       , (1, Failure <$> arbitrary)
       ]  
-
-
-instance Arbitrary APIError where
-  arbitrary = APIError <$> arbitrary
