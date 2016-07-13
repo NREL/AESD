@@ -9,7 +9,7 @@ This [Haskell package](cesds-records.cabal) contains . . .
 3.  [automated tests](src/TestJSON.hs) for the library, and
 4.  [an example server](src/Main.hs) that implements the REST API and provides random, but consistent data and validates input.
 
-This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/de659ed7be4c23223a661e6d60d27a4aa9045ee1.
+This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/ea52ec71c809996206df5657fd0f0e3d931f25a5.
 
 ## Example usage of CESDS API
 
