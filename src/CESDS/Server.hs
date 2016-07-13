@@ -20,7 +20,7 @@ module CESDS.Server (
 
 
 import Control.Concurrent.STM (TVar, atomically, modifyTVar', newTVarIO, readTVarIO, writeTVar)
-import Control.Monad (liftM, unless)
+import Control.Monad (unless)
 import Control.Monad.Except (ExceptT, MonadError, runExceptT)
 import Control.Monad.Reader (MonadIO, MonadReader, MonadTrans, ReaderT(runReaderT), ask, lift, liftIO)
 import Data.Aeson (eitherDecode')
@@ -271,7 +271,7 @@ serverM = lift
 
 
 gets :: (s -> a) -> ServerM s a
-gets f = liftM f $ ask >>= liftIO . readTVarIO
+gets f = f <$> (ask >>= liftIO . readTVarIO)
 
 
 sets :: s -> ServerM s ()
