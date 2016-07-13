@@ -13,7 +13,7 @@ import CESDS.Types.Test (arbitraryVal)
 import CESDS.Types.Variable (Display(..), Domain(..), Variable(..), Units(..), isSet)
 import Data.List (nub)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (Gen, elements, listOf1, oneof, sublistOf, suchThat)
+import Test.QuickCheck.Gen (Gen, elements, frequency, listOf1, sublistOf, suchThat)
  
  
 instance Arbitrary Variable where
@@ -37,10 +37,10 @@ instance Arbitrary Display where
 
 instance Arbitrary Domain where
   arbitrary =
-    oneof
+    frequency
       [
-        uncurry Interval <$> arbitrary `suchThat` ordered
-      , Set . nub <$> listOf1 arbitrary
+        (9, uncurry Interval <$> arbitrary `suchThat` ordered)
+      , (1, Set . nub <$> listOf1 arbitrary                  )
       ]
     where
       ordered (Just l, Just u) = l < u

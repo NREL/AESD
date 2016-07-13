@@ -25,7 +25,7 @@ import CESDS.Types.Variable.Test ()
 import CESDS.Types.Work (Submission, Work, maybeRecordIdentifier, validateSubmission, validateWorkList)
 import CESDS.Types.Work.Test (arbitrarySubmission)
 import Control.Arrow (second)
-import Control.Monad (foldM, unless)
+import Control.Monad (foldM)
 import Control.Monad.Except (throwError)
 import Control.Monad.Except.Util (assert)
 import Control.Monad.Reader (liftIO)
@@ -101,6 +101,7 @@ validateModelState ModelState{..} =
     validateWorkList . Work.makeWorkList $ map work works
     let
       recordIdentifiers = map recordIdentifier works
+    assert "inconsistent record count" $ Model.recordCount model == length recordIdentifiers
     validateBookmarks recordIdentifiers bookmarks
     validateFilters (Model.variables model) filters
 
@@ -141,7 +142,11 @@ ageModel modelState@ModelState{..} =
         |
           workState@WorkState{..} <- works
         ]
-    return modelState {works = works'}
+    return $ updateRecordCount modelState {works = works'}
+
+
+updateRecordCount :: ModelState -> ModelState
+updateRecordCount ms@ModelState{..} = ms { model = model {Model.recordCount = length works}}
 
 
 arbitraryModelState :: ModelIdentifier -> Gen ModelState
@@ -155,7 +160,7 @@ arbitraryModelState modelIdentifier =
       records = map recordIdentifier $ works modelState'
     bookmarks' <- nubOn Bookmark.identifier . filter ((> 0) . Bookmark.size) <$> listOf (arbitraryBookmark [Nothing] records)
     filters'   <- nubOn Filter.identifier   <$> listOf (arbitraryFilter [Nothing] . Model.variables $ model modelState)
-    return modelState' {bookmarks = bookmarks', filters = filters'}
+    return $ updateRecordCount modelState' {bookmarks = bookmarks', filters = filters'}
 
 
 addArbitraryWork :: Work.Submission -> ModelState -> Gen ModelState
@@ -187,7 +192,7 @@ addArbitraryWork submission@Work.Submission{..} modelState@ModelState{..} =
         || recordKey `elem` map Main.recordKey works
       then do
               f <- choose (0, 1) :: Gen Double
-              if f < 0.1
+              if f < 0.05
                 then return modelState
                 else addArbitraryWork submission modelState
       else return modelState {works = w : works}
@@ -212,6 +217,7 @@ submitWork ms submission =
       generation' = Model.generation (model ms) + 1
     validateSubmission (model ms) (map recordKey $ works ms) submission
     ms' <- liftIO $ generate $ addArbitraryWork submission $ ms {model = (model ms) {Model.generation = generation'}}
+    assert "failed to submit new work" $ works ms == works ms'
     return
       (
         ms'
@@ -442,7 +448,7 @@ service =
 
 
 clearModel :: ModelState -> ModelState
-clearModel modelState = modelState {works = [], bookmarks = [], filters = []}
+clearModel modelState = updateRecordCount $ modelState {works = [], bookmarks = [], filters = []}
 
 
 replaceModel :: (ModelState, a) -> ServerM ServerState a
