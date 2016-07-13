@@ -39,7 +39,7 @@ import qualified CESDS.Types.Bookmark as Bookmark (Bookmark(..))
 import qualified CESDS.Types.Command as Command (Command(..), Result(..))
 import qualified CESDS.Types.Filter as Filter (Filter(..))
 import qualified CESDS.Types.Model as Model (Model(..))
-import qualified CESDS.Types.Record as Record (Record(..))
+import qualified CESDS.Types.Record as Record (Record(..), makeRecordList)
 import qualified CESDS.Types.Server as Server (Server(..))
 import qualified CESDS.Types.Work as Work (Submission(..), SubmissionResult(..), WorkStatus(..), hasStatus, isSuccess)
 
@@ -261,7 +261,7 @@ filterWorkState WorkFilter{..} =
 
 
 filterRecordState :: RecordFilter -> [WorkState] -> [WorkState]
-filterRecordState RecordFilter{..} =
+filterRecordState RecordFilter{..} = -- FIXME: Also filter variable names.
   filter f
     where
       f WorkState{..} =
@@ -305,7 +305,7 @@ service =
         $ do
           modifys $ \s@ServerState{..} -> s {models = map (second clearModel) models}
           randomResult
-    postServer _ = undefined
+    postServer _ = throwError "bad request"
     getModel modelIdentifier =
       do
         modelState' <- gets $ lookup modelIdentifier . models
@@ -332,6 +332,31 @@ service =
     postModel (Command.GetStrategy _) _ =
       randomFailure
         $ return (Command.Result $ Just "default strategy")
+    getRecord recordFilter modelIdentifier =
+      do
+        modifysIO ageModels
+        modelState' <- gets $ lookup modelIdentifier . models
+        maybeNotFound "model"
+          (
+            (
+              \records -> if null records then throwError "record not found" else return $ head records
+            )
+              . map record . filterRecordState recordFilter . works
+          )
+          modelState'
+    getRecords recordFilter modelIdentifier =
+      do
+        modifysIO ageModels
+        modelState' <- gets $ lookup modelIdentifier . models
+        maybeNotFound "model"
+          (return . Record.makeRecordList . map record . filterRecordState recordFilter . works)
+          modelState'
+    postRecord _record modelIdentifier =
+      do
+        modelState' <- gets $ lookup modelIdentifier . models
+        maybeNotFound "model"
+          (const $ throwError "not implemented")
+          modelState'
     getWorks workFilter modelIdentifier =
       do
         modifysIO ageModels
@@ -345,13 +370,6 @@ service =
         maybe
           (return $ Work.SubmissionError "model not found")
           ((replaceModel =<<) . flip submitWork submission)
-          modelState'
-    getRecords recordFilter modelIdentifier =
-      do
-        modifysIO ageModels
-        modelState' <- gets $ lookup modelIdentifier . models
-        maybeNotFound "model"
-          (return . map record . filterRecordState recordFilter . works)
           modelState'
     getBookmarkMetas tags modelIdentifier =
       do

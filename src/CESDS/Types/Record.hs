@@ -8,15 +8,18 @@ module CESDS.Types.Record (
   RecordIdentifier
 , Record(..)
 , validateRecord
+, RecordList(..)
+, makeRecordList
+, validateRecordList
 ) where
 
 
-import CESDS.Types (Identifier, Val)
+import CESDS.Types (Identifier, Val, object')
 import CESDS.Types.Variable (Variable, VariableIdentifier, canHaveVal, hasVariable)
 import Control.Arrow (second)
-import Control.Monad (unless)
-import Control.Monad.Except (MonadError, throwError)
-import Data.Aeson.Types (FromJSON(..), ToJSON(..), object, withObject)
+import Control.Monad.Except (MonadError)
+import Control.Monad.Except.Util (assert)
+import Data.Aeson.Types (FromJSON(..), ToJSON(..), (.:), (.=), object, withObject)
 import Data.Function (on)
 import Data.HashMap.Strict (toList)
 import Data.List (sortBy)
@@ -42,23 +45,24 @@ instance Eq Record where
 instance FromJSON Record where
   parseJSON =
     withObject "RECORD" $ \o ->
-      Record
-        <$> sequence
-        [
-          (k, ) <$> parseJSON v
-        |
-          (k, v) <- toList o
-        ]
+      do
+        variables <- o .: "variables"
+        Record
+          <$> sequence
+          [
+            (k, ) <$> parseJSON v
+          |
+            (k, v) <- toList variables
+          ]
 
 instance ToJSON Record where
-  toJSON (Record kvs) = toJSON . object $ map (second toJSON) kvs
+  toJSON (Record kvs) = object ["variables" .= object (map (second toJSON) kvs)]
 
 
 validateRecord :: (IsString e, MonadError e m) => [Variable] -> Record -> m ()
 validateRecord variables Record{..} =
   do
-    unless (noDuplicates $ map fst unRecord)
-      $ throwError "duplicate variables in record"
+    assert "duplicate variables in record" $ noDuplicates $ map fst unRecord
     sequence_
       [
         do
@@ -67,3 +71,38 @@ validateRecord variables Record{..} =
       |
         (variable, value) <- unRecord
       ]
+
+
+data RecordList =
+  RecordList
+  {
+    recordCount :: Int
+  , records     :: [Record]
+  }
+    deriving (Eq, Generic, Read, Show)
+
+instance FromJSON RecordList where
+  parseJSON =
+    withObject "RECORD_LIST" $ \o ->
+      do
+        recordCount <- o .: "count"
+        records     <- o .: "records"
+        return RecordList{..}
+
+instance ToJSON RecordList where
+  toJSON RecordList{..} = object' ["count" .= recordCount, "records" .= records]
+
+
+makeRecordList :: [Record] -> RecordList
+makeRecordList records =
+  let
+    recordCount = length records
+  in
+    RecordList{..}
+
+
+validateRecordList :: (IsString e, MonadError e m) => [Variable] -> RecordList -> m ()
+validateRecordList variables RecordList{..} =
+  do
+    assert "record count does not match number of records" $ recordCount == length records
+    mapM_ (validateRecord variables) records

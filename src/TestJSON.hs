@@ -17,7 +17,7 @@ import CESDS.Types.Filter (Filter, SelectionExpression)
 import CESDS.Types.Filter.Test ()
 import CESDS.Types.Model (Model)
 import CESDS.Types.Model.Test ()
-import CESDS.Types.Record (Record)
+import CESDS.Types.Record (Record, RecordList)
 import CESDS.Types.Record.Test ()
 import CESDS.Types.Server (Server, Status)
 import CESDS.Types.Server.Test ()
@@ -100,6 +100,10 @@ prop_record_json :: Record -> Property
 prop_record_json = label "Record JSON" . checkEncodeDecode
 
 
+prop_record_list_json :: RecordList -> Property
+prop_record_list_json = label "RecordList JSON" . checkEncodeDecode
+
+
 prop_submission_json :: Submission -> Property
 prop_submission_json = label "Submission JSON" . checkEncodeDecode
 
@@ -144,6 +148,7 @@ main =
         , quickCheckResult prop_result_json
         , quickCheckResult prop_command_json
         , quickCheckResult prop_record_json
+        , quickCheckResult prop_record_list_json
         , quickCheckResult prop_submission_json
         , quickCheckResult prop_submission_result_json
         , quickCheckResult prop_work_status_json
