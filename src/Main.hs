@@ -35,7 +35,7 @@ import Data.Text (pack)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
 import Test.QuickCheck.Gen (Gen, choose, frequency, generate, listOf, suchThat)
 
-import qualified CESDS.Types.Bookmark as Bookmark (Bookmark(..))
+import qualified CESDS.Types.Bookmark as Bookmark (Bookmark(..), makeBookmarkList)
 import qualified CESDS.Types.Command as Command (Command(..), Result(..))
 import qualified CESDS.Types.Filter as Filter (Filter(..))
 import qualified CESDS.Types.Model as Model (Model(..))
@@ -384,23 +384,32 @@ service =
         maybeNotFound "model"
           (const $ throwError "not supported")
           modelState'
-    getBookmarkMetas tags modelIdentifier =
+    getBookmarkList tags modelIdentifier =
       do
         modelState' <- gets $ lookup modelIdentifier . models
-        maybeNotFound "bookmark"
-          (return . map (\b -> b {Bookmark.records = Nothing}) . filterBookmarks tags Nothing . bookmarks)
+        maybeNotFound "model"
+          (return . Bookmark.makeBookmarkList . map (\b -> b {Bookmark.records = Nothing}) . filterBookmarks tags Nothing . bookmarks)
           modelState'
-    getBookmarks bookmarkIdentifier modelIdentifier =
+    getBookmark bookmarkIdentifier modelIdentifier =
       do
         modelState' <- gets $ lookup modelIdentifier . models
-        maybeNotFound "bookmark"
-          (return . filterBookmarks (Tags []) bookmarkIdentifier . bookmarks)
+        maybeNotFound "model"
+          (
+            (\bookmarks -> if null bookmarks then throwError "bookmark not found" else return $ head bookmarks)
+              . filterBookmarks (Tags []) (Just bookmarkIdentifier) . bookmarks
+          )
           modelState'
     postBookmark bookmark modelIdentifier =
       do
         modelState' <- gets $ lookup modelIdentifier . models
-        maybeNotFound "bookmark"
+        maybeNotFound "model"
           ((replaceModel =<<) . flip addBookmark bookmark)
+          modelState'
+    deleteBookmark _bookmarkIdentifier modelIdentifier =
+      do
+        modelState' <- gets $ lookup modelIdentifier . models
+        maybeNotFound "model"
+          (const $ throwError "not supported")
           modelState'
     getFilterMetas tags modelIdentifier =
       do

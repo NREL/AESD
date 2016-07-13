@@ -6,18 +6,21 @@
 module CESDS.Types.Bookmark (
   BookmarkIdentifier
 , Bookmark(..)
-, validateBookmarks
 , validateBookmark
+, validateBookmarks
+, BookmarkList(..)
+, makeBookmarkList
+, validateBookmarkList
 ) where
 
 
 import CESDS.Types (Color, Identifier, Tags, object')
 import CESDS.Types.Record (RecordIdentifier)
-import Control.Monad (unless)
-import Control.Monad.Except (MonadError, throwError)
+import Control.Monad.Except (MonadError)
+import Control.Monad.Except.Util (assert)
 import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
 import Data.List.Util (deleteOn, hasSubset, noDuplicates, notDuplicatedIn)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
 import Data.String (IsString)
 import Data.Text (Text)
 import GHC.Generics (Generic)
@@ -73,11 +76,19 @@ instance ToJSON Bookmark where
       ]
 
 
+validateBookmark :: (IsString e, MonadError e m) => [Bookmark] -> [RecordIdentifier]-> Bookmark -> m ()
+validateBookmark bookmarks recordIdentifiers bookmark =
+  do
+    assert "duplicate bookmark identifiers" $ notDuplicatedIn identifier bookmark bookmarks
+    assert "no record identifiers in bookmark" $ maybe False (not . null) $ records bookmark
+    assert "incorrect bookmark size" $ size bookmark == maybe 0 length (records bookmark)
+    assert "invalid record identifiers" $ recordIdentifiers `hasSubset` fromMaybe [] (records bookmark)
+
+
 validateBookmarks :: (IsString e, MonadError e m) => [RecordIdentifier] -> [Bookmark] -> m ()
 validateBookmarks recordIdentifiers bookmarks =
   do
-    unless (noDuplicates $ map identifier bookmarks)
-      $ throwError "duplicate bookmark identifiers"
+    assert "duplicate bookmark identifiers" $ noDuplicates $ map identifier bookmarks
     sequence_
       [
         validateBookmark (deleteOn identifier bookmark bookmarks) recordIdentifiers bookmark
@@ -86,14 +97,37 @@ validateBookmarks recordIdentifiers bookmarks =
       ]
 
 
-validateBookmark :: (IsString e, MonadError e m) => [Bookmark] -> [RecordIdentifier]-> Bookmark -> m ()
-validateBookmark bookmarks recordIdentifiers bookmark =
+data BookmarkList =
+  BookmarkList
+  {
+    count     :: Int
+  , bookmarks :: [BookmarkIdentifier]
+  }
+    deriving (Eq, Generic, Read, Show)
+
+instance FromJSON BookmarkList where
+  parseJSON =
+    withObject "BOOKMARK_META_LIST" $ \o ->
+      do
+        count <- o .: "count"
+        bookmarks <- o .: "bookmark_ids"
+        return BookmarkList{..}
+
+instance ToJSON BookmarkList where
+  toJSON BookmarkList{..} = object' ["count" .= count, "bookmark_ids" .= bookmarks]
+
+
+makeBookmarkList :: [Bookmark] -> BookmarkList
+makeBookmarkList items =
+  let
+    bookmarks = mapMaybe identifier items
+    count = length bookmarks
+  in
+    BookmarkList{..}
+
+
+validateBookmarkList :: (IsString e, MonadError e m) => BookmarkList -> m ()
+validateBookmarkList BookmarkList{..}  =
   do
-    unless (notDuplicatedIn identifier bookmark bookmarks)
-      $ throwError "duplicate bookmark identifiers"
-    unless (maybe False (not . null) $ records bookmark)
-      $ throwError "no record identifiers in bookmark"
-    unless (size bookmark == maybe 0 length (records bookmark))
-      $ throwError "incorrect bookmark size"
-    unless (recordIdentifiers `hasSubset` fromMaybe [] (records bookmark))
-      $ throwError "invalid record identifiers"
+    assert "bookmark count does not match number of bookmarks" $ count == length bookmarks
+    assert "duplicate bookmark identifiers" $ noDuplicates bookmarks

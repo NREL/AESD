@@ -9,7 +9,7 @@ module Main (
 
 
 import CESDS.Types (Color)
-import CESDS.Types.Bookmark (Bookmark(..))
+import CESDS.Types.Bookmark (Bookmark, BookmarkList)
 import CESDS.Types.Bookmark.Test ()
 import CESDS.Types.Command (Command, Result)
 import CESDS.Types.Command.Test ()
@@ -124,6 +124,10 @@ prop_bookmark_json :: Bookmark -> Property
 prop_bookmark_json = label "Bookmark JSON" . checkEncodeDecode
 
 
+prop_bookmark_list_json :: BookmarkList -> Property
+prop_bookmark_list_json = label "BookmarkList JSON" . checkEncodeDecode
+
+
 prop_selection_json :: SelectionExpression -> Property
 prop_selection_json = label "SelectionExpression JSON" . checkEncodeDecode
 
@@ -158,6 +162,7 @@ main =
         , quickCheckResult prop_work_json
         , quickCheckResult prop_work_list_json
         , quickCheckResult prop_bookmark_json
+        , quickCheckResult prop_bookmark_list_json
         , quickCheckResult prop_selection_json
         , quickCheckResult prop_filter_json
         ]
