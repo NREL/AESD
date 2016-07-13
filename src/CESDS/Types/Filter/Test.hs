@@ -10,11 +10,12 @@ module CESDS.Types.Filter.Test (
 
 
 import CESDS.Types.Test (arbitraryPositive, arbitraryVal)
-import CESDS.Types.Filter (Filter(..), FilterIdentifier, SelectionExpression(..))
+import CESDS.Types.Filter (Filter(..), FilterIdentifier, FilterList(..), SelectionExpression(..))
 import CESDS.Types.Variable (Variable(..))
 import CESDS.Types.Variable.Test (arbitrarySubdomain)
+import Data.List (nub)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (Gen, frequency, listOf1, oneof, suchThat)
+import Test.QuickCheck.Gen (Gen, frequency, listOf1, oneof, resize, suchThat)
 
 
 arbitraryFilter :: [Maybe FilterIdentifier] -> [Variable] -> Gen Filter
@@ -37,11 +38,19 @@ arbitraryExpression variables =
     frequency
       [
         (1, NotSelection       <$> arbitraryExpression variables                                          )
-      , (1, UnionSelection     <$> arbitraryExpression variables <*> arbitraryExpression variables        )
-      , (1, IntersectSelection <$> arbitraryExpression variables <*> arbitraryExpression variables        )
+      , (1, UnionSelection     <$> resize 4 (listOf1 $ arbitraryExpression variables)                     )
+      , (1, IntersectSelection <$> resize 4 (listOf1 $ arbitraryExpression variables)                     )
       , (2, oneof [ValueSelection  identifier <$> arbitraryVal       domain   | Variable{..} <- variables])
       , (5, oneof [DomainSelection identifier <$> arbitrarySubdomain domain   | Variable{..} <- variables])
       ]
+
+
+instance Arbitrary FilterList where
+  arbitrary = 
+    do
+      filters <- nub <$> resize 4 arbitrary
+      let count = length filters
+      return FilterList{..}
 
 
 instance Arbitrary SelectionExpression where

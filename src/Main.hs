@@ -37,7 +37,7 @@ import Test.QuickCheck.Gen (Gen, choose, frequency, generate, listOf, suchThat)
 
 import qualified CESDS.Types.Bookmark as Bookmark (Bookmark(..), makeBookmarkList)
 import qualified CESDS.Types.Command as Command (Command(..), Result(..))
-import qualified CESDS.Types.Filter as Filter (Filter(..))
+import qualified CESDS.Types.Filter as Filter (Filter(..), makeFilterList)
 import qualified CESDS.Types.Model as Model (Model(..))
 import qualified CESDS.Types.Record as Record (Record(..), makeRecordList)
 import qualified CESDS.Types.Server as Server (Server(..))
@@ -273,12 +273,12 @@ filterRecordState RecordFilter{..} = -- FIXME: Also filter variable names.
 
 
 filterBookmarks :: Tags -> Maybe BookmarkIdentifier -> [Bookmark] -> [Bookmark]
-filterBookmarks tags Nothing = filter ((`hasSubset` unTags tags) . unTags . Bookmark.tags)
+filterBookmarks tags Nothing = filter ((`hasSubset` unTags tags) . unTags . fromMaybe (Tags []) . Bookmark.tags)
 filterBookmarks tags bookmarkIdentifier = filterBookmarks tags Nothing . filter ((== bookmarkIdentifier) . Bookmark.identifier)
 
 
 filterFilters :: Tags -> Maybe FilterIdentifier -> [Filter] -> [Filter]
-filterFilters tags Nothing = filter ((`hasSubset` unTags tags) . unTags . Filter.tags)
+filterFilters tags Nothing = filter ((`hasSubset` unTags tags) . unTags . fromMaybe (Tags []) . Filter.tags)
 filterFilters tags filterIdentifier = filterFilters tags Nothing . filter ((== filterIdentifier) . Filter.identifier)
 
 
@@ -395,7 +395,7 @@ service =
         modelState' <- gets $ lookup modelIdentifier . models
         maybeNotFound "model"
           (
-            (\bookmarks -> if null bookmarks then throwError "bookmark not found" else return $ head bookmarks)
+            (\bookmarks' -> if null bookmarks' then throwError "bookmark not found" else return $ head bookmarks')
               . filterBookmarks (Tags []) (Just bookmarkIdentifier) . bookmarks
           )
           modelState'
@@ -411,23 +411,32 @@ service =
         maybeNotFound "model"
           (const $ throwError "not supported")
           modelState'
-    getFilterMetas tags modelIdentifier =
+    getFilterList tags modelIdentifier =
       do
         modelState' <- gets $ lookup modelIdentifier . models
-        maybeNotFound "filter"
-          (return . map (\f -> f {Filter.expression = Nothing}) . filterFilters tags Nothing . filters)
+        maybeNotFound "model"
+          (return . Filter.makeFilterList . map (\f -> f {Filter.expression = Nothing}) . filterFilters tags Nothing . filters)
           modelState'
-    getFilters filterIdentifier modelIdentifier =
+    getFilter filterIdentifier modelIdentifier =
       do
         modelState' <- gets $ lookup modelIdentifier . models
-        maybeNotFound "filter"
-          (return . filterFilters (Tags []) filterIdentifier . filters)
+        maybeNotFound "model"
+          (
+            (\filters' -> if null filters' then throwError "filter not found" else return $ head filters')
+              . filterFilters (Tags []) (Just filterIdentifier) . filters
+          )
           modelState'
     postFilter filter' modelIdentifier =
       do
         modelState' <- gets $ lookup modelIdentifier . models
-        maybeNotFound "filter"
+        maybeNotFound "model"
           ((replaceModel =<<) . flip addFilter filter')
+          modelState'
+    deleteFilter _filterIdentifier modelIdentifier =
+      do
+        modelState' <- gets $ lookup modelIdentifier . models
+        maybeNotFound "model"
+          (const $ throwError "not supported")
           modelState'
   in
     Service{..}

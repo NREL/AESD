@@ -8,6 +8,9 @@ module CESDS.Types.Filter (
 , Filter(..)
 , validateFilters
 , validateFilter
+, FilterList(..)
+, makeFilterList
+, validateFilterList
 , SelectionExpression(..)
 , validateSelectionExpression
 ) where
@@ -16,12 +19,14 @@ module CESDS.Types.Filter (
 import CESDS.Types (Color, Identifier, Tags, Val, object')
 import CESDS.Types.Variable (Domain(..), Variable, VariableIdentifier, canHaveVal, compatibleDomains, hasVariable)
 import Control.Applicative ((<|>))
-import Control.Monad (unless, when)
-import Control.Monad.Except (MonadError, throwError)
+import Control.Monad ( when)
+import Control.Monad.Except (MonadError)
+import Control.Monad.Except.Util (assert)
 import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
 import Data.List.Util (deleteOn, noDuplicates, notDuplicatedIn)
+import Data.Maybe (mapMaybe)
 import Data.String (IsString)
-import Data.Text (Text, pack)
+import Data.Text (Text)
 import GHC.Generics (Generic)
 
 import qualified CESDS.Types.Variable as Variable (Variable(..))
@@ -37,7 +42,7 @@ data Filter =
   , name       :: Text
   , size       :: Maybe Int
   , color      :: Maybe Color
-  , tags       :: Tags
+  , tags       :: Maybe Tags
   , expression :: Maybe SelectionExpression
   }
     deriving (Eq, Generic, Read, Show)
@@ -53,7 +58,7 @@ instance FromJSON Filter where
                       name       <- o' .:  "name"
                       size       <- o' .:? "size"
                       color      <- o' .:? "color"
-                      tags       <- o' .:  "tags"
+                      tags       <- o' .:? "tags"
                       let expression = Nothing
                       return Filter{..}
                   )
@@ -80,8 +85,7 @@ instance ToJSON Filter where
 validateFilters :: (IsString e, MonadError e m) => [Variable] -> [Filter] -> m ()
 validateFilters variables filters =
   do
-    unless (noDuplicates $ map identifier filters)
-      $ throwError "duplicate filter identifiers"
+    assert "duplicate filter identifiers" $ noDuplicates $ map identifier filters
     sequence_
       [
         validateFilter (deleteOn identifier filter' filters) variables filter'
@@ -93,28 +97,60 @@ validateFilters variables filters =
 validateFilter :: (IsString e, MonadError e m) => [Filter] -> [Variable] -> Filter -> m ()
 validateFilter filters variables filter' =
   do
-    unless (notDuplicatedIn identifier filter' filters)
-      $ throwError "duplicate filter identifier"
+    assert "duplicate filter identifier" $ notDuplicatedIn identifier filter' filters
     maybe
       (return ())
       (validateSelectionExpression variables)
       $ expression filter'
 
 
+data FilterList =
+  FilterList
+  {
+    count   :: Int
+  , filters :: [FilterIdentifier]
+  }
+    deriving (Eq, Generic, Read, Show)
+
+instance FromJSON FilterList where
+  parseJSON =
+    withObject "FILTER_META_LIST" $ \o ->
+      do
+        count   <- o .: "count"
+        filters <- o .: "filter_ids"
+        return FilterList{..}
+
+instance ToJSON FilterList where
+  toJSON FilterList{..} = object' ["count" .= count, "filter_ids" .= filters]
+
+
+makeFilterList :: [Filter] -> FilterList
+makeFilterList items =
+  let
+    filters = mapMaybe identifier items
+    count = length filters
+  in
+    FilterList{..}
+
+validateFilterList :: (IsString e, MonadError e m) => FilterList -> m ()
+validateFilterList FilterList{..} =
+  do
+    assert "filter count does not match number of filters" $ count == length filters
+    assert "duplicate filter identifiers" $ noDuplicates filters
+
+
 data SelectionExpression =
-    NotSelection 
+    NotSelection
     {
-      right :: SelectionExpression
+      negatedExpression :: SelectionExpression
     }
   | UnionSelection
     {
-      left  :: SelectionExpression
-    , right :: SelectionExpression
+      expressions :: [SelectionExpression]
     }
   | IntersectSelection
     {
-      left  :: SelectionExpression
-    , right :: SelectionExpression
+      expressions :: [SelectionExpression]
     }
   | ValueSelection
     {
@@ -131,16 +167,11 @@ data SelectionExpression =
 instance FromJSON SelectionExpression where
   parseJSON =
     withObject "SEL_EXPR" $ \o ->
-      parseSet o <|> parseInterval o <|> parseValue o <|> parseExpression o
+      parseSet o <|> parseInterval o <|> parseValue o <|> parseNot o <|> parseUnion o <|> parseIntersect o
     where
-      parseExpression o =
-        do
-          expr <- o .: "expr"
-          case expr :: String of
-            "not"   -> NotSelection       <$> o .: "a"
-            "union" -> UnionSelection     <$> o .: "a" <*> o .: "b"
-            "isect" -> IntersectSelection <$> o .: "a" <*> o .: "b"
-            _       -> fail $ "invalid SEL_EXPR_TYPE \"" ++ expr ++ "\""
+      parseNot       o = NotSelection   <$> o .: "not"
+      parseUnion     o = UnionSelection <$> o .: "union"
+      parseIntersect o = IntersectSelection <$> o .: "isect"
       parseValue o =
         do
           variable <- o .: "var"
@@ -168,22 +199,17 @@ instance ToJSON SelectionExpression where
   toJSON NotSelection{..} =
     object'
       [
-        "expr" .= pack "not"
-      , "a"    .= right
+        "not" .= negatedExpression
       ]
   toJSON UnionSelection{..} =
     object'
       [
-        "expr" .= pack "union"
-      , "a"    .= left
-      , "b"    .= right
+        "union" .= expressions
       ] 
   toJSON IntersectSelection{..} =
     object'
       [
-        "expr" .= pack "isect"
-      , "a"    .= left
-      , "b"    .= right
+        "isect" .= expressions
       ]
   toJSON ValueSelection{..} =
     object'
@@ -207,11 +233,11 @@ instance ToJSON SelectionExpression where
 
 validateSelectionExpression :: (IsString e, MonadError e m) => [Variable] -> SelectionExpression -> m ()
 validateSelectionExpression variables NotSelection{..} =
-  validateSelectionExpression variables right
+  validateSelectionExpression variables negatedExpression
 validateSelectionExpression variables UnionSelection{..} =
-  mapM_ (validateSelectionExpression variables) [left, right]
+  mapM_ (validateSelectionExpression variables) expressions
 validateSelectionExpression variables IntersectSelection{..} =
-  mapM_ (validateSelectionExpression variables) [left, right]
+  mapM_ (validateSelectionExpression variables) expressions
 validateSelectionExpression variables ValueSelection{..} =
   do
     variable' <- variables `hasVariable` variable

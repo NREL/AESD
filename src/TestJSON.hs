@@ -13,7 +13,7 @@ import CESDS.Types.Bookmark (Bookmark, BookmarkList)
 import CESDS.Types.Bookmark.Test ()
 import CESDS.Types.Command (Command, Result)
 import CESDS.Types.Command.Test ()
-import CESDS.Types.Filter (Filter, SelectionExpression)
+import CESDS.Types.Filter (Filter, FilterList, SelectionExpression)
 import CESDS.Types.Filter.Test ()
 import CESDS.Types.Model (Model)
 import CESDS.Types.Model.Test ()
@@ -136,6 +136,10 @@ prop_filter_json :: Filter -> Property
 prop_filter_json = label "Filter JSON" . checkEncodeDecode
 
 
+prop_filter_list_json :: FilterList -> Property
+prop_filter_list_json = label "FilterList JSON" . checkEncodeDecode
+
+
 main :: IO ()
 main =
   do
@@ -165,5 +169,6 @@ main =
         , quickCheckResult prop_bookmark_list_json
         , quickCheckResult prop_selection_json
         , quickCheckResult prop_filter_json
+        , quickCheckResult prop_filter_list_json
         ]
     unless (all isSuccess results) exitFailure

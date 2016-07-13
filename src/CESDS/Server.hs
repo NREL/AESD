@@ -36,7 +36,7 @@ import Web.Scotty.Trans (ActionT, Parsable, ScottyT, Options(..), body, defaultH
 import qualified CESDS.Types as CESDS (Generation, Tags(..))
 import qualified CESDS.Types.Bookmark as CESDS (Bookmark, BookmarkIdentifier, BookmarkList)
 import qualified CESDS.Types.Command as CESDS (Command, Result)
-import qualified CESDS.Types.Filter as CESDS (Filter, FilterIdentifier)
+import qualified CESDS.Types.Filter as CESDS (Filter, FilterIdentifier, FilterList)
 import qualified CESDS.Types.Model as CESDS (Model, ModelIdentifier)
 import qualified CESDS.Types.Record as CESDS (Record, RecordIdentifier, RecordList)
 import qualified CESDS.Types.Server as CESDS (Server)
@@ -67,9 +67,10 @@ data Service s =
   , getBookmark     :: CESDS.BookmarkIdentifier -> CESDS.ModelIdentifier -> ServerM s CESDS.Bookmark
   , postBookmark    :: CESDS.Bookmark -> CESDS.ModelIdentifier -> ServerM s CESDS.Bookmark
   , deleteBookmark  :: CESDS.BookmarkIdentifier -> CESDS.ModelIdentifier -> ServerM s ()
-  , getFilterMetas  :: CESDS.Tags -> CESDS.ModelIdentifier -> ServerM s [CESDS.Filter]
-  , getFilters      :: Maybe CESDS.FilterIdentifier -> CESDS.ModelIdentifier -> ServerM s [CESDS.Filter]
+  , getFilterList   :: CESDS.Tags -> CESDS.ModelIdentifier -> ServerM s CESDS.FilterList
+  , getFilter       :: CESDS.FilterIdentifier -> CESDS.ModelIdentifier -> ServerM s CESDS.Filter
   , postFilter      :: CESDS.Filter -> CESDS.ModelIdentifier -> ServerM s CESDS.Filter
+  , deleteFilter    :: CESDS.FilterIdentifier -> CESDS.ModelIdentifier -> ServerM s ()
   }
 
 
@@ -161,18 +162,22 @@ runService port Service{..} initial =
         $ do
             (modelIdentifier, Just bookmarkIdentifier, _) <- params1 ["bookmark_id"]
             json =<< serverM (deleteBookmark bookmarkIdentifier modelIdentifier)
-      get "/server/:model/filter_metas"
+      get "/models/:model/filter"
         $ do
             (modelIdentifier, tags) <- paramsTags
-            json =<< serverM (getFilterMetas tags modelIdentifier)
-      get "/server/:model/filters"
+            json =<< serverM (getFilterList tags modelIdentifier)
+      get "/models/:model/filters/:filter_id"
         $ do
-            (modelIdentifier, filterIdentifier, _) <- params1 ["filter_id"]
-            json =<< serverM (getFilters filterIdentifier modelIdentifier)
-      post "/server/:model/filters" . withBody
+            (modelIdentifier, Just filterIdentifier, _) <- params1 ["filter_id"]
+            json =<< serverM (getFilter filterIdentifier modelIdentifier)
+      post "/models/:model/filters" . withBody
         $ \b -> do
             (modelIdentifier, _) <- params0 []
             json =<< serverM (postFilter b modelIdentifier)
+      delete "/models/:model/filters/:filter_id"
+        $ do
+            (modelIdentifier, Just filterIdentifier, _) <- params1 ["filter_id"]
+            json =<< serverM (deleteFilter filterIdentifier modelIdentifier)
       notFound
         $ apiError (badRequest400, "invalid request")
 

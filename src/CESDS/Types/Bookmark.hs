@@ -36,7 +36,7 @@ data Bookmark =
   , name       :: Text
   , size       :: Int
   , color      :: Maybe Color
-  , tags       :: Tags
+  , tags       :: Maybe Tags
   , records    :: Maybe [RecordIdentifier]
   }
     deriving (Eq, Generic, Read, Show)
@@ -52,7 +52,7 @@ instance FromJSON Bookmark where
                       name       <- o' .:  "name"
                       size       <- o' .:  "size"
                       color      <- o' .:? "color"
-                      tags       <- o' .:  "tags"
+                      tags       <- o' .:? "tags"
                       let records  = Nothing
                       return Bookmark{..}
                   )

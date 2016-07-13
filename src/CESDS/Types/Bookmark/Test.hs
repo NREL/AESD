@@ -35,6 +35,6 @@ instance Arbitrary Bookmark where
 instance Arbitrary BookmarkList where
   arbitrary =
     do
-      bookmarks <- nub <$> arbitrary
+      bookmarks <- nub <$> resize 4 arbitrary
       let count = length bookmarks
       return BookmarkList{..}
