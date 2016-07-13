@@ -63,7 +63,7 @@ instance ToJSON Variable where
     object'
       [
         "var_id"   .= identifier
-      , "disp"     .= display
+      , "display"  .= display
       , "domain"   .= domain
       , "units"    .= units
       , "is_input" .= isInput
