@@ -61,4 +61,4 @@ instance Arbitrary Work where
 
 
 instance Arbitrary WorkList where
-  arbitrary = makeWorkList <$> arbitrary
+  arbitrary = makeWorkList <$> resize 4 arbitrary

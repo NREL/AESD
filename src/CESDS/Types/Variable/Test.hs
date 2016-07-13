@@ -76,4 +76,4 @@ instance Arbitrary Units where
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
-      <*> suchThat arbitrary (/= 0)
+      <*> frequency [(1, return 1), (9, arbitrary `suchThat` (/= 0))]

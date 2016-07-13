@@ -30,18 +30,18 @@ arbitraryFilter veto variables =
 
 
 instance Arbitrary Filter where
-  arbitrary = arbitraryFilter [] =<< listOf1 arbitrary
+  arbitrary = arbitraryFilter [] =<< resize 4 (listOf1 arbitrary)
 
 
 arbitraryExpression :: [Variable] -> Gen SelectionExpression
 arbitraryExpression variables =
     frequency
       [
-        (1, NotSelection       <$> arbitraryExpression variables                                          )
-      , (1, UnionSelection     <$> resize 4 (listOf1 $ arbitraryExpression variables)                     )
-      , (1, IntersectSelection <$> resize 4 (listOf1 $ arbitraryExpression variables)                     )
-      , (2, oneof [ValueSelection  identifier <$> arbitraryVal       domain   | Variable{..} <- variables])
-      , (5, oneof [DomainSelection identifier <$> arbitrarySubdomain domain   | Variable{..} <- variables])
+        (1, NotSelection       <$>                                    arbitraryExpression variables                              )
+      , (1, UnionSelection     <$>                resize 4 (listOf1 $ arbitraryExpression variables)                             )
+      , (1, IntersectSelection <$>                resize 4 (listOf1 $ arbitraryExpression variables)                             )
+      , (2, oneof [ValueSelection  identifier <$> resize 4 (          arbitraryVal domain)           | Variable{..} <- variables])
+      , (5, oneof [DomainSelection identifier <$>                     arbitrarySubdomain domain      | Variable{..} <- variables])
       ]
 
 
@@ -54,4 +54,4 @@ instance Arbitrary FilterList where
 
 
 instance Arbitrary SelectionExpression where
-  arbitrary = arbitraryExpression =<< listOf1 arbitrary
+  arbitrary = arbitraryExpression =<< resize 4 (listOf1 arbitrary)
