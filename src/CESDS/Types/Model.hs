@@ -37,7 +37,7 @@ data Model =
   , uri         :: Maybe URI
   , name        :: Text
   , description :: Maybe Text
-  , tags        :: Tags
+  , tags        :: Maybe Tags
   , generation  :: Generation
   , recordCount :: Int
   , variables   :: [Variable]
@@ -53,7 +53,7 @@ instance FromJSON Model where
                   uri         <- o .:? "model_uri"
                   name        <- o .:  "label"
                   description <- o .:? "description"
-                  tags        <- o .:  "tags"
+                  tags        <- o .:? "tags"
                   generation  <- o .:  "generation"
                   recordCount <- o .:  "record_count"
                   variables   <- o .:  "variables"
