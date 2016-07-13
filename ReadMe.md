@@ -1,3 +1,6 @@
+**THIS DOCUMENT IS OUTDATED!**
+
+
 # CESDS Records API in Haskell
 
 ## Overview
