@@ -162,7 +162,7 @@ runService port Service{..} initial =
         $ do
             (modelIdentifier, Just bookmarkIdentifier, _) <- params1 ["bookmark_id"]
             json =<< serverM (deleteBookmark bookmarkIdentifier modelIdentifier)
-      get "/models/:model/filter"
+      get "/models/:model/filters"
         $ do
             (modelIdentifier, tags) <- paramsTags
             json =<< serverM (getFilterList tags modelIdentifier)
