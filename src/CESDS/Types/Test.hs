@@ -8,6 +8,7 @@
 module CESDS.Types.Test (
   arbitrarySimpleJSON
 , arbitraryVal
+, arbitraryPositive
 ) where
 
 
@@ -22,7 +23,7 @@ import Data.Scientific (Scientific, fromFloatDigits, scientific, toRealFloat)
 import Data.Text (Text, pack)
 import Network.URI (URI, parseURI)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
-import Test.QuickCheck.Gen (Gen, choose, elements, listOf, listOf1, oneof, resize, suchThat)
+import Test.QuickCheck.Gen (Gen, choose, elements, frequency, listOf, listOf1, oneof, resize, suchThat)
 
 import qualified Data.HashMap.Strict as H (fromList)
 import qualified Data.Vector as V (fromList)
@@ -95,3 +96,12 @@ instance Arbitrary Val where
         Continuous <$> arbitrary
       , Discrete   <$> arbitrary
       ]
+
+
+arbitraryPositive :: (Arbitrary a, Num a, Ord a) => Gen (Maybe a)
+arbitraryPositive =
+  frequency
+    [
+      (1, return Nothing)
+    , (9, Just <$> arbitrary `suchThat` (> 0))
+    ]

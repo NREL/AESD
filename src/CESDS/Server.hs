@@ -31,7 +31,7 @@ import Data.List.Util (hasSubset)
 import Network.HTTP.Types (Status, badRequest400, internalServerError500)
 import Network.Wai (Response)
 import Network.Wai.Handler.Warp (Port, {- setOnException, -} setOnExceptionResponse, setPort)
-import Web.Scotty.Trans (ActionT, Parsable, ScottyT, Options(..), body, defaultHandler, get, json, notFound, param, params, post, raise, scottyOptsT, status, text)
+import Web.Scotty.Trans (ActionT, Parsable, ScottyT, Options(..), body, defaultHandler, delete, get, json, notFound, param, params, post, raise, scottyOptsT, status, text)
 
 import qualified CESDS.Types as CESDS (Generation, Tags(..))
 import qualified CESDS.Types.Bookmark as CESDS (Bookmark, BookmarkIdentifier)
@@ -41,7 +41,7 @@ import qualified CESDS.Types.Model as CESDS (Model, ModelIdentifier)
 import qualified CESDS.Types.Record as CESDS (Record, RecordIdentifier, RecordList)
 import qualified CESDS.Types.Server as CESDS (Server)
 import qualified CESDS.Types.Variable as CESDS (VariableIdentifier)
-import qualified CESDS.Types.Work as CESDS (Submission, SubmissionResult, WorkIdentifier, WorkStatus)
+import qualified CESDS.Types.Work as CESDS (Submission, SubmissionResult, Work, WorkIdentifier, WorkList)
 
 import qualified Data.ByteString.Lazy.Char8 as LBS (pack)
 import qualified Data.Text as T (pack)
@@ -59,8 +59,10 @@ data Service s =
   , getRecord        :: RecordFilter -> CESDS.ModelIdentifier -> ServerM s CESDS.Record
   , getRecords       :: RecordFilter -> CESDS.ModelIdentifier -> ServerM s CESDS.RecordList
   , postRecord       :: CESDS.Record -> CESDS.ModelIdentifier -> ServerM s ()
-  , getWorks         :: WorkFilter -> CESDS.ModelIdentifier -> ServerM s [CESDS.WorkStatus]
+  , getWork          :: WorkFilter -> CESDS.ModelIdentifier -> ServerM s CESDS.Work
+  , getWorks         :: WorkFilter -> CESDS.ModelIdentifier -> ServerM s CESDS.WorkList
   , postWork         :: CESDS.Submission -> CESDS.ModelIdentifier -> ServerM s CESDS.SubmissionResult
+  , deleteWork       :: WorkFilter -> CESDS.ModelIdentifier -> ServerM s ()
   , getBookmarkMetas :: CESDS.Tags -> CESDS.ModelIdentifier -> ServerM s [CESDS.Bookmark]
   , getBookmarks     :: Maybe CESDS.BookmarkIdentifier -> CESDS.ModelIdentifier -> ServerM s [CESDS.Bookmark]
   , postBookmark     :: CESDS.Bookmark -> CESDS.ModelIdentifier -> ServerM s CESDS.Bookmark
@@ -115,21 +117,33 @@ runService port Service{..} initial =
             json =<< serverM (getRecord RecordFilter{..} modelIdentifier)
       get "/models/:model/records"
         $ do
-            (modelIdentifier, rfFrom, rfTo, rfKey, rfRecord, rfVariables, _) <- params5 ["from", "to", "primary_key", "result_id", "variables"]
+            let rfRecord = Nothing
+            (modelIdentifier, rfFrom, rfTo, rfKey, rfVariables, _) <- params4 ["from", "to", "primary_key", "variables"]
             json =<< serverM (getRecords RecordFilter{..} modelIdentifier)
       post "/models/:model/records" . withBody
         $ \b -> do
             (modelIdentifier, _) <- params0 []
             serverM $ postRecord b modelIdentifier
             json $ object ["result" .= String "ok"]
-      get "/command/:model/work"
+      get "/models/:model/work/:work_id"
         $ do
-            (modelIdentifier, wfFrom, wfTo, wfStatus, wfWork, _) <- params4 ["from", "to", "status", "work_id"]
+            let (wfFrom, wfTo, wfStatus) = (Nothing, Nothing, Nothing)
+            (modelIdentifier, wfWork, _) <- params1 ["work_id"]
+            json =<< serverM (getWork WorkFilter{..} modelIdentifier)
+      get "/models/:model/work"
+        $ do
+            let wfWork = Nothing
+            (modelIdentifier, wfFrom, wfTo, wfStatus, _) <- params3 ["from", "to", "status"]
             json =<< serverM (getWorks WorkFilter{..} modelIdentifier)
-      post "/server/:model/work" . withBody
+      post "/models/:model/work" . withBody
         $ \b -> do
             (modelIdentifier, _) <- params0 []
             json =<< serverM (postWork b modelIdentifier)
+      delete "/models/:model/work/:work_id"
+        $ do
+            let (wfFrom, wfTo, wfStatus) = (Nothing, Nothing, Nothing)
+            (modelIdentifier, wfWork, _) <- params1 ["work_id"]
+            json =<< serverM (deleteWork WorkFilter{..} modelIdentifier)
       get "/server/:model/bookmark_metas"
         $ do
             (modelIdentifier, tags) <- paramsTags
@@ -200,14 +214,6 @@ params4 ps =
     (modelIdentifier, v2, v3, v4, parameters) <- params3 $ tail ps ++ [head ps]
     v1 <- maybeParam parameters $ head ps
     return (modelIdentifier, v1, v2, v3, v4, parameters)
-
-
-params5 :: (MonadIO m, Parsable a, Parsable b, Parsable c, Parsable d, Parsable e) => [LT.Text] -> ActionT LT.Text m (CESDS.ModelIdentifier, Maybe a, Maybe b, Maybe c, Maybe d, Maybe e, [LT.Text])
-params5 ps =
-  do
-    (modelIdentifier, v2, v3, v4, v5, parameters) <- params4 $ tail ps ++ [head ps]
-    v1 <- maybeParam parameters $ head ps
-    return (modelIdentifier, v1, v2, v3, v4, v5, parameters)
 
 
 paramsTags :: Monad m => ActionT LT.Text m (CESDS.ModelIdentifier, CESDS.Tags)

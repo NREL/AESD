@@ -22,7 +22,7 @@ import CESDS.Types.Record.Test (arbitraryRecord)
 import CESDS.Types.Server (Server, validateServer)
 import CESDS.Types.Server.Test ()
 import CESDS.Types.Variable.Test ()
-import CESDS.Types.Work (Submission, WorkStatus, maybeRecordIdentifier, validateSubmission, validateWorkStatuses)
+import CESDS.Types.Work (Submission, Work, maybeRecordIdentifier, validateSubmission, validateWorkList)
 import CESDS.Types.Work.Test (arbitrarySubmission)
 import Control.Arrow (second)
 import Control.Monad (foldM, unless)
@@ -41,7 +41,7 @@ import qualified CESDS.Types.Filter as Filter (Filter(..))
 import qualified CESDS.Types.Model as Model (Model(..))
 import qualified CESDS.Types.Record as Record (Record(..), makeRecordList)
 import qualified CESDS.Types.Server as Server (Server(..))
-import qualified CESDS.Types.Work as Work (Submission(..), SubmissionResult(..), WorkStatus(..), hasStatus, isSuccess)
+import qualified CESDS.Types.Work as Work (Submission(..), SubmissionResult(..), Work(..), hasStatus, isSuccess, makeWorkList)
 
 
 data ServerState =
@@ -99,7 +99,7 @@ validateModelState ModelState{..} =
   do
     validateModel [] model
 --  mapM_ (validateSubmission model (map recordKey works)) $ map submission works
-    validateWorkStatuses $ map workStatus works
+    validateWorkList . Work.makeWorkList $ map work works
     let
       recordIdentifiers = map recordIdentifier works
     validateBookmarks recordIdentifiers bookmarks
@@ -130,14 +130,14 @@ ageModel modelState@ModelState{..} =
             return $
               workState
               {
-                workStatus = case workStatus of
-                  Work.Pending{..} -> if r < 0.25 then Work.Running workIdentifier else workStatus
+                work = case work of
+                  Work.Pending{..} -> if r < 0.25 then Work.Running workIdentifier else work
                   Work.Running{..} -> if r < 0.50
                                         then if r < 0.10
                                                then Work.Failure workIdentifier "random failure"
                                                else Work.Success workIdentifier recordIdentifier
-                                        else workStatus
-                  _                -> workStatus
+                                        else work
+                  _                -> work
               }
         |
           workState@WorkState{..} <- works
@@ -166,8 +166,8 @@ addArbitraryWork submission@Work.Submission{..} modelState@ModelState{..} =
       Model.Model{..} = model
       workGeneration = generation
       submissionKey = maybe "" (valAsString . snd) $ find ((== primaryKey) . fst) explicitVariables
-    workStatus <- arbitrary
-    recordIdentifier <- maybe arbitrary return $ maybeRecordIdentifier workStatus
+    work <- arbitrary
+    recordIdentifier <- maybe arbitrary return $ maybeRecordIdentifier work
     record' <- arbitraryRecord variables
     let
       record =
@@ -180,10 +180,10 @@ addArbitraryWork submission@Work.Submission{..} modelState@ModelState{..} =
       recordKey = valAsString . snd . fromJust . find ((== primaryKey) . fst) $ Record.unRecord record
     let
       w = WorkState{..}
-      fWorkIdentifier = Work.workIdentifier . Main.workStatus
-      fRecordIdentifier = maybeRecordIdentifier . Main.workStatus
+      fWorkIdentifier = Work.workIdentifier . Main.work
+      fRecordIdentifier = maybeRecordIdentifier . Main.work
     if submissionKey `elem` map Main.recordKey works
-        || fWorkIdentifier w `elem` map (Work.workIdentifier . Main.workStatus) works
+        || fWorkIdentifier w `elem` map fWorkIdentifier works
         || fRecordIdentifier w `elem` map fRecordIdentifier works
         || recordKey `elem` map Main.recordKey works
       then do
@@ -198,7 +198,7 @@ data WorkState =
   WorkState
   {
     workGeneration   :: Generation
-  , workStatus       :: WorkStatus
+  , work             :: Work
   , recordIdentifier :: RecordIdentifier
   , recordKey        :: String
   , record           :: Record
@@ -207,18 +207,18 @@ data WorkState =
 
 
 submitWork :: ModelState -> Submission -> ServerM s (ModelState, Work.SubmissionResult)
-submitWork ms@ModelState{..} submission =
+submitWork ms submission =
   do
     let
-      generation' = Model.generation model + 1
-    validateSubmission model (map recordKey works) submission
-    ms' <- liftIO $ generate $ addArbitraryWork submission $ ms {model = model {Model.generation = generation'}}
+      generation' = Model.generation (model ms) + 1
+    validateSubmission (model ms) (map recordKey $ works ms) submission
+    ms' <- liftIO $ generate $ addArbitraryWork submission $ ms {model = (model ms) {Model.generation = generation'}}
     return
       (
         ms'
       , Work.Submitted
         {
-          identifier          = Work.workIdentifier . workStatus $ head $ Main.works ms'
+          identifier          = Work.workIdentifier . work $ head $ works ms'
         , generation          = generation'
         , estimatedCompletion = Nothing
         }
@@ -256,8 +256,8 @@ filterWorkState WorkFilter{..} =
       f WorkState{..} =
            maybeCompare wfFrom (<=) workGeneration
         && maybeCompare wfTo   (>=) workGeneration
-        && maybeCompare wfWork (==) (Work.workIdentifier workStatus)
-        && maybe True (flip Work.hasStatus workStatus . pack) wfStatus
+        && maybeCompare wfWork (==) (Work.workIdentifier work)
+        && maybe True (flip Work.hasStatus work . pack) wfStatus
 
 
 filterRecordState :: RecordFilter -> [WorkState] -> [WorkState]
@@ -265,7 +265,7 @@ filterRecordState RecordFilter{..} = -- FIXME: Also filter variable names.
   filter f
     where
       f WorkState{..} =
-           Work.isSuccess workStatus
+           Work.isSuccess work
         && maybeCompare rfFrom   (<=) workGeneration
         && maybeCompare rfTo     (>=) workGeneration
         && maybeCompare rfRecord (==) recordIdentifier 
@@ -338,9 +338,7 @@ service =
         modelState' <- gets $ lookup modelIdentifier . models
         maybeNotFound "model"
           (
-            (
-              \records -> if null records then throwError "record not found" else return $ head records
-            )
+            (\records -> if null records then throwError "record not found" else return $ head records)
               . map record . filterRecordState recordFilter . works
           )
           modelState'
@@ -355,21 +353,36 @@ service =
       do
         modelState' <- gets $ lookup modelIdentifier . models
         maybeNotFound "model"
-          (const $ throwError "not implemented")
+          (const $ throwError "not supported")
+          modelState'
+    getWork workFilter modelIdentifier =
+      do
+        modifysIO ageModels
+        modelState' <- gets $ lookup modelIdentifier . models
+        maybeNotFound "model"
+          (
+            (\works' -> if null works' then throwError "work not found" else return $ head works')
+              . map work . filterWorkState workFilter . works
+          )
           modelState'
     getWorks workFilter modelIdentifier =
       do
         modifysIO ageModels
         modelState' <- gets $ lookup modelIdentifier . models
         maybeNotFound "model"
-          (return . map workStatus . filterWorkState workFilter . works)
+          (return . Work.makeWorkList . map work . filterWorkState workFilter . works)
           modelState'
     postWork submission modelIdentifier =
       do
         modelState' <- gets $ lookup modelIdentifier . models
-        maybe
-          (return $ Work.SubmissionError "model not found")
+        maybeNotFound "model"
           ((replaceModel =<<) . flip submitWork submission)
+          modelState'
+    deleteWork _workFilter modelIdentifier =
+      do
+        modelState' <- gets $ lookup modelIdentifier . models
+        maybeNotFound "model"
+          (const $ throwError "not supported")
           modelState'
     getBookmarkMetas tags modelIdentifier =
       do

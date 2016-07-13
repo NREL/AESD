@@ -9,10 +9,12 @@ module CESDS.Types.Work (
 , Duration
 , Priority
 , Submission(..)
-, SubmissionResult(..)
 , validateSubmission
-, WorkStatus(..)
-, validateWorkStatuses
+, SubmissionResult(..)
+, Work(..)
+, WorkList(..)
+, makeWorkList
+, validateWorkList
 , maybeRecordIdentifier
 , hasStatus
 , isSuccess
@@ -22,10 +24,9 @@ module CESDS.Types.Work (
 import CESDS.Types (Generation, Identifier, Val, object', valAsString)
 import CESDS.Types.Record (RecordIdentifier)
 import CESDS.Types.Variable (VariableIdentifier, canHaveVal, hasVariable)
-import Control.Applicative ((<|>))
 import Control.Arrow (second)
-import Control.Monad (unless)
-import Control.Monad.Except (MonadError, throwError)
+import Control.Monad.Except (MonadError)
+import Control.Monad.Except.Util (assert)
 import Data.Aeson.Types (FromJSON(parseJSON), Parser, ToJSON(toJSON), Value, (.:), (.:?), (.=), object, withObject)
 import Data.Function (on)
 import Data.HashMap.Strict (toList)
@@ -61,7 +62,7 @@ data Submission =
 
 instance Eq Submission where
   x == y =
-      sortBy (compare `on` fst) (explicitVariables x) == sortBy (compare `on` fst) (explicitVariables y)
+    sortBy (compare `on` fst) (explicitVariables x) == sortBy (compare `on` fst) (explicitVariables y)
       && sort (randomVariables x) == sort (randomVariables y)
       && timeout x == timeout y
       && priority x == priority y
@@ -100,50 +101,6 @@ instance ToJSON Submission where
       ]
 
 
-data SubmissionResult =
-    Submitted
-    {
-      identifier          :: WorkIdentifier
-    , generation          :: Generation
-    , estimatedCompletion :: Maybe Duration
-    }
-  | SubmissionError
-    {
-      message :: Text
-    }
-    deriving (Eq, Generic, Read, Show)
-
-instance FromJSON SubmissionResult where
-  parseJSON =
-    withObject "WORK_SUBMISSION_RESULT" $ \o ->
-      parseSubmitted o <|> parseError o
-    where
-      parseSubmitted o =
-        do
-          identifier          <- o .:  "work_id"
-          generation          <- o .:  "generation"
-          estimatedCompletion <- o .:? "estimated_completion"
-          return Submitted{..}
-      parseError o =
-        do
-          message <- o .: "error"
-          return SubmissionError{..}
-
-instance ToJSON SubmissionResult where
-  toJSON Submitted{..} =
-    object'
-      [
-        "work_id"              .= identifier
-      , "generation"           .= generation
-      , "estimated_completion" .= estimatedCompletion
-      ]
-  toJSON SubmissionError{..} =
-    object'
-      [
-        "error" .= message
-      ]
-
-
 validateSubmission :: (IsString e, MonadError e m) => Model.Model -> [String] -> Submission -> m ()
 validateSubmission Model.Model{..} recordKeys Submission{..} =
   do
@@ -152,25 +109,19 @@ validateSubmission Model.Model{..} recordKeys Submission{..} =
       inputVariables = map Variable.identifier $ filter Variable.isInput variables
       explicitVariables' = sort $ map fst explicitVariables
       randomVariables' = sort randomVariables
-    unless (null inputVariables || inputVariables `hasSubset` (explicitVariables' ++ randomVariables'))
-      $ throwError "cannot set value of output variable"
-    unless (noDuplicates explicitVariables')
-      $ throwError "duplicate explicit variables"
-    unless (modelVariables `hasSubset` explicitVariables')
-      $ throwError "invalid explicit variable"
-    unless (noDuplicates randomVariables')
-      $ throwError "duplicate random variables"
-    unless (modelVariables `hasSubset` randomVariables')
-      $ throwError "invalid random variable"
-    unless (explicitVariables' `disjoint` randomVariables')
-      $ throwError "explicit and random variables overlap"
+    assert "cannot set value of output variable" $ null inputVariables || inputVariables `hasSubset` (explicitVariables' ++ randomVariables')
+    assert "duplicate explicit variables" $ noDuplicates explicitVariables'
+    assert "invalid explicit variable" $ modelVariables `hasSubset` explicitVariables'
+    assert "duplicate random variables" $ noDuplicates randomVariables'
+    assert "invalid random variable" $ modelVariables `hasSubset` randomVariables'
+    assert "explicit and random variables overlap" $ explicitVariables' `disjoint` randomVariables'
+    assert "timeout cannot be negative" $ maybe True (> 0) timeout
     sequence_
       [
         do
           variable <-variables `hasVariable` variableIdentifier
           Variable.domain variable `canHaveVal` value
-          unless (variableIdentifier `notElem` explicitVariables' || valAsString value `notElem` recordKeys)
-            $ throwError "primary key violation"
+          assert "primary key violation"  $variableIdentifier `notElem` explicitVariables' || valAsString value `notElem` recordKeys
       |
         (variableIdentifier, value) <- explicitVariables
       ]
@@ -182,7 +133,35 @@ validateSubmission Model.Model{..} recordKeys Submission{..} =
       ]
 
 
-data WorkStatus =
+data SubmissionResult =
+    Submitted
+    {
+      identifier          :: WorkIdentifier
+    , generation          :: Generation
+    , estimatedCompletion :: Maybe Duration
+    }
+    deriving (Eq, Generic, Read, Show)
+
+instance FromJSON SubmissionResult where
+  parseJSON =
+    withObject "WORK_SUBMISSION_RESULT" $ \o ->
+      do
+        identifier          <- o .:  "work_id"
+        generation          <- o .:  "generation"
+        estimatedCompletion <- o .:? "estimated_completion"
+        return Submitted{..}
+
+instance ToJSON SubmissionResult where
+  toJSON Submitted{..} =
+    object'
+      [
+        "work_id"              .= identifier
+      , "generation"           .= generation
+      , "estimated_completion" .= estimatedCompletion
+      ]
+
+
+data Work =
     Pending
     {
       workIdentifier :: WorkIdentifier
@@ -203,9 +182,9 @@ data WorkStatus =
     }
     deriving (Eq, Generic, Read, Show)
 
-instance FromJSON WorkStatus where
+instance FromJSON Work where
   parseJSON = 
-    withObject "WORK_STATUS" $ \o ->
+    withObject "WORK_ITEM" $ \o ->
       do
         status <- o .: "status"
         case status of
@@ -215,7 +194,7 @@ instance FromJSON WorkStatus where
           "failed"   -> Failure <$> o .: "work_id" <*> o .: "additional"
           _          -> fail $ "invalid WORK_STATUS \"" ++ status ++ "\""
         
-instance ToJSON WorkStatus where
+instance ToJSON Work where
   toJSON Pending{..} =
     object'
       [
@@ -244,21 +223,47 @@ instance ToJSON WorkStatus where
       ]
 
 
-validateWorkStatuses :: (IsString e, MonadError e m) => [WorkStatus] -> m ()
-validateWorkStatuses workStatuses =
+data WorkList =
+  WorkList
+  {
+    count  :: Int
+  , statuses :: [Work]
+  }
+    deriving (Eq, Generic, Read, Show)
+
+instance FromJSON WorkList where
+  parseJSON =
+    withObject "WORK_ITEM_LIST" $ \o ->
+      do
+        count    <- o .: "count"
+        statuses <- o .: "status"
+        return WorkList{..}
+
+instance ToJSON WorkList where
+  toJSON WorkList{..} = object' ["count" .= count, "status" .= statuses]
+
+
+makeWorkList :: [Work] -> WorkList
+makeWorkList statuses =
+  let
+    count = length statuses
+  in
+    WorkList{..}
+
+
+validateWorkList :: (IsString e, MonadError e m) => WorkList -> m ()
+validateWorkList WorkList{..} =
   do
-    unless (noDuplicates $ map workIdentifier workStatuses)
-      $ throwError "duplicate work identifiers"
-    unless (noDuplicates . catMaybes $ map maybeRecordIdentifier workStatuses)
-      $ throwError "duplicate record identifiers in work"
+    assert "duplicate work identifiers" $ noDuplicates $ map workIdentifier statuses
+    assert "duplicate record identifiers in work" $ noDuplicates . catMaybes $ map maybeRecordIdentifier statuses
 
 
-maybeRecordIdentifier :: WorkStatus -> Maybe RecordIdentifier
+maybeRecordIdentifier :: Work -> Maybe RecordIdentifier
 maybeRecordIdentifier Success{..} = Just recordIdentifier
 maybeRecordIdentifier _           = Nothing
 
 
-hasStatus :: Text -> WorkStatus -> Bool
+hasStatus :: Text -> Work -> Bool
 hasStatus "pending" Pending{..} = True
 hasStatus "running" Running{..} = True
 hasStatus "success" Success{..} = True
@@ -266,6 +271,6 @@ hasStatus "failed"  Failure{..} = True
 hasStatus _         _           = False
 
 
-isSuccess :: WorkStatus -> Bool
+isSuccess :: Work -> Bool
 isSuccess Success{} = True
 isSuccess _         = False

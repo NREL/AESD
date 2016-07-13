@@ -10,10 +10,10 @@ module CESDS.Types.Work.Test (
 
 import CESDS.Types.Record (Record(..))
 import CESDS.Types.Record.Test (arbitraryRecord)
-import CESDS.Types.Test ()
+import CESDS.Types.Test (arbitraryPositive)
 import CESDS.Types.Variable (Variable)
 import CESDS.Types.Variable.Test ()
-import CESDS.Types.Work (Submission(..), SubmissionResult(..), WorkStatus(..))
+import CESDS.Types.Work (Submission(..), SubmissionResult(..), Work(..), WorkList(..), makeWorkList)
 import Data.List ((\\))
 import Data.List.Util (nubOn)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
@@ -32,7 +32,7 @@ arbitrarySubmission variables = -- FIXME: This can generate submission with a pr
     record <- arbitraryRecord variables
     let
       explicitVariables = filter ((`elem` explicitVariables') . fst) $ unRecord record
-    timeout <- arbitrary
+    timeout <- arbitraryPositive
     priority <- arbitrary
     return Submission{..}
 
@@ -43,14 +43,13 @@ instance Arbitrary Submission where
 
 instance Arbitrary SubmissionResult where
   arbitrary =
-    oneof
-      [
-        Submitted <$> arbitrary <*> arbitrary <*> arbitrary
-      , SubmissionError <$> arbitrary
-      ]
+    Submitted
+      <$> arbitrary
+      <*> arbitrary
+      <*> arbitraryPositive
 
 
-instance Arbitrary WorkStatus where
+instance Arbitrary Work where
   arbitrary =
     oneof
       [
@@ -59,3 +58,7 @@ instance Arbitrary WorkStatus where
       , Success <$> arbitrary <*> arbitrary
       , Failure <$> arbitrary <*> arbitrary
       ]
+
+
+instance Arbitrary WorkList where
+  arbitrary = makeWorkList <$> arbitrary

@@ -24,7 +24,7 @@ import CESDS.Types.Server.Test ()
 import CESDS.Types.Test ()
 import CESDS.Types.Variable (Display, Domain, Units, Variable)
 import CESDS.Types.Variable.Test ()
-import CESDS.Types.Work (Submission, SubmissionResult, WorkStatus)
+import CESDS.Types.Work (Submission, SubmissionResult, Work, WorkList)
 import CESDS.Types.Work.Test ()
 import Control.Arrow ((&&&))
 import Control.Monad (unless)
@@ -112,8 +112,12 @@ prop_submission_result_json :: SubmissionResult -> Property
 prop_submission_result_json = label "SubmissionResult JSON" . checkEncodeDecode
 
 
-prop_work_status_json :: WorkStatus -> Property
-prop_work_status_json = label "WorkStatus JSON" . checkEncodeDecode
+prop_work_json :: Work -> Property
+prop_work_json = label "Work JSON" . checkEncodeDecode
+
+
+prop_work_list_json :: WorkList -> Property
+prop_work_list_json = label "WorkList JSON" . checkEncodeDecode
 
 
 prop_bookmark_json :: Bookmark -> Property
@@ -151,7 +155,8 @@ main =
         , quickCheckResult prop_record_list_json
         , quickCheckResult prop_submission_json
         , quickCheckResult prop_submission_result_json
-        , quickCheckResult prop_work_status_json
+        , quickCheckResult prop_work_json
+        , quickCheckResult prop_work_list_json
         , quickCheckResult prop_bookmark_json
         , quickCheckResult prop_selection_json
         , quickCheckResult prop_filter_json

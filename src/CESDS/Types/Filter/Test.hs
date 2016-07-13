@@ -9,7 +9,7 @@ module CESDS.Types.Filter.Test (
 ) where
 
 
-import CESDS.Types.Test (arbitraryVal)
+import CESDS.Types.Test (arbitraryPositive, arbitraryVal)
 import CESDS.Types.Filter (Filter(..), FilterIdentifier, SelectionExpression(..))
 import CESDS.Types.Variable (Variable(..))
 import CESDS.Types.Variable.Test (arbitrarySubdomain)
@@ -22,7 +22,7 @@ arbitraryFilter veto variables =
     Filter
       <$> arbitrary `suchThat` (`notElem` veto)
       <*> arbitrary
-      <*> arbitrary `suchThat` (> Just 0)
+      <*> arbitraryPositive
       <*> arbitrary
       <*> arbitrary
       <*> oneof [return Nothing, Just <$> arbitraryExpression variables]
