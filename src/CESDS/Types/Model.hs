@@ -13,8 +13,7 @@ module CESDS.Types.Model (
 
 import CESDS.Types (Generation, Identifier, Tags, object')
 import CESDS.Types.Variable (Variable, VariableIdentifier, validateVariable)
-import Control.Monad (unless)
-import Control.Monad.Except (MonadError, throwError)
+import Control.Monad.Except (MonadError)
 import Control.Monad.Except.Util (assert)
 import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
 import Data.List (delete)
@@ -82,8 +81,7 @@ validateModels models =
   do
     let
       modelIdentifiers = identifier <$> models
-    unless (noDuplicates modelIdentifiers)
-      $ throwError "duplicate model identifiers"
+    assert "duplicate model identifiers" $ noDuplicates modelIdentifiers
     sequence_
       [
         validateModel (identifier model `delete` modelIdentifiers) model

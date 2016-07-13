@@ -27,6 +27,7 @@ import CESDS.Types.Work.Test (arbitrarySubmission)
 import Control.Arrow (second)
 import Control.Monad (foldM, unless)
 import Control.Monad.Except (throwError)
+import Control.Monad.Except.Util (assert)
 import Control.Monad.Reader (liftIO)
 import Data.List (find)
 import Data.List.Util (hasSubset, noDuplicates, nubOn, replaceByFst)
@@ -70,13 +71,11 @@ validateServerState :: ServerState -> ServerM s ()
 validateServerState ServerState{..} =
   do
     validateServer server
-    unless (noDuplicates $ map fst models)
-      $ throwError "duplicate model identifiers"
+    assert "duplicate model identifiers" $ noDuplicates $ map fst models
     sequence_
       [
         do
-          unless (modelIdentifier == Model.identifier model)
-            $ throwError "corrupt model index"
+          assert "corrupt model index" $ modelIdentifier == Model.identifier model
           validateModelState modelState
       |
         (modelIdentifier, modelState@ModelState{..}) <- models
