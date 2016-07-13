@@ -192,7 +192,7 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/ea5
 	{
 	  "record_ids":["Oh2yztzSCgDY","hA4fPQQEpLKbvwNW5"],
 	  "meta":{
-	    "size":2,
+	    "count":2,
 	    "name":"jFfPeFMGsb4YH",
 	    "bookmark_id":"myl7t8npVZbCPOCLCg",
 	    "tags":{"ZQ":"Ry","QV":4.518413462458594}
@@ -207,12 +207,12 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/ea5
 
 ### Add a bookmark
 
-	$ curl -H POST --data-ascii '{"meta" : {"name" : "test bookmark", "size" : 1}, "record_ids" : ["Oh2yztzSCgDY"]}' 'http://1lv11lamb01.nrel.gov:8090/models/JCF/bookmarks'
+	$ curl -H POST --data-ascii '{"meta" : {"name" : "test bookmark", "count" : 1}, "record_ids" : ["Oh2yztzSCgDY"]}' 'http://1lv11lamb01.nrel.gov:8090/models/JCF/bookmarks'
 	
 	{
 	  "record_ids":["Oh2yztzSCgDY"],
 	  "meta":{
-	    "size":1,
+	    "count":1,
 	    "name":"test bookmark",
 	    "bookmark_id":"CLpAIHa"
 	  }
@@ -225,7 +225,7 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/ea5
 	{
 	  "record_ids":["Oh2yztzSCgDY"],
 	  "meta":{
-	    "size":1,
+	    "count":1,
 	    "name":"test bookmark",
 	    "bookmark_id":"CLpAIHa"
 	  }
@@ -233,7 +233,7 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/ea5
 
 ### Attempt to add a bookmark incorrectly referencing records
 
-	$ curl -H POST --data-ascii '{"meta" : {"name" : "test bookmark", "size" : 1}, "record_ids" : ["not a record"]}' 'http://1lv11lamb01.nrel.gov:8090/models/JCF/bookmarks'
+	$ curl -H POST --data-ascii '{"meta" : {"name" : "test bookmark", "count" : 1}, "record_ids" : ["not a record"]}' 'http://1lv11lamb01.nrel.gov:8090/models/JCF/bookmarks'
 	
 	invalid record identifiers
 

@@ -50,7 +50,7 @@ instance FromJSON Bookmark where
                     do
                       identifier <- o' .:? "bookmark_id"
                       name       <- o' .:  "name"
-                      size       <- o' .:  "size"
+                      size       <- o' .:  "count"
                       color      <- o' .:? "color"
                       tags       <- o' .:? "tags"
                       let records  = Nothing
@@ -69,7 +69,7 @@ instance ToJSON Bookmark where
                     [
                       "bookmark_id" .= identifier
                     , "name"        .= name
-                    , "size"        .= size
+                    , "count"       .= size
                     , "color"       .= color
                     , "tags"        .= tags
                     ]

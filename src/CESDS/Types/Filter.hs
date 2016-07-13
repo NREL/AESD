@@ -56,7 +56,7 @@ instance FromJSON Filter where
                     do
                       identifier <- o' .:? "filter_id"
                       name       <- o' .:  "name"
-                      size       <- o' .:? "size"
+                      size       <- o' .:? "count"
                       color      <- o' .:? "color"
                       tags       <- o' .:? "tags"
                       let expression = Nothing
@@ -75,7 +75,7 @@ instance ToJSON Filter where
                     [
                       "filter_id" .= identifier
                     , "name"      .= name
-                    , "size"      .= size
+                    , "count"     .= size
                     , "color"     .= color
                     , "tags"      .= tags
                     ]
