@@ -1,6 +1,3 @@
-**THIS DOCUMENT IS OUTDATED!**
-
-
 # CESDS Records API in Haskell
 
 ## Overview
@@ -18,577 +15,161 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/de6
 
 ### Get server status
 
-	$ curl -H GET 'http://localhost:8090/server'
+	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/'
 	
-	{  
-	  "status":"ok",
-	  "server_id":"20tt2hAu",
-	  "models":[  
-	
-	  ],
-	  "version":17
-	}
+	{"status":{"state":"ok","message":"SWjkS9xkJ7WQ481"},"server_id":"2LpkwQF386kJli07eBkbQMl3FCom","server_type":"record_server","models":["w","Q"],"version":0}
 
 ### Attempt a request with malformed JSON
 
-	$ curl -H POST --data-ascii '{"command" : "restart}' 'http://localhost:8090/server'
+	$ curl -H POST --data-ascii '{"command": "restart}' 'http://1lv11lamb01.nrel.gov:8090/command'
 	
-	{  
-	  "api_error":"illegal JSON: Error in $: not enough input"
-	}
+	illegal JSON: Error in $: not enough input
 
 ### Attempt a request with a missing parameter
 
-	$ curl -H POST --data-ascii '{"command" : "restart"}' 'http://localhost:8090/server'
+	$ curl -H POST --data-ascii '{"param" : ["a parameter"]}' 'http://1lv11lamb01.nrel.gov:8090/command'
 	
-	{  
-	  "api_error":"illegal JSON: Error in $: key \"param\" not present"
-	}
+	illegal JSON: Error in $: key "command" not present
 
 ### Experience server failure
 
-	$ curl -H POST --data-ascii '{"command" : "restart", "param" : []}' 'http://localhost:8090/server'
+	$ curl -H POST --data-ascii '{"command" : "restart", "param" : []}' 'http://1lv11lamb01.nrel.gov:8090/command'
 	
-	{  
-	  "result":"failed",
-	  "additional":"random failure for testing"
-	}
+	{"result":"random failure for testing"}
 
 ### Restart the server
 
-	$ curl -H POST --data-ascii '{"command" : "restart", "param" : []}' 'http://localhost:8090/server'
+	$ curl -H POST --data-ascii '{"command" : "restart"}' 'http://1lv11lamb01.nrel.gov:8090/command'
 	
-	{}
-	
-	$ curl -H GET 'http://localhost:8090/server'
-	
-	{  
-	  "status":"on_fire",
-	  "server_id":"kIPVnUUmQHYC5yT",
-	  "models":[  
-	    "zOH8",
-	    "y",
-	    "t"
-	  ],
-	  "version":2
-	}
+	{"result":"xTr8IE3Vl78O3J6Eqngh6n2FGUYxl"}
 
 ### Retrieve model information
 
-	$ curl -H GET 'http://localhost:8090/server/y'
+	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF'
 	
-	{  
-	  "primary_key":"iyIl",
-	  "variables":[  
-	    {  
-	      "domain":{  
-	        "set":{  
-	          "options":[  "Do", "Kym", "tMU" ]
-	        }
-	      },
-	      "is_input":true,
-	      "var_id":"mj",
-	      "disp":{  
-	        "shortlabel":"e",
-	        "label":"9z"
-	      }
-	    },
-	    {  
-	      "domain":{  
-	        "interval":{  
-	          "bounds":[  null, null ]
-	        }
-	      },
-	      "is_input":false,
-	      "var_id":"iyIl",
-	      "units":{  
-	        "scale":3,
-	        "SI":[  2, -3, 0, -4, 1, 2, 3, -2 ]
-	      },
-	      "disp":{  
-	        "color":"#020002",
-	        "shortlabel":"A",
-	        "label":"VI"
-	      }
-	    }
-	  ],
-	  "model_id":"y",
-	  "time_key":"iyIl",
-	  "model_uri":"http://bxe",
-	  "generation":15,
-	  "description":"F",
-	  "label":"u2YoJLbUikkqXbeEp0rLk",
-	  "tags":{  
-	    "g83W":-53.02027558053175,
-	    "m5n":{  
-	      "td":-2,
-	      "1g":5.491602524783761,
-	      "I63m":-4
-	    },
-	    "359K":18.11972097369426
-	  }
-	}
+	{"record_id_var":"9hn","variables":[{"display":{"shortlabel":"ig","label":"s"},"domain":{"set":{"options":["1Vcv","IJ2","bNE3","E6O"]}},"is_input":true,"var_id":"9hn"},{"display":{"color":"#010201","shortlabel":"J","label":"dDOW"},"domain":{"set":{"options":["7tY","YPdZ"]}},"is_input":false,"var_id":"H9Bf"},{"display":{"color":"#020001","shortlabel":"xMz","label":"6NfV"},"domain":{"set":{"options":["Tr","SBm"]}},"is_input":true,"var_id":"EwHT"},{"display":{"shortlabel":"V5x","label":"J"},"domain":{"set":{"options":["x","Ql6h"]}},"is_input":true,"var_id":"2"}],"model_id":"JCF","time_key":"H9Bf","generation":-29,"description":"ZwSEd57QUlNYOum","label":"YscJ8JyshhQaL3V33cHcCaNUg9","record_count":4}
 
 ### Set the strategy for running simulations
 
-	$ curl -H POST --data-ascii '{"command" : "model_strat_fifo", "param" : []}' 'http://localhost:8090/server/y'
+	$ curl -H POST --data-ascii '{"command" : "set_model_strategy", "param" : ["FIFO"]}' 'http://1lv11lamb01.nrel.gov:8090/models/SaQ/command'
 	
-	{  
-	  "result":"failed",
-	  "additional":"random failure for testing"
-	}
-	
-	$ curl -H: []}' 'http://localhost:8090/server/y'_strat_fifo", "param" : []}' 'http://localhost:8090/server/y'
-	
-	{}
+	{"result":"strategy request ignored"}
 
 ### Retrieve records
 
-	$ curl -H GET 'http://localhost:8090/server/y/records'
+	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/records?from=-30'
 	
-	[  
-	  {  
-	    "mj":"Kym",
-	    "iyIl":5.383744935322579
-	  }
-	]
+	{"count":3,"records":[{"variables":{"9hn":"E6O","2":"Ql6h","H9Bf":"7tY","EwHT":"SBm"}},{"variables":{"9hn":"bNE3","2":"Ql6h","H9Bf":"7tY","EwHT":"Tr"}},{"variables":{"9hn":"1Vcv","2":"Ql6h","H9Bf":"YPdZ","EwHT":"Tr"}}]}
 
 ### Attempt to submit malformed work
 
-	$ curl -H POST --data-ascii '{"explicit" : {"mj" : "z"}, "random" : ["iyIl"]}' 'http://localhost:8090/server/y/work'
+	$ curl -H POST --data-ascii '{"explicit" : {"9hn" : 20}, "random" : ["E60"]}' 'http://1lv11lamb01.nrel.gov:8090/models/JCF/work'
 	
-	{  
-	  "api_error":"value incompatible with domain"
-	}
+	cannot set value of output variable
+	
+	$ curl -H POST --data-ascii '{"explicit" : {"EwHT" : 20}, "random" : []}' 'http://1lv11lamb01.nrel.gov:8090/models/JCF/work'
+	
+	value not in domain
+	
+	$ curl -H POST --data-ascii '{"explicit" : {"EwHT" : "invalid"}, "random" : []}' 'http://1lv11lamb01.nrel.gov:8090/models/JCF/work'
+	
+	value incompatible with domain	
 
 ### List work and watch for it to complete
 
-	$ curl -H GET 'http://localhost:8090/server/y/work'
+	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/work'
 	
-	[  
-	  {  
-	    "status":"success",
-	    "work_id":"XKAzHCYTyrIvylAVjuQRKg",
-	    "result_id":"rT6y1XjaVfu"
-	  },
-	  {  
-	    "status":"success",
-	    "work_id":"zVwYAEwUIT724Omd5HzPIybPQV1NuE",
-	    "result_id":"XLW4BKeij0M2MYrOIADKdkzb"
-	  },
-	  {  
-	    "status":"pending",
-	    "work_id":"GDNq6kTVMdOd8080yaVstVCWIq1sGG"
-	  }
-	]
+	{"status":[{"status":"pending","work_id":"GYIs2"},{"status":"success","work_id":"zGuZx4tzHalWLvmNOOsSTMqsc","result_id":"Oh2yztzSCgDY"},{"status":"success","work_id":"IC5P65YZEWaDoCz","result_id":"V5efDKAU8f7"},{"status":"success","work_id":"eUTB6l5JXkQYOHei9","result_id":"hA4fPQQEpLKbvwNW5"}],"count":4}
 	
-	$ curl -H GET 'http://localhost:8090/server/y/work'
+	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/work'
 	
-	[  
-	  {  
-	    "status":"success",
-	    "work_id":"XKAzHCYTyrIvylAVjuQRKg",
-	    "result_id":"rT6y1XjaVfu"
-	  },
-	  {  
-	    "status":"success",
-	    "work_id":"zVwYAEwUIT724Omd5HzPIybPQV1NuE",
-	    "result_id":"XLW4BKeij0M2MYrOIADKdkzb"
-	  },
-	  {  
-	    "status":"running",
-	    "work_id":"GDNq6kTVMdOd8080yaVstVCWIq1sGG"
-	  }
-	]
+	{"status":[{"status":"running","work_id":"GYIs2"},{"status":"success","work_id":"zGuZx4tzHalWLvmNOOsSTMqsc","result_id":"Oh2yztzSCgDY"},{"status":"success","work_id":"IC5P65YZEWaDoCz","result_id":"V5efDKAU8f7"},{"status":"success","work_id":"eUTB6l5JXkQYOHei9","result_id":"hA4fPQQEpLKbvwNW5"}],"count":4}
 	
-	$ curl -H GET 'http://localhost:8090/server/y/work'
+	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/work'
 	
-	[  
-	  {  
-	    "status":"success",
-	    "work_id":"XKAzHCYTyrIvylAVjuQRKg",
-	    "result_id":"rT6y1XjaVfu"
-	  },
-	  {  
-	    "status":"success",
-	    "work_id":"zVwYAEwUIT724Omd5HzPIybPQV1NuE",
-	    "result_id":"XLW4BKeij0M2MYrOIADKdkzb"
-	  },
-	  {  
-	    "status":"success",
-	    "work_id":"GDNq6kTVMdOd8080yaVstVCWIq1sGG",
-	    "result_id":"aKSnAUu77dz"
-	  }
-	]
-
-### Retrieve results
-
-	$ curl -H GET 'http://localhost:8090/server/y/records?result_id=rT6y1XjaVfu'
-	
-	[  
-	  {  
-	    "mj":"Do",
-	    "iyIl":-18.174549356827406
-	  }
-	]
+	{"status":[{"status":"success","work_id":"GYIs2","result_id":"KCovQuF"},{"status":"success","work_id":"zGuZx4tzHalWLvmNOOsSTMqsc","result_id":"Oh2yztzSCgDY"},{"status":"success","work_id":"IC5P65YZEWaDoCz","result_id":"V5efDKAU8f7"},{"status":"success","work_id":"eUTB6l5JXkQYOHei9","result_id":"hA4fPQQEpLKbvwNW5"}],"count":4}
 
 ### Submit work
 
-	$ curl -H POST --data-ascii '{"explicit" : {"iyIl" : 20}, "random" : []}' 'http://localhost:8090/server/y/work'
+	$ curl -H POST --data-ascii '{"explicit" : {"EwHT" : "Tr"}, "random" : []}' 'http://1lv11lamb01.nrel.gov:8090/models/JCF/work'
+	{"work_id":"GYIs2","generation":-28}
+
+### Retrieve results
+
+	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/records/KCovQuF'
 	
-	{  
-	  "work_id":"fq9wPOsljoA4yHIUykIbHBrMW",
-	  "generation":17
-	}
+	{"variables":{"9hn":"E6O","2":"Ql6h","H9Bf":"7tY","EwHT":"SBm"}}
+	
+	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/records?from=-28'
+	
+	{"count":0,"records":[{"variables":{"9hn":"E6O","2":"Ql6h","H9Bf":"7tY","EwHT":"SBm"}}]}
 
 ### Attempt to submit work with duplicate primary keys
 
-	$ curl -H POST --data-ascii '{"explicit" : {"iyIl" : 20}, "random" : []}' 'http://localhost:8090/server/y/work'
+	$ curl -H POST --data-ascii '{"explicit" : {"9hn" : "E6O"}, "random" : []}' 'http://1lv11lamb01.nrel.gov:8090/models/JCF/work'
 	
-	{  
-	  "api_error":"primary key violation"
-	}
-
-### Query work and results
-
-	$ curl -H GET 'http://localhost:8090/server/y/work?from=17&to=1000'
-	
-	[  
-	  {  
-	    "status":"running",
-	    "work_id":"fq9wPOsljoA4yHIUykIbHBrMW"
-	  }
-	]
-	
-	$ curl -H GET 'http://localhost:8090/server/y/work?from=17'
-	
-	[  
-	  {  
-	    "status":"success",
-	    "work_id":"fq9wPOsljoA4yHIUykIbHBrMW",
-	    "result_id":"wWKVjbkcuHQvNQChvK20dr4xNdTG"
-	  }
-	]
-	
-	$ curl -H GET 'http://localhost:8090/server/y/records?from=17'
-	
-	[  
-	  {  
-	    "mj":"Kym",
-	    "iyIl":20
-	  }
-	]
+	primary key violation	$ curl -H POST --data-ascii '{"explicit" : {"iyIl" : 20}, "random" : []}' 'http://localhost:8090/server/y/work'
 
 ### List bookmark metadata
 
-	$ curl -H GET 'http://localhost:8090/server/y/bookmark_metas'
+	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/bookmarks'
 	
-	[  
-	  {  
-	    "meta":{  
-	      "color":"#718c12",
-	      "size":2,
-	      "name":"J8dZ46sxrHY",
-	      "bookmark_id":"6jF77FlBrwP5Q",
-	      "tags":{  
-	        "LyJE":true,
-	        "me":{  
-	          "MH":true,
-	          "mWqy":false,
-	          "5":"gcsw"
-	        },
-	        "Cu5":null
-	      }
-	    }
-	  },
-	  {  
-	    "meta":{  
-	      "color":"#67202d",
-	      "size":1,
-	      "name":"Am3wYW3dTAGP49Hx",
-	      "bookmark_id":"9BZGLb3JsOfQ9KBrdvWisj53",
-	      "tags":{  
-	        "Vwi":[  ],
-	        "kTo":false,
-	        "Dgpx":3.36963399215058,
-	        "M68":-3
-	      }
-	    }
-	  },
-	  {  
-	    "meta":{  
-	      "color":"#2715cb",
-	      "size":1,
-	      "name":"7MTV8q0OwsX6TVkWRCB07",
-	      "bookmark_id":"dEQqTvRqnzylf",
-	      "tags":{  
-	        "rKD":"unQB"
-	      }
-	    }
-	  },
-	  {  
-	    "meta":{  
-	      "color":"#6cb71d",
-	      "size":1,
-	      "name":"ovwP13vu8zwAUuTk2Qj",
-	      "bookmark_id":"MLO",
-	      "tags":{  
-	        "CN":true,
-	        "HzAH":[  ],
-	        "py":null
-	      }
-	    }
-	  }
-	]
+	{"count":1,"bookmark_ids":["myl7t8npVZbCPOCLCg"]}
 
 ### List bookmarks
 
-	$ curl -H GET 'http://localhost:8090/server/y/bookmarks'
+	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/bookmarks/myl7t8npVZbCPOCLCg'
 	
-	[  
-	  {  
-	    "record_ids":[  
-	      "XLW4BKeij0M2MYrOIADKdkzb",
-	      "yREZOm1CPlpbt5MdFyZ3"
-	    ],
-	    "meta":{  
-	      "color":"#718c12",
-	      "size":2,
-	      "name":"J8dZ46sxrHY",
-	      "bookmark_id":"6jF77FlBrwP5Q",
-	      "tags":{  
-	        "LyJE":true,
-	        "me":{  
-	          "MH":true,
-	          "mWqy":false,
-	          "5":"gcsw"
-	        },
-	        "Cu5":null
-	      }
-	    }
-	  },
-	  {  
-	    "record_ids":[  
-	      "XLW4BKeij0M2MYrOIADKdkzb"
-	    ],
-	    "meta":{  
-	      "color":"#67202d",
-	      "size":1,
-	      "name":"Am3wYW3dTAGP49Hx",
-	      "bookmark_id":"9BZGLb3JsOfQ9KBrdvWisj53",
-	      "tags":{  
-	        "Vwi":[  ],
-	        "kTo":false,
-	        "Dgpx":3.36963399215058,
-	        "M68":-3
-	      }
-	    }
-	  },
-	  {  
-	    "record_ids":[  
-	      "XLW4BKeij0M2MYrOIADKdkzb"
-	    ],
-	    "meta":{  
-	      "color":"#2715cb",
-	      "size":1,
-	      "name":"7MTV8q0OwsX6TVkWRCB07",
-	      "bookmark_id":"dEQqTvRqnzylf",
-	      "tags":{  
-	        "rKD":"unQB"
-	      }
-	    }
-	  },
-	  {  
-	    "record_ids":[  
-	      "yREZOm1CPlpbt5MdFyZ3"
-	    ],
-	    "meta":{  
-	      "color":"#6cb71d",
-	      "size":1,
-	      "name":"ovwP13vu8zwAUuTk2Qj",
-	      "bookmark_id":"MLO",
-	      "tags":{  
-	        "CN":true,
-	        "HzAH":[  ],
-	        "py":null
-	      }
-	    }
-	  }
-	]
+	{"record_ids":["Oh2yztzSCgDY","hA4fPQQEpLKbvwNW5"],"meta":{"size":2,"name":"jFfPeFMGsb4YH","bookmark_id":"myl7t8npVZbCPOCLCg","tags":{"ZQ":"Ry","QV":4.518413462458594}}}
 
 ### Search bookmarks by tag
 
-	$ curl -H GET 'http://localhost:8090/server/y/bookmark_metas?LyJE=true'
+	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/bookmarks?ZQ="Ry"'
 	
-	[  
-	  {  
-	    "meta":{  
-	      "color":"#718c12",
-	      "size":2,
-	      "name":"J8dZ46sxrHY",
-	      "bookmark_id":"6jF77FlBrwP5Q",
-	      "tags":{  
-	        "LyJE":true,
-	        "me":{  
-	          "MH":true,
-	          "mWqy":false,
-	          "5":"gcsw"
-	        },
-	        "Cu5":null
-	      }
-	    }
-	  }
-	]
+	{"count":1,"bookmark_ids":["myl7t8npVZbCPOCLCg"]}
 
 ### Add a bookmark
 
-	$ curl -H POST --data-ascii '{"meta" : {"name" : "test bookmark", "size" : 1, "tags" : {}}, "record_ids" : ["XLW4BKeij0M2MYrOIADKdkzb"]}' 'http://localhost:8090/server/y/bookmarks'
+	$ curl -H POST --data-ascii '{"meta" : {"name" : "test bookmark", "size" : 1}, "record_ids" : ["Oh2yztzSCgDY"]}' 'http://1lv11lamb01.nrel.gov:8090/models/JCF/bookmarks'
 	
-	{  
-	  "record_ids":[  
-	    "XLW4BKeij0M2MYrOIADKdkzb"
-	  ],
-	  "meta":{  
-	    "size":1,
-	    "name":"test bookmark",
-	    "bookmark_id":"2JItRD3jfSGspm5yAnud8d5",
-	    "tags":{  
-	    }
-	  }
-	}
+	{"record_ids":["Oh2yztzSCgDY"],"meta":{"size":1,"name":"test bookmark","bookmark_id":"CLpAIHa"}}
 
 ### Retrieve a bookmark
 
-	$ curl -H GET 'http://localhost:8090/server/y/bookmarks?bookmark_id=2JItRD3jfSGspm5yAnud8d5'
+	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/bookmarks/CLpAIHa'
 	
-	[  
-	  {  
-	    "record_ids":[  
-	      "XLW4BKeij0M2MYrOIADKdkzb"
-	    ],
-	    "meta":{  
-	      "size":1,
-	      "name":"test bookmark",
-	      "bookmark_id":"2JItRD3jfSGspm5yAnud8d5",
-	      "tags":{  
-	
-	      }
-	    }
-	  }
-	]
+	{"record_ids":["Oh2yztzSCgDY"],"meta":{"size":1,"name":"test bookmark","bookmark_id":"CLpAIHa"}}
 
 ### Attempt to add a bookmark incorrectly referencing records
 
-	$ curl -H POST --data-ascii '{"meta" : {"name" : "test bookmark", "size" : 1, "tags" : {}}, "record_ids" : ["XLW4BKeij0M2MYrOIADxKdkzb"]}' 'http://localhost:8090/server/y/bookmarks'
+	$ curl -H POST --data-ascii '{"meta" : {"name" : "test bookmark", "size" : 1}, "record_ids" : ["not a record"]}' 'http://1lv11lamb01.nrel.gov:8090/models/JCF/bookmarks'
 	
-	{  
-	  "api_error":"invalid record identifiers"
-	}
+	invalid record identifiers
 
 ### List filter metadata
 
-	$ curl -H GET 'http://localhost:8090/server/y/filter_metas'
+	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/filters'
 	
-	[  
-	  {  
-	    "meta":{  
-	      "color":"#d8560a",
-	      "size":-24,
-	      "name":"pcqqzoTA5",
-	      "filter_id":"7W5",
-	      "tags":{  
-	        "LFQ":null,
-	        "A40":null,
-	        "ZI":false,
-	        "8kM":null
-	      }
-	    }
-	  },
-	  {  
-	    "meta":{  
-	      "color":"#0b2cf3",
-	      "size":21,
-	      "name":"2Hd",
-	      "filter_id":"GWL",
-	      "tags":{  
-	        "cg":"T0",
-	        "O27":{  
-	
-	        },
-	        "8Z":4,
-	        "8nMV":true
-	      }
-	    }
-	  },
-	  {  
-	    "meta":{  
-	      "color":"#2ca686",
-	      "size":-30,
-	      "name":"XXKEy",
-	      "filter_id":"lsWOGGGAQE8SRgssdB",
-	      "tags":{  
-	        "oI":1,
-	        "717":"FUZ",
-	        "Y8":[  
-	          {  }
-	        ]
-	      }
-	    }
-	  },
-	  {  
-	    "meta":{  
-	      "color":"#09e29c",
-	      "name":"eVkfA0dFhS9gZaE",
-	      "filter_id":"VXRjPEFa4zedeHZLKILhSuUQvd",
-	      "tags":{  
-	        "jHVt":null,
-	        "O":-4
-	      }
-	    }
-	  }
-	]
+	{"count":20,"filter_ids":["Cg7RdpzZYr0bs7","pOeN9UfCdekdFUwh6uBlYrCYxPCN6","88J33wDmU","0rZRFzzLlhE2o888Rftl7J10YwfAEs5","qKsRreE8h04v","Bwm","FUH2Agfzn3l09IFFkQ6m8Es","A2cmZsolppMhHqSsdBLFK48vOa","HqX6ReFe1xr3fc6XiwNP","rZ2vZnY","5CVCeVJ7jcyaCHIbXy5YoX","GYNOqFtD","phxLzqoK","URK8NicF2HUIJKZNNzAayjRLqhm","LhViaZEc2w2qwCGVDiPE953wEuuY91","5JQ","AcHNyrwe7gzGqbiAg8mouLU","8Q0B5xWQ46wBOX0AKG8xBbENDHimLD","B4Ho3FqHKXdM4BIzPuIkTNhJ0","Tq6fYbU3TTRw"]}
 
 ### Attempt to add a malformed filter
 
-	$ curl -H POST --data-ascii '{"meta" : {"name" : "test filter", "tags" : {}}, "expr" : {"var" : "iyIl", "set" : ["Do", "tMU"]}}' 'http://localhost:8090/server/y/filters'
+	$ curl -H POST --data-ascii '{"meta" : {"name" : "test filter", "tags" : {"key" : "value"}}, "expr" : {"not" : {"union" : [{"var" : "9hn", "value" : "bad value"}, {"var" : "H9Bf", "set" : ["7tY", "YPdZ"]}]}}}' 'http://1lv11lamb01.nrel.gov/models/JCF/filters'
 	
-	{  
-	  "api_error":"incompatible domains"
-	}
-	
-	$ curl -H POST --data-ascii '{"meta" : {"name" : "test filter", "tags" : {}}, "expr" : {"var" : "iyIl", "value" : "tMU"}}' 'http://localhost:8090/server/y/filters'
-	
-	{  
-	  "api_error":"value not in domain"
-	}
+	value incompatible with domain
 
 ### Add a filter
 
-	$ curl -H POST --data-ascii '{"meta" : {"name" : "test filter", "tags" : {}}, "expr" : {"expr" : "union", "a" : {"var" : "mj", "set" : ["Do", "tMU"]}, "b" : {"var" : "iyIl", "interval" : [-4, null]}}}' 'http://localhost:8090/server/y/filters'
+	$ curl -H POST --data-ascii '{"meta" : {"name" : "test filter", "tags" : {"key" : "value"}}, "expr" : {"not" : {"union" : [{"var" : "9hn", "value" : "IJ2"}, {"var" : "H9Bf", "set" : ["7tY", "YPdZ"]}]}}}' 'http://1lv11lamb01.nrel.gov:8090/models/JCF/filters'
 	
-	{  
-	  "expr":{  
-	    "expr":"union",
-	    "a":{  
-	      "set":[  
-	        "Do",
-	        "tMU"
-	      ],
-	      "var":"mj"
-	    },
-	    "b":{  
-	      "var":"iyIl",
-	      "interval":[  
-	        -4,
-	        null
-	      ]
-	    }
-	  },
-	  "meta":{  
-	    "name":"test filter",
-	    "filter_id":"eDscdQiLrIuZV3tNVZP25VK51Wr",
-	    "tags":{  
+	{"expr":{"not":{"union":[{"var":"9hn","value":"IJ2"},{"set":["7tY","YPdZ"],"var":"H9Bf"}]}},"meta":{"name":"test filter","filter_id":"HvuzvDYS","tags":{"key":"value"}}}	$ curl -H POST --data-ascii '{"meta" : {"name" : "test filter", "tags" : {}}, "expr" : {"expr" : "union", "a" : {"var" : "mj", "set" : ["Do", "tMU"]}, "b" : {"var" : "iyIl", "interval" : [-4, null]}}}' 'http://localhost:8090/server/y/filters'
+
+### Retrieve a filter.
+
+	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/filters?key="value"'
 	
-	    }
-	  }
-	}
+	{"count":1,"filter_ids":["HvuzvDYS"]}
+	
+	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/filters/HvuzvDYS'
+	
+	{"expr":{"not":{"union":[{"var":"9hn","value":"IJ2"},{"set":["7tY","YPdZ"],"var":"H9Bf"}]}},"meta":{"name":"test filter","filter_id":"HvuzvDYS","tags":{"key":"value"}}}
