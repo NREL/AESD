@@ -186,7 +186,6 @@ params0 :: MonadIO m => [LT.Text] -> ActionT LT.Text m (CESDS.ModelIdentifier, [
 params0 ps =
   do
     parameters <- filter ((/= '{') . LT.head) . map fst <$> params
-    liftIO $ print (ps, parameters)
     unless (("model" : ps) `hasSubset` parameters)
       . raise
       $ LT.concat ["illegal parameters in URL: ", LT.intercalate ", " $ parameters \\ ("model" : ps)]
