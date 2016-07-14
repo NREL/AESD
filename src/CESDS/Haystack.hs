@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
@@ -5,24 +6,39 @@
 
 module CESDS.Haystack (
   HaystackAccess(..)
+, HaystackTimes(..)
 , haystackRequest
 , haystackNav
 , haystackNavTree
 , haystackRead
+, haystackHisRead
 , getNavId
 , getId
+, History
+, EpochSeconds
+, sEpochSeconds
+, TimeStamp
+, sTimeStamp
+, Measurement
+, sMeasurement
 ) where
 
 
+import CESDS.Types (Identifier, Val(..))
 import Control.Arrow ((***))
 import Control.Monad.Except (MonadIO)
 import Data.Aeson.Types (FromJSON(..), ToJSON(..), Value, (.=), object)
 import Data.Aeson.Util (extract)
-import Data.ByteString.Char8 (pack)
 import Data.Maybe (fromMaybe)
+import Data.Time.Util (toSecondsPOSIX)
+import Data.Vinyl ((<+>))
+import Data.Vinyl.Derived (FieldRec, SField(..), (=:))
 import Debug.Trace (trace)
 import GHC.Generics (Generic)
 import Network.HTTP.Simple (Request, addRequestHeader, defaultRequest, getResponseBody, httpJSON, setRequestBasicAuth, setRequestHost, setRequestPath, setRequestPort, setRequestQueryString, setRequestSecure)
+
+import qualified Data.ByteString.Char8 as BS (pack)
+import qualified Data.Text as T (drop, pack, unpack)
 
 
 data HaystackAccess =
@@ -43,26 +59,26 @@ instance ToJSON HaystackAccess where
 
 haystackRequest :: HaystackAccess -> String -> Request
 haystackRequest HaystackAccess{..} path =
-    setRequestHost (pack server)
-  $ setRequestPath (pack $ root ++ path)
+    setRequestHost (BS.pack server)
+  $ setRequestPath (BS.pack $ root ++ path)
   $ setRequestSecure secure'
   $ setRequestPort (fromMaybe (if secure' then 443 else 80) port)
-  $ maybe id (uncurry setRequestBasicAuth . (pack *** pack)) authorization
+  $ maybe id (uncurry setRequestBasicAuth . (BS.pack *** BS.pack)) authorization
     defaultRequest
     where
       secure' = fromMaybe True secure
 
 
-setNavId :: Maybe String -> Request -> Request
+setNavId :: Maybe Identifier -> Request -> Request
 setNavId Nothing           = id
-setNavId (Just identifier) = setRequestQueryString [("navId", Just $ pack identifier)]
+setNavId (Just identifier) = setRequestQueryString [("navId", Just . BS.pack $ T.unpack identifier)]
 
 
-setId :: String -> Request -> Request
-setId identifier = setRequestQueryString [("id", Just $ pack identifier)]
+setId :: Identifier -> Request -> Request
+setId identifier = setRequestQueryString [("id", Just . BS.pack $ T.unpack identifier)]
 
 
-haystackNav :: MonadIO m => HaystackAccess -> Maybe String -> m [Value]
+haystackNav :: MonadIO m => HaystackAccess -> Maybe Identifier -> m [Value]
 haystackNav access identifier =
   let
     request =
@@ -75,13 +91,13 @@ haystackNav access identifier =
       <$> httpJSON request
 
 
-haystackNavTree :: MonadIO m => HaystackAccess -> Maybe String -> m Value
+haystackNavTree :: MonadIO m => HaystackAccess -> Maybe Identifier -> m Value
 haystackNavTree access identifier =
   let
     visit parent =
       do
         let navId = getNavId parent
-        children <- haystackNavTree access $ trace (getId parent) $ Just navId
+        children <- haystackNavTree access . trace (T.unpack $ getId parent) $ Just navId
         return $ object ["entity" .= parent, "children" .= children]
   in
     fmap toJSON
@@ -89,7 +105,7 @@ haystackNavTree access identifier =
       =<< haystackNav access identifier
 
 
-haystackRead :: MonadIO m => HaystackAccess -> String -> m Value
+haystackRead :: MonadIO m => HaystackAccess -> Identifier -> m Value
 haystackRead access identifier =
   let
     request =
@@ -101,12 +117,102 @@ haystackRead access identifier =
       <$> httpJSON request
 
 
-getNavId :: Value -> String
-getNavId = getIdField "navId"
+data HaystackTimes a =
+    Today
+  | Yesterday
+  | Date
+    {
+      startDate :: a
+    }
+  | DateRange
+    {
+      startDate :: a
+    , endDate   :: a
+    }
+  | TimeRange
+    {
+      startTime :: a
+    , endTime   :: a
+    }
+  | AfterTime
+    {
+      startTime :: a
+    }
+    deriving (Eq, Generic, Read, Show)
+
+instance FromJSON a => FromJSON (HaystackTimes a) where
+
+instance ToJSON a => ToJSON (HaystackTimes a) where
 
 
-getId :: Value -> String
-getId = getIdField "id"
+showHaystackTimes :: HaystackTimes String -> String
+showHaystackTimes Today         = "today"
+showHaystackTimes Yesterday     = "yesterday"
+showHaystackTimes Date{..}      = show   startDate
+showHaystackTimes DateRange{..} = show $ startDate ++ "," ++ endDate
+showHaystackTimes TimeRange{..} = show $ startTime ++ "," ++ endTime
+showHaystackTimes AfterTime{..} = show   startTime
+
+
+type History = FieldRec '[EpochSeconds, TimeStamp, Measurement]
+
+type EpochSeconds = '("Epoch Seconds", Integer)
+
+type TimeStamp    = '("Time Stamp"   , Val    )
+
+type Measurement  = '("Measurement"  , Val    )
+
+sEpochSeconds :: SField EpochSeconds
+sEpochSeconds = SField
+
+sTimeStamp :: SField TimeStamp
+sTimeStamp = SField
+
+sMeasurement :: SField Measurement
+sMeasurement = SField
+
+
+haystackHisRead :: MonadIO m => HaystackAccess -> Identifier -> HaystackTimes String -> m [History]
+haystackHisRead access identifier times =
+  let
+    request =
+        addRequestHeader "Accept" "application/json"
+      $ setTimes identifier times
+      $ haystackRequest access "/hisRead"
+  in
+    extractHistory
+      . getResponseBody
+      <$> httpJSON request
+
+
+setTimes :: Identifier -> HaystackTimes String -> Request -> Request
+setTimes identifier times =
+  setRequestQueryString
+    [
+      ("id"   , Just . BS.pack $ T.unpack identifier    )
+    , ("range", Just . BS.pack $ showHaystackTimes times)
+    ]
+
+
+extractHistory :: Value -> [History]
+extractHistory o =
+  [
+        sEpochSeconds =: toSecondsPOSIX (T.unpack ts)
+    <+> sTimeStamp    =: Discrete ts
+    <+> sMeasurement  =: Continuous val
+  |
+    o' <- extract "rows" o
+  , let ts  =                           T.drop 2 $ extract "ts" o'
+        val = read . takeWhile (/= ' ') . drop 2 $ extract "val" o'
+  ]
+   
+ 
+getNavId :: Value -> Identifier
+getNavId = T.pack . getIdField "navId"
+
+
+getId :: Value -> Identifier
+getId = T.pack . getIdField "id"
 
 
 getIdField :: String -> Value -> String

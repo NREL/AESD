@@ -1,5 +1,5 @@
 name:                cesds-records-haystack
-version:             0.2.10.0
+version:             0.2.11.0
 synopsis:            Haystack support for CESDS records API.
 description:         Haystack support for CESDS records API.
 license:             AllRightsReserved
@@ -26,14 +26,19 @@ library
   hs-source-dirs  : src
   exposed-modules : CESDS.Haystack
                     Data.Aeson.Util
+                    Data.Time.Util
   build-depends   : base >=4.8 && <4.9
                   , aeson
                   , aeson-pretty
                   , bytestring
                   , cesds-records
+                  , daft
                   , http-conduit
                   , mtl
+                  , scientific
                   , text
+                  , time
+                  , vinyl
                   , yaml
   default-language: Haskell2010
   ghc-options     : -Wall -O2
@@ -47,9 +52,13 @@ executable cesds-server
                   , aeson-pretty
                   , bytestring
                   , cesds-records
+                  , daft
                   , http-conduit
                   , mtl
+                  , scientific
                   , text
+                  , time
+                  , vinyl
                   , yaml
   buildable       : True               
   default-language: Haskell2010        
