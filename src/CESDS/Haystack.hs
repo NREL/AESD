@@ -8,6 +8,7 @@ module CESDS.Haystack (
 , haystackRequest
 , haystackNav
 , haystackNavTree
+, haystackRead
 , getNavId
 , getId
 ) where
@@ -57,6 +58,10 @@ setNavId Nothing           = id
 setNavId (Just identifier) = setRequestQueryString [("navId", Just $ pack identifier)]
 
 
+setId :: String -> Request -> Request
+setId identifier = setRequestQueryString [("id", Just $ pack identifier)]
+
+
 haystackNav :: MonadIO m => HaystackAccess -> Maybe String -> m [Value]
 haystackNav access identifier =
   let
@@ -82,6 +87,18 @@ haystackNavTree access identifier =
     fmap toJSON
       . mapM visit
       =<< haystackNav access identifier
+
+
+haystackRead :: MonadIO m => HaystackAccess -> String -> m Value
+haystackRead access identifier =
+  let
+    request =
+        addRequestHeader "Accept" "application/json"
+      $ setId identifier
+      $ haystackRequest access "/read"
+  in
+    getResponseBody
+      <$> httpJSON request
 
 
 getNavId :: Value -> String
