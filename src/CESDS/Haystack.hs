@@ -8,6 +8,8 @@ module CESDS.Haystack (
 , haystackRequest
 , nav
 , navTree
+, getNavId
+, getId
 ) where
 
 
