@@ -28,5 +28,5 @@ main =
   do
     [configurationFile] <- getArgs
     Just access <- decodeFile configurationFile
-    b <- navTree access navRoot
+    b <- haystackNavTree access navRoot
     putStrLn . LBS.unpack $ encodePretty b
