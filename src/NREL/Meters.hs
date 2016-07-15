@@ -9,7 +9,7 @@ module NREL.Meters (
 ) where
 
 
-import CESDS.Types (Identifier)
+import CESDS.Types.Variable (VariableIdentifier)
 import Control.Arrow ((***))
 import Data.Text (Text)
 import Data.Tuple (swap)
@@ -17,7 +17,7 @@ import Data.Tuple (swap)
 import qualified Data.Text as T (cons, splitAt, tail)
 
 
-nrelRSF2 :: [(Text, Identifier)]
+nrelRSF2 :: [(Text, VariableIdentifier)]
 nrelRSF2 =
   map (swap . (T.cons '@' *** T.tail) . T.splitAt 17)
     [
@@ -39,13 +39,13 @@ nrelRSF2 =
     ]
 
 
-navRoot :: Maybe Identifier
+navRoot :: Maybe VariableIdentifier
 navRoot = Nothing
 
 
-navRSF2 :: Maybe Identifier
+navRSF2 :: Maybe VariableIdentifier
 navRSF2 = Just "`equip:/1edb6bcb-7a9026e4`"
 
 
-idRSF2MainPower :: Identifier
+idRSF2MainPower :: VariableIdentifier
 idRSF2MainPower = "@1edb6d30-f64869a4"

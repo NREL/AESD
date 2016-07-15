@@ -1,19 +1,24 @@
 module Data.Time.Util (
-  toSecondsPOSIX
+  SecondsPOSIX
+, toSecondsPOSIX
 , fromSecondsPOSIX
 ) where
 
 
+import Control.Arrow (second)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime, utcTimeToPOSIXSeconds)
 import Data.Time.Format (defaultTimeLocale, formatTime, parseTimeOrError)
 import Data.Time.LocalTime (TimeZone, utcToZonedTime, zonedTimeToUTC)
+
+
+type SecondsPOSIX = Int
 
 
 theFormat :: String
 theFormat = "%FT%X%z %Z"
 
 
-toSecondsPOSIX :: String -> Int
+toSecondsPOSIX :: String -> SecondsPOSIX
 toSecondsPOSIX =
   truncate
     . utcTimeToPOSIXSeconds
@@ -21,9 +26,12 @@ toSecondsPOSIX =
     . parseTimeOrError False defaultTimeLocale theFormat
 
 
-fromSecondsPOSIX :: TimeZone -> Int -> String
+fromSecondsPOSIX :: TimeZone -> SecondsPOSIX -> String
 fromSecondsPOSIX zone =
-  formatTime defaultTimeLocale theFormat
+  uncurry (++)
+    . second (':' :)
+    . splitAt 22
+    . formatTime defaultTimeLocale theFormat
     . utcToZonedTime zone
     . posixSecondsToUTCTime
     . fromIntegral

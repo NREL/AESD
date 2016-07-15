@@ -7,8 +7,8 @@ module Main (
 ) where
 
 
-import CESDS.Haystack
-import CESDS.Haystack.Cache
+import CESDS.Haystack (HaystackAccess, haystackNavTree)
+import CESDS.Haystack.Cache (CacheManager(cache), makeCacheManager, refreshCacheManager)
 import CESDS.Types (Identifier)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Function (on)
@@ -34,14 +34,14 @@ main =
     [configurationFile] <- getArgs
     Just access <- decodeFile configurationFile
     let
-      sample = map snd [head nrelRSF2, nrelRSF2 !! 6]
-      start = "2016-07-14T19:09:00-06:00 Denver"
-    histories <- mapM (flip (haystackHisRead access) $ AfterTime start) sample
-    let
-      cache = foldl addHistory newCache $ zip sample histories
+      sample = [head nrelRSF2, nrelRSF2 !! 6]
+    cacheManager <- makeCacheManager access sample
+    print $ length $ M.toList $ cache cacheManager
+    cacheManager' <- refreshCacheManager cacheManager 1468560000
+    print $ length $ M.toList $ cache cacheManager'
     sequence_
       [
         print (k, sortBy (compare `on` fst) $ H.toList v)
       |
-        (k, v) <- M.toList cache
+        (k, v) <- M.toList $ cache cacheManager'
       ]

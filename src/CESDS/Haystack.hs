@@ -49,6 +49,7 @@ data HaystackAccess =
   , authorization :: Maybe (String, String)
   , secure        :: Maybe Bool
   , port          :: Maybe Int
+  , timeZone      :: (Int, Bool, String)
   }
     deriving (Eq, Generic, Read, Show)
 

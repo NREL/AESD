@@ -2,3 +2,4 @@ server       : skyspark-ops.nrel.gov
 root         : /api/nrel
 authorization: ["ds","4S2vhsCw185wd6515ocS4QJGXeRegiSS"]
 secure       : true
+timeZone     : [-360, True, Denver]
