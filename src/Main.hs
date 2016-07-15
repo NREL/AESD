@@ -14,7 +14,7 @@ import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Function (on)
 import Data.List (sortBy)
 import Data.Yaml (decodeFile)
-import NREL.Meters (nrelRSF2)
+import NREL.Meters (metersRSF2)
 import System.Environment (getArgs)
 
 import qualified Data.ByteString.Lazy.Char8 as LBS (unpack)
@@ -34,7 +34,7 @@ main =
     [configurationFile] <- getArgs
     Just access <- decodeFile configurationFile
     let
-      sample = [head nrelRSF2, nrelRSF2 !! 6]
+      sample = [head metersRSF2, metersRSF2 !! 6]
     cacheManager <- makeCacheManager access sample
     print $ length $ M.toList $ cache cacheManager
     cacheManager'   <- refreshCacheManager cacheManager  1468580000 (Just 1468585260)

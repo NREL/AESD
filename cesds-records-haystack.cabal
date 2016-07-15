@@ -1,5 +1,5 @@
 name:                cesds-records-haystack
-version:             0.2.14.0
+version:             0.2.15.0
 synopsis:            Haystack support for CESDS records API.
 description:         Haystack support for CESDS records API.
 license:             AllRightsReserved
