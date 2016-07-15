@@ -6,6 +6,7 @@ module CESDS.Haystack.Cache (
   CacheManager(..)
 , makeCacheManager
 , refreshCacheManager
+, extractForTimes
 , Cache
 , newCache
 , addHistory
@@ -14,7 +15,7 @@ module CESDS.Haystack.Cache (
 
 import CESDS.Haystack (HaystackAccess(..), HaystackTimes(..), History, haystackHisRead, sEpochSeconds, sMeasurement, sTimeStamp)
 import CESDS.Types (Identifier)
-import Control.Arrow (second)
+import Control.Arrow ((&&&), second)
 import Control.Monad.Except (MonadIO)
 import Data.Aeson.Types (Object, Value(Null, String), (.=))
 import Data.Daft.Vinyl.Derived ((<:))
@@ -57,6 +58,14 @@ extractTimeStamp o =
     T.unpack s
 
 
+extractForTimes :: Maybe SecondsPOSIX -> Maybe SecondsPOSIX -> CacheManager -> [Object]
+extractForTimes start finish CacheManager{..} =
+  M.elems
+    . snd 
+    . M.mapAccum (((id &&& id) .) . flip updateObject) prototype
+    $ subsetByTimes start finish cache
+
+
 fromSecondsPOSIX' :: HaystackAccess -> SecondsPOSIX -> String
 fromSecondsPOSIX' HaystackAccess{..} =
   let
@@ -89,6 +98,13 @@ refreshCacheManager' cacheManager@CacheManager{..} times =
 
 replaceCache :: CacheManager -> Cache -> CacheManager
 replaceCache cacheManager cache' = cacheManager {cache = cache'}
+
+
+subsetByTimes :: Maybe SecondsPOSIX -> Maybe SecondsPOSIX -> Cache -> Cache
+subsetByTimes Nothing      Nothing       = id
+subsetByTimes (Just start) Nothing       = snd . M.split (start - 1)
+subsetByTimes Nothing      (Just finish) =                             fst . M.split (finish + 1)
+subsetByTimes (Just start) (Just finish) = snd . M.split (start - 1) . fst . M.split (finish + 1)
 
 
 type Cache = M.IntMap Object

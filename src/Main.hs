@@ -8,7 +8,7 @@ module Main (
 
 
 import CESDS.Haystack (HaystackAccess, haystackNavTree)
-import CESDS.Haystack.Cache (CacheManager(cache), makeCacheManager, refreshCacheManager)
+import CESDS.Haystack.Cache (CacheManager(cache), extractForTimes, makeCacheManager, refreshCacheManager)
 import CESDS.Types (Identifier)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Function (on)
@@ -44,4 +44,15 @@ main =
         print (k, sortBy (compare `on` fst) $ H.toList v)
       |
         (k, v) <- M.toList $ cache cacheManager'
+      ]
+    let
+      x = extractForTimes (Just 1468581735) (Just 1468585260) cacheManager'
+--    x = extractForTimes (Just 1468591531) Nothing cacheManager'
+--    x = extractForTimes Nothing (Just 1468560817) cacheManager'
+--    x = extractForTimes Nothing Nothing cacheManager'
+    sequence_
+      [
+        print $ sortBy (compare `on` fst) $ H.toList row
+      |
+        row <- x
       ]
