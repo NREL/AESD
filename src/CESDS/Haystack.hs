@@ -156,11 +156,11 @@ showHaystackTimes AfterTime{..} = show   startTime
 
 type History = FieldRec '[EpochSeconds, TimeStamp, Measurement]
 
-type EpochSeconds = '("Epoch Seconds", Integer)
+type EpochSeconds = '("Epoch Seconds", Int)
 
-type TimeStamp    = '("Time Stamp"   , Val    )
+type TimeStamp    = '("Time Stamp"   , Val)
 
-type Measurement  = '("Measurement"  , Val    )
+type Measurement  = '("Measurement"  , Val)
 
 sEpochSeconds :: SField EpochSeconds
 sEpochSeconds = SField

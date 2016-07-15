@@ -13,7 +13,7 @@ theFormat :: String
 theFormat = "%FT%X%z %Z"
 
 
-toSecondsPOSIX :: String -> Integer
+toSecondsPOSIX :: String -> Int
 toSecondsPOSIX =
   truncate
     . utcTimeToPOSIXSeconds
@@ -21,11 +21,10 @@ toSecondsPOSIX =
     . parseTimeOrError False defaultTimeLocale theFormat
 
 
-
-fromSecondsPOSIX :: TimeZone -> Integer -> String
+fromSecondsPOSIX :: TimeZone -> Int -> String
 fromSecondsPOSIX zone =
   formatTime defaultTimeLocale theFormat
     . utcToZonedTime zone
     . posixSecondsToUTCTime
-    . fromInteger
+    . fromIntegral
   
