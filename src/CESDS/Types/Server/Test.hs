@@ -19,7 +19,7 @@ instance Arbitrary Server where
     Server
       <$> arbitrary `suchThat` (/= "")
       <*> frequency [(49, return "record_server"), (1, arbitrary)]
-      <*> frequency [(49, return 0              ), (1, arbitrary)]
+      <*> frequency [(49, return 1              ), (1, arbitrary)]
       <*> (nub <$> resize 4 arbitrary)
       <*> arbitrary
 
