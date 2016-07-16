@@ -33,7 +33,6 @@ import Data.Maybe (fromMaybe)
 import Data.Time.Util (toSecondsPOSIX)
 import Data.Vinyl ((<+>))
 import Data.Vinyl.Derived (FieldRec, SField(..), (=:))
-import Debug.Trace (trace)
 import GHC.Generics (Generic)
 import Network.HTTP.Simple (Request, addRequestHeader, defaultRequest, getResponseBody, httpJSON, setRequestBasicAuth, setRequestHost, setRequestPath, setRequestPort, setRequestQueryString, setRequestSecure)
 
@@ -98,7 +97,7 @@ haystackNavTree access identifier =
     visit parent =
       do
         let navId = getNavId parent
-        children <- haystackNavTree access . trace (T.unpack $ getId parent) $ Just navId
+        children <- haystackNavTree access $ Just navId
         return $ object ["entity" .= parent, "children" .= children]
   in
     fmap toJSON

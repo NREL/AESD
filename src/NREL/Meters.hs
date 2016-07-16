@@ -63,7 +63,7 @@ modelRSF2 =
                                      {
                                        label      = "Time Stamp"
                                      , shortLabel = Just "Time"
-                                     , color      = Just $ read "#FF000"
+                                     , color      = Nothing
                                      }
                     , domain       = Set []
                     , units        = Nothing
@@ -76,7 +76,7 @@ modelRSF2 =
                                      {
                                        label      = "POSIX Seconds"
                                      , shortLabel = Just "Seconds"
-                                     , color      = Just $ read "#00FF00"
+                                     , color      = Nothing
                                      }
                     , domain       = Interval (Just 315558000) Nothing
                     , units        = Just $ Units 0 0 1 0 0 0 0 0 1
@@ -90,7 +90,7 @@ modelRSF2 =
                                      {
                                        label      = label'
                                      , shortLabel = Just identifier'
-                                     , color      = Just $ read "#0000FF"
+                                     , color      = Nothing
                                      }
                     , domain       = Interval Nothing Nothing
                     , units        = Just $ Units 2 1 (-3) 0 0 0 0 0 1000

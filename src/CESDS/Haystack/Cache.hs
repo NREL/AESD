@@ -4,10 +4,12 @@
 
 module CESDS.Haystack.Cache (
   CacheManager(..)
+, clearCache
 , makeCacheManager
 , refreshExtractCacheManager
 , refreshCacheManager
 , extractForTimes
+, timeKeys
 , Cache
 , newCache
 , addHistory
@@ -15,17 +17,16 @@ module CESDS.Haystack.Cache (
 
 
 import CESDS.Haystack (HaystackAccess(..), HaystackTimes(..), History, haystackHisRead, sEpochSeconds, sMeasurement, sTimeStamp)
-import CESDS.Types (Identifier)
+import CESDS.Types (Identifier, Val(Discrete))
+import CESDS.Types.Variable (VariableIdentifier)
 import Control.Arrow ((&&&), second)
 import Control.Monad (foldM, guard)
 import Control.Monad.Except (MonadIO)
-import Data.Aeson.Types (Object, Value(Null, String), (.=))
 import Data.Daft.Vinyl.Derived ((<:))
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Text (Text)
 import Data.Time.LocalTime (TimeZone(..))
 import Data.Time.Util (SecondsPOSIX, fromSecondsPOSIX)
-import Debug.Trace (trace)
 
 import qualified Data.HashMap.Strict as H
 import qualified Data.IntMap.Strict as M
@@ -38,9 +39,14 @@ data CacheManager =
     access    :: HaystackAccess
   , entities  :: [Identifier]
   , cache     :: Cache
-  , prototype :: Object
+  , prototype :: Object'
   }
     deriving (Eq, Read, Show)
+
+
+clearCache :: CacheManager -> CacheManager
+clearCache cacheManager =
+  cacheManager {cache = M.empty}
 
 
 makeCacheManager :: MonadIO m => HaystackAccess -> [(Text, Identifier)] -> m CacheManager
@@ -48,23 +54,26 @@ makeCacheManager access entities' =
   let
     entities  = map snd entities'
     cache     = newCache
-    prototype = H.fromList $ map (.= Null) entities
+    prototype = H.empty -- FIXME
   in
     return CacheManager{..}
---  refreshCacheManager' CacheManager{..} Today
 
 
-extractTimeStamp :: Object -> String
+timeKeys :: CacheManager -> [SecondsPOSIX]
+timeKeys CacheManager{..} = M.keys cache
+
+
+extractTimeStamp :: Object' -> String
 extractTimeStamp o =
   let
-    String s = o H.! "Time Stamp"
+    Discrete s = o H.! "Time Stamp"
   in
     T.unpack s
 
 
-extractForTimes :: Maybe SecondsPOSIX -> Maybe SecondsPOSIX -> CacheManager -> [Object]
+extractForTimes :: Maybe SecondsPOSIX -> Maybe SecondsPOSIX -> CacheManager -> [(SecondsPOSIX, Object')]
 extractForTimes start finish CacheManager{..} =
-  M.elems
+  M.toList
     . snd 
     . M.mapAccum (((id &&& id) .) . flip updateObject) prototype
     $ subsetByTimes start finish cache
@@ -78,11 +87,13 @@ fromSecondsPOSIX' HaystackAccess{..} =
     fromSecondsPOSIX TimeZone{..}
 
 
-refreshExtractCacheManager :: MonadIO m => CacheManager -> SecondsPOSIX -> Maybe SecondsPOSIX -> m (CacheManager, [Object])
-refreshExtractCacheManager cacheManager startRequest finishRequest =
+refreshExtractCacheManager :: MonadIO m => CacheManager -> Maybe SecondsPOSIX -> Maybe SecondsPOSIX -> m (CacheManager, [(SecondsPOSIX, Object')])
+refreshExtractCacheManager cacheManager@CacheManager{..} startRequest finishRequest =
   do
-    cacheManager' <- refreshCacheManager cacheManager startRequest finishRequest
-    return (cacheManager', extractForTimes (Just startRequest) finishRequest cacheManager')
+    let
+      startRequest' = fromMaybe (fst $ M.findMin cache) startRequest
+    cacheManager' <- refreshCacheManager cacheManager startRequest' finishRequest
+    return (cacheManager', extractForTimes startRequest finishRequest cacheManager')
 
 
 refreshCacheManager :: MonadIO m => CacheManager -> SecondsPOSIX -> Maybe SecondsPOSIX -> m CacheManager
@@ -95,7 +106,7 @@ refreshCacheManager cacheManager@CacheManager{..} startRequest maybeFinishReques
     (startCache , startCache' ) = convert' $ M.findMin cache
     (finishCache, finishCache') = convert' $ M.findMax cache
     intervals
-      | M.null cache = [maybe AfterTime (flip TimeRange) maybeFinishRequest' $ startRequest']
+      | M.null cache = [maybe AfterTime (flip TimeRange) maybeFinishRequest' startRequest']
       | otherwise    = catMaybes
                        [
                          do
@@ -106,19 +117,7 @@ refreshCacheManager cacheManager@CacheManager{..} startRequest maybeFinishReques
                            return . maybe AfterTime (flip TimeRange) maybeFinishRequest' $ finishCache'
                        ]
   in
-    trace (show intervals) $ foldM refreshCacheManager' cacheManager intervals
-{-
-  do
-    let
-      cacheMin = second extractTimeStamp       $ M.findMin cache
-      cacheMax =        extractTimeStamp . snd $ M.findMax cache
-    cacheManager' <- refreshCacheManager' cacheManager $ AfterTime cacheMax
-    if startTime >= fst cacheMin
-      then return cacheManager'
-      else
-        refreshCacheManager' cacheManager'
-          $ TimeRange (fromSecondsPOSIX' access startTime) (snd cacheMin)
--}
+    foldM refreshCacheManager' cacheManager intervals
 
 
 refreshCacheManager' :: MonadIO m => CacheManager -> HaystackTimes String -> m CacheManager
@@ -140,7 +139,10 @@ subsetByTimes Nothing      (Just finish) =                             fst . M.s
 subsetByTimes (Just start) (Just finish) = snd . M.split (start - 1) . fst . M.split (finish + 1)
 
 
-type Cache = M.IntMap Object
+type Object' = H.HashMap VariableIdentifier Val
+
+
+type Cache = M.IntMap Object'
 
 
 newCache :: Cache
@@ -151,14 +153,14 @@ asCache :: Identifier -> [History] -> Cache
 asCache = (M.fromList .) . map  . asObject
 
 
-asObject :: Identifier -> History -> (Int, Object)
+asObject :: Identifier -> History -> (Int, Object')
 asObject identifier row =
   (
     sEpochSeconds <: row
   , H.fromList 
     [
-      "Time Stamp" .= sTimeStamp   <: row
-    , identifier   .= sMeasurement <: row
+      ("Time Stamp", sTimeStamp   <: row)
+    , (identifier  , sMeasurement <: row)
     ]
   )
 
@@ -171,5 +173,5 @@ updateCache :: Cache -> Cache -> Cache
 updateCache = M.unionWith updateObject
 
 
-updateObject :: Object -> Object -> Object
+updateObject :: Object' -> Object' -> Object'
 updateObject = H.union

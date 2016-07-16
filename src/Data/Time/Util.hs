@@ -2,10 +2,12 @@ module Data.Time.Util (
   SecondsPOSIX
 , toSecondsPOSIX
 , fromSecondsPOSIX
+, getSecondsPOSIX
 ) where
 
 
 import Control.Arrow (second)
+import Data.Time.Clock (getCurrentTime)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime, utcTimeToPOSIXSeconds)
 import Data.Time.Format (defaultTimeLocale, formatTime, parseTimeOrError)
 import Data.Time.LocalTime (TimeZone, utcToZonedTime, zonedTimeToUTC)
@@ -35,4 +37,10 @@ fromSecondsPOSIX zone =
     . utcToZonedTime zone
     . posixSecondsToUTCTime
     . fromIntegral
-  
+
+ 
+getSecondsPOSIX :: IO SecondsPOSIX
+getSecondsPOSIX =
+  truncate
+    . utcTimeToPOSIXSeconds
+    <$> getCurrentTime
