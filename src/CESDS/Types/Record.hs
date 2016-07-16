@@ -8,13 +8,10 @@ module CESDS.Types.Record (
   RecordIdentifier
 , Record(..)
 , validateRecord
-, RecordList(..)
-, makeRecordList
-, validateRecordList
 ) where
 
 
-import CESDS.Types (Identifier, Val, object')
+import CESDS.Types (Identifier, Val)
 import CESDS.Types.Variable (Variable, VariableIdentifier, canHaveVal, hasVariable)
 import Control.Arrow (second)
 import Control.Monad.Except (MonadError)
@@ -71,38 +68,3 @@ validateRecord variables Record{..} =
       |
         (variable, value) <- unRecord
       ]
-
-
-data RecordList =
-  RecordList
-  {
-    recordCount :: Int
-  , records     :: [Record]
-  }
-    deriving (Eq, Generic, Read, Show)
-
-instance FromJSON RecordList where
-  parseJSON =
-    withObject "RECORD_LIST" $ \o ->
-      do
-        recordCount <- o .: "count"
-        records     <- o .: "records"
-        return RecordList{..}
-
-instance ToJSON RecordList where
-  toJSON RecordList{..} = object' ["count" .= recordCount, "records" .= records]
-
-
-makeRecordList :: [Record] -> RecordList
-makeRecordList records =
-  let
-    recordCount = length records
-  in
-    RecordList{..}
-
-
-validateRecordList :: (IsString e, MonadError e m) => [Variable] -> RecordList -> m ()
-validateRecordList variables RecordList{..} =
-  do
-    assert "record count does not match number of records" $ recordCount == length records
-    mapM_ (validateRecord variables) records

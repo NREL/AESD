@@ -34,14 +34,14 @@ import Network.Wai.Handler.Warp (Port, {- setOnException, -} setOnExceptionRespo
 import Web.Scotty.Trans (ActionT, Parsable, ScottyT, Options(..), body, defaultHandler, delete, get, json, notFound, param, params, post, raise, scottyOptsT, status, text)
 
 import qualified CESDS.Types as CESDS (Generation, Tags(..))
-import qualified CESDS.Types.Bookmark as CESDS (Bookmark, BookmarkIdentifier, BookmarkList)
+import qualified CESDS.Types.Bookmark as CESDS (Bookmark, BookmarkIdentifier)
 import qualified CESDS.Types.Command as CESDS (Command, Result)
-import qualified CESDS.Types.Filter as CESDS (Filter, FilterIdentifier, FilterList)
+import qualified CESDS.Types.Filter as CESDS (Filter, FilterIdentifier)
 import qualified CESDS.Types.Model as CESDS (Model, ModelIdentifier)
-import qualified CESDS.Types.Record as CESDS (Record, RecordIdentifier, RecordList)
+import qualified CESDS.Types.Record as CESDS (Record, RecordIdentifier)
 import qualified CESDS.Types.Server as CESDS (Server)
 import qualified CESDS.Types.Variable as CESDS (VariableIdentifier)
-import qualified CESDS.Types.Work as CESDS (Submission, SubmissionResult, Work, WorkIdentifier, WorkList)
+import qualified CESDS.Types.Work as CESDS (Submission, SubmissionResult, Work, WorkIdentifier)
 
 import qualified Data.ByteString.Lazy.Char8 as LBS (pack)
 import qualified Data.Text as T (pack)
@@ -57,17 +57,17 @@ data Service s =
   , getModel        :: CESDS.ModelIdentifier -> ServerM s CESDS.Model
   , postModel       :: CESDS.Command -> CESDS.ModelIdentifier -> ServerM s CESDS.Result
   , getRecord       :: RecordFilter -> CESDS.ModelIdentifier -> ServerM s CESDS.Record
-  , getRecords      :: RecordFilter -> CESDS.ModelIdentifier -> ServerM s CESDS.RecordList
+  , getRecords      :: RecordFilter -> CESDS.ModelIdentifier -> ServerM s [CESDS.Record]
   , postRecord      :: CESDS.Record -> CESDS.ModelIdentifier -> ServerM s ()
   , getWork         :: WorkFilter -> CESDS.ModelIdentifier -> ServerM s CESDS.Work
-  , getWorks        :: WorkFilter -> CESDS.ModelIdentifier -> ServerM s CESDS.WorkList
+  , getWorks        :: WorkFilter -> CESDS.ModelIdentifier -> ServerM s [CESDS.Work]
   , postWork        :: CESDS.Submission -> CESDS.ModelIdentifier -> ServerM s CESDS.SubmissionResult
   , deleteWork      :: WorkFilter -> CESDS.ModelIdentifier -> ServerM s ()
-  , getBookmarkList :: CESDS.Tags -> CESDS.ModelIdentifier -> ServerM s CESDS.BookmarkList
+  , getBookmarkList :: CESDS.Tags -> CESDS.ModelIdentifier -> ServerM s [CESDS.Bookmark]
   , getBookmark     :: CESDS.BookmarkIdentifier -> CESDS.ModelIdentifier -> ServerM s CESDS.Bookmark
   , postBookmark    :: CESDS.Bookmark -> CESDS.ModelIdentifier -> ServerM s CESDS.Bookmark
   , deleteBookmark  :: CESDS.BookmarkIdentifier -> CESDS.ModelIdentifier -> ServerM s ()
-  , getFilterList   :: CESDS.Tags -> CESDS.ModelIdentifier -> ServerM s CESDS.FilterList
+  , getFilterList   :: CESDS.Tags -> CESDS.ModelIdentifier -> ServerM s [CESDS.Filter]
   , getFilter       :: CESDS.FilterIdentifier -> CESDS.ModelIdentifier -> ServerM s CESDS.Filter
   , postFilter      :: CESDS.Filter -> CESDS.ModelIdentifier -> ServerM s CESDS.Filter
   , deleteFilter    :: CESDS.FilterIdentifier -> CESDS.ModelIdentifier -> ServerM s ()

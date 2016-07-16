@@ -22,7 +22,7 @@ import CESDS.Types.Record.Test (arbitraryRecord)
 import CESDS.Types.Server (Server, validateServer)
 import CESDS.Types.Server.Test ()
 import CESDS.Types.Variable.Test ()
-import CESDS.Types.Work (Submission, Work, maybeRecordIdentifier, validateSubmission, validateWorkList)
+import CESDS.Types.Work (Submission, Work, maybeRecordIdentifier, validateSubmission, validateWorks)
 import CESDS.Types.Work.Test (arbitrarySubmission)
 import Control.Arrow (second)
 import Control.Monad (foldM)
@@ -36,13 +36,13 @@ import Data.Text (pack)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
 import Test.QuickCheck.Gen (Gen, choose, frequency, generate, listOf, suchThat)
 
-import qualified CESDS.Types.Bookmark as Bookmark (Bookmark(..), makeBookmarkList)
+import qualified CESDS.Types.Bookmark as Bookmark (Bookmark(..))
 import qualified CESDS.Types.Command as Command (Command(..), Result(..))
-import qualified CESDS.Types.Filter as Filter (Filter(..), makeFilterList)
+import qualified CESDS.Types.Filter as Filter (Filter(..))
 import qualified CESDS.Types.Model as Model (Model(..))
-import qualified CESDS.Types.Record as Record (Record(..), makeRecordList)
+import qualified CESDS.Types.Record as Record (Record(..))
 import qualified CESDS.Types.Server as Server (Server(..))
-import qualified CESDS.Types.Work as Work (Submission(..), SubmissionResult(..), Work(..), hasStatus, isSuccess, makeWorkList)
+import qualified CESDS.Types.Work as Work (Submission(..), SubmissionResult(..), Work(..), hasStatus, isSuccess)
 
 
 data ServerState =
@@ -98,7 +98,7 @@ validateModelState ModelState{..} =
   do
     validateModel [] model
 --  mapM_ (validateSubmission model (map recordKey works)) $ map submission works
-    validateWorkList . Work.makeWorkList $ map work works
+    validateWorks $ map work works
     let
       recordIdentifiers = map recordIdentifier works
     assert "inconsistent record count" $ Model.recordCount model == length recordIdentifiers
@@ -352,7 +352,7 @@ service =
         modifysIO ageModels
         modelState' <- gets $ lookup modelIdentifier . models
         maybeNotFound "model"
-          (return . Record.makeRecordList . map record . filterRecordState recordFilter . works)
+          (return . map record . filterRecordState recordFilter . works)
           modelState'
     postRecord _record modelIdentifier =
       do
@@ -375,7 +375,7 @@ service =
         modifysIO ageModels
         modelState' <- gets $ lookup modelIdentifier . models
         maybeNotFound "model"
-          (return . Work.makeWorkList . map work . filterWorkState workFilter . works)
+          (return . map work . filterWorkState workFilter . works)
           modelState'
     postWork submission modelIdentifier =
       do
@@ -393,7 +393,7 @@ service =
       do
         modelState' <- gets $ lookup modelIdentifier . models
         maybeNotFound "model"
-          (return . Bookmark.makeBookmarkList . map (\b -> b {Bookmark.records = Nothing}) . filterBookmarks tags Nothing . bookmarks)
+          (return . map (\b -> b {Bookmark.records = Nothing}) . filterBookmarks tags Nothing . bookmarks)
           modelState'
     getBookmark bookmarkIdentifier modelIdentifier =
       do
@@ -420,7 +420,7 @@ service =
       do
         modelState' <- gets $ lookup modelIdentifier . models
         maybeNotFound "model"
-          (return . Filter.makeFilterList . map (\f -> f {Filter.expression = Nothing}) . filterFilters tags Nothing . filters)
+          (return . map (\f -> f {Filter.expression = Nothing}) . filterFilters tags Nothing . filters)
           modelState'
     getFilter filterIdentifier modelIdentifier =
       do

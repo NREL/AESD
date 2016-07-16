@@ -8,9 +8,6 @@ module CESDS.Types.Bookmark (
 , Bookmark(..)
 , validateBookmark
 , validateBookmarks
-, BookmarkList(..)
-, makeBookmarkList
-, validateBookmarkList
 ) where
 
 
@@ -20,7 +17,7 @@ import Control.Monad.Except (MonadError)
 import Control.Monad.Except.Util (assert)
 import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
 import Data.List.Util (deleteOn, hasSubset, noDuplicates, notDuplicatedIn)
-import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Maybe (fromMaybe)
 import Data.String (IsString)
 import Data.Text (Text)
 import GHC.Generics (Generic)
@@ -95,39 +92,3 @@ validateBookmarks recordIdentifiers bookmarks =
       |
         bookmark <-  bookmarks
       ]
-
-
-data BookmarkList =
-  BookmarkList
-  {
-    count     :: Int
-  , bookmarks :: [BookmarkIdentifier]
-  }
-    deriving (Eq, Generic, Read, Show)
-
-instance FromJSON BookmarkList where
-  parseJSON =
-    withObject "BOOKMARK_META_LIST" $ \o ->
-      do
-        count <- o .: "count"
-        bookmarks <- o .: "bookmark_ids"
-        return BookmarkList{..}
-
-instance ToJSON BookmarkList where
-  toJSON BookmarkList{..} = object' ["count" .= count, "bookmark_ids" .= bookmarks]
-
-
-makeBookmarkList :: [Bookmark] -> BookmarkList
-makeBookmarkList items =
-  let
-    bookmarks = mapMaybe identifier items
-    count = length bookmarks
-  in
-    BookmarkList{..}
-
-
-validateBookmarkList :: (IsString e, MonadError e m) => BookmarkList -> m ()
-validateBookmarkList BookmarkList{..}  =
-  do
-    assert "bookmark count does not match number of bookmarks" $ count == length bookmarks
-    assert "duplicate bookmark identifiers" $ noDuplicates bookmarks

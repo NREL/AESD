@@ -8,9 +8,6 @@ module CESDS.Types.Filter (
 , Filter(..)
 , validateFilters
 , validateFilter
-, FilterList(..)
-, makeFilterList
-, validateFilterList
 , SelectionExpression(..)
 , validateSelectionExpression
 ) where
@@ -24,7 +21,6 @@ import Control.Monad.Except (MonadError)
 import Control.Monad.Except.Util (assert)
 import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
 import Data.List.Util (deleteOn, noDuplicates, notDuplicatedIn)
-import Data.Maybe (mapMaybe)
 import Data.String (IsString)
 import Data.Text (Text)
 import GHC.Generics (Generic)
@@ -102,41 +98,6 @@ validateFilter filters variables filter' =
       (return ())
       (validateSelectionExpression variables)
       $ expression filter'
-
-
-data FilterList =
-  FilterList
-  {
-    count   :: Int
-  , filters :: [FilterIdentifier]
-  }
-    deriving (Eq, Generic, Read, Show)
-
-instance FromJSON FilterList where
-  parseJSON =
-    withObject "FILTER_META_LIST" $ \o ->
-      do
-        count   <- o .: "count"
-        filters <- o .: "filter_ids"
-        return FilterList{..}
-
-instance ToJSON FilterList where
-  toJSON FilterList{..} = object' ["count" .= count, "filter_ids" .= filters]
-
-
-makeFilterList :: [Filter] -> FilterList
-makeFilterList items =
-  let
-    filters = mapMaybe identifier items
-    count = length filters
-  in
-    FilterList{..}
-
-validateFilterList :: (IsString e, MonadError e m) => FilterList -> m ()
-validateFilterList FilterList{..} =
-  do
-    assert "filter count does not match number of filters" $ count == length filters
-    assert "duplicate filter identifiers" $ noDuplicates filters
 
 
 data SelectionExpression =

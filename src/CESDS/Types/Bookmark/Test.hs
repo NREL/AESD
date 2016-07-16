@@ -9,7 +9,7 @@ module CESDS.Types.Bookmark.Test (
 
 
 import CESDS.Types.Test ()
-import CESDS.Types.Bookmark (Bookmark(..), BookmarkIdentifier, BookmarkList(..))
+import CESDS.Types.Bookmark (Bookmark(..), BookmarkIdentifier)
 import CESDS.Types.Record (RecordIdentifier)
 import Data.List (nub)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
@@ -30,11 +30,3 @@ arbitraryBookmark veto recordIdentifiers =
 
 instance Arbitrary Bookmark where
   arbitrary = arbitraryBookmark [] =<< arbitrary
-
-
-instance Arbitrary BookmarkList where
-  arbitrary =
-    do
-      bookmarks <- nub <$> resize 4 arbitrary
-      let count = length bookmarks
-      return BookmarkList{..}

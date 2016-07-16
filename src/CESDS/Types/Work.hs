@@ -12,9 +12,7 @@ module CESDS.Types.Work (
 , validateSubmission
 , SubmissionResult(..)
 , Work(..)
-, WorkList(..)
-, makeWorkList
-, validateWorkList
+, validateWorks
 , maybeRecordIdentifier
 , hasStatus
 , isSuccess
@@ -223,41 +221,6 @@ instance ToJSON Work where
       ]
 
 
-data WorkList =
-  WorkList
-  {
-    count  :: Int
-  , statuses :: [Work]
-  }
-    deriving (Eq, Generic, Read, Show)
-
-instance FromJSON WorkList where
-  parseJSON =
-    withObject "WORK_ITEM_LIST" $ \o ->
-      do
-        count    <- o .: "count"
-        statuses <- o .: "status"
-        return WorkList{..}
-
-instance ToJSON WorkList where
-  toJSON WorkList{..} = object' ["count" .= count, "status" .= statuses]
-
-
-makeWorkList :: [Work] -> WorkList
-makeWorkList statuses =
-  let
-    count = length statuses
-  in
-    WorkList{..}
-
-
-validateWorkList :: (IsString e, MonadError e m) => WorkList -> m ()
-validateWorkList WorkList{..} =
-  do
-    assert "duplicate work identifiers" $ noDuplicates $ map workIdentifier statuses
-    assert "duplicate record identifiers in work" $ noDuplicates . catMaybes $ map maybeRecordIdentifier statuses
-
-
 maybeRecordIdentifier :: Work -> Maybe RecordIdentifier
 maybeRecordIdentifier Success{..} = Just recordIdentifier
 maybeRecordIdentifier _           = Nothing
@@ -274,3 +237,10 @@ hasStatus _         _           = False
 isSuccess :: Work -> Bool
 isSuccess Success{} = True
 isSuccess _         = False
+
+
+validateWorks :: (IsString e, MonadError e m) => [Work] -> m ()
+validateWorks statuses =
+  do
+    assert "duplicate work identifiers" $ noDuplicates $ map workIdentifier statuses
+    assert "duplicate record identifiers in work" $ noDuplicates . catMaybes $ map maybeRecordIdentifier statuses

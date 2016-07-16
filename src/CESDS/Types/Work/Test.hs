@@ -13,7 +13,7 @@ import CESDS.Types.Record.Test (arbitraryRecord)
 import CESDS.Types.Test (arbitraryPositive)
 import CESDS.Types.Variable (Variable)
 import CESDS.Types.Variable.Test ()
-import CESDS.Types.Work (Submission(..), SubmissionResult(..), Work(..), WorkList(..), makeWorkList)
+import CESDS.Types.Work (Submission(..), SubmissionResult(..), Work(..))
 import Data.List ((\\))
 import Data.List.Util (nubOn)
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
@@ -58,7 +58,3 @@ instance Arbitrary Work where
       , Success <$> arbitrary <*> arbitrary
       , Failure <$> arbitrary <*> arbitrary
       ]
-
-
-instance Arbitrary WorkList where
-  arbitrary = makeWorkList <$> resize 4 arbitrary

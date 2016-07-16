@@ -9,22 +9,22 @@ module Main (
 
 
 import CESDS.Types (Color)
-import CESDS.Types.Bookmark (Bookmark, BookmarkList)
+import CESDS.Types.Bookmark (Bookmark)
 import CESDS.Types.Bookmark.Test ()
 import CESDS.Types.Command (Command, Result)
 import CESDS.Types.Command.Test ()
-import CESDS.Types.Filter (Filter, FilterList, SelectionExpression)
+import CESDS.Types.Filter (Filter, SelectionExpression)
 import CESDS.Types.Filter.Test ()
 import CESDS.Types.Model (Model)
 import CESDS.Types.Model.Test ()
-import CESDS.Types.Record (Record, RecordList)
+import CESDS.Types.Record (Record)
 import CESDS.Types.Record.Test ()
 import CESDS.Types.Server (Server, Status)
 import CESDS.Types.Server.Test ()
 import CESDS.Types.Test ()
 import CESDS.Types.Variable (Display, Domain, Units, Variable)
 import CESDS.Types.Variable.Test ()
-import CESDS.Types.Work (Submission, SubmissionResult, Work, WorkList)
+import CESDS.Types.Work (Submission, SubmissionResult, Work)
 import CESDS.Types.Work.Test ()
 import Control.Arrow ((&&&))
 import Control.Monad (unless)
@@ -100,10 +100,6 @@ prop_record_json :: Record -> Property
 prop_record_json = label "Record JSON" . checkEncodeDecode
 
 
-prop_record_list_json :: RecordList -> Property
-prop_record_list_json = label "RecordList JSON" . checkEncodeDecode
-
-
 prop_submission_json :: Submission -> Property
 prop_submission_json = label "Submission JSON" . checkEncodeDecode
 
@@ -116,16 +112,8 @@ prop_work_json :: Work -> Property
 prop_work_json = label "Work JSON" . checkEncodeDecode
 
 
-prop_work_list_json :: WorkList -> Property
-prop_work_list_json = label "WorkList JSON" . checkEncodeDecode
-
-
 prop_bookmark_json :: Bookmark -> Property
 prop_bookmark_json = label "Bookmark JSON" . checkEncodeDecode
-
-
-prop_bookmark_list_json :: BookmarkList -> Property
-prop_bookmark_list_json = label "BookmarkList JSON" . checkEncodeDecode
 
 
 prop_selection_json :: SelectionExpression -> Property
@@ -134,10 +122,6 @@ prop_selection_json = label "SelectionExpression JSON" . checkEncodeDecode
 
 prop_filter_json :: Filter -> Property
 prop_filter_json = label "Filter JSON" . checkEncodeDecode
-
-
-prop_filter_list_json :: FilterList -> Property
-prop_filter_list_json = label "FilterList JSON" . checkEncodeDecode
 
 
 main :: IO ()
@@ -160,15 +144,11 @@ main =
         , quickCheckResult prop_result_json
         , quickCheckResult prop_command_json
         , quickCheckResult prop_record_json
-        , quickCheckResult prop_record_list_json
         , quickCheckResult prop_submission_json
         , quickCheckResult prop_submission_result_json
         , quickCheckResult prop_work_json
-        , quickCheckResult prop_work_list_json
         , quickCheckResult prop_bookmark_json
-        , quickCheckResult prop_bookmark_list_json
         , quickCheckResult prop_selection_json
         , quickCheckResult prop_filter_json
-        , quickCheckResult prop_filter_list_json
         ]
     unless (all isSuccess results) exitFailure
