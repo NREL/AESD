@@ -17,7 +17,7 @@ module CESDS.Haystack.Cache (
 
 
 import CESDS.Haystack (HaystackAccess(..), HaystackTimes(..), History, haystackHisRead, sEpochSeconds, sMeasurement, sTimeStamp)
-import CESDS.Types (Identifier, Val(Discrete))
+import CESDS.Types (Identifier, Val(..))
 import CESDS.Types.Variable (VariableIdentifier)
 import Control.Arrow ((&&&), second)
 import Control.Monad (foldM, guard)
@@ -161,8 +161,9 @@ asObject identifier row =
     sEpochSeconds <: row
   , H.fromList 
     [
-      ("Time Stamp", sTimeStamp   <: row)
-    , (identifier  , sMeasurement <: row)
+      ("time"      ,                            sTimeStamp    <: row)
+    , ("epoch"     , Continuous .fromIntegral $ sEpochSeconds <: row)
+    , (identifier  ,                            sMeasurement  <: row)
     ]
   )
 
