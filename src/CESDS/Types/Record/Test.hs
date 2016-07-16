@@ -20,13 +20,17 @@ import Test.QuickCheck.Gen (Gen, resize)
 
 arbitraryRecord :: [Variable] -> Gen Record 
 arbitraryRecord variables =
-  Record <$> sequence
-    [
-      (identifier, ) <$> arbitraryVal domain
-    |
-      Variable{..} <- variables
-    ]
+  do
+    recordIdentifier <- arbitrary
+    recordValues <-
+       sequence
+         [
+           (identifier, ) <$> arbitraryVal domain
+         |
+           Variable{..} <- variables
+         ]
+    return Record{..}
 
 
 instance Arbitrary Record where
-  arbitrary = Record . nubOn fst <$> resize 4 arbitrary
+  arbitrary = arbitraryRecord =<< nubOn identifier <$> resize 4 (arbitrary :: Gen [Variable])

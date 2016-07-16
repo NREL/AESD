@@ -176,12 +176,15 @@ addArbitraryWork submission@Work.Submission{..} modelState@ModelState{..} =
     let
       record =
         Record.Record
-          [
-            (k , fromMaybe v $ k `lookup` explicitVariables)
-          |
-            (k, v) <- Record.unRecord record'
-          ]
-      recordKey = valAsString . snd . fromJust . find ((== primaryKey) . fst) $ Record.unRecord record
+        {
+          recordIdentifier = recordIdentifier
+        , recordValues = [
+                           (k , fromMaybe v $ k `lookup` explicitVariables)
+                         |
+                           (k, v) <- Record.recordValues record'
+                         ]
+        }
+      recordKey = valAsString . snd . fromJust . find ((== primaryKey) . fst) $ Record.recordValues record
     let
       w = WorkState{..}
       fWorkIdentifier = Work.workIdentifier . Main.work

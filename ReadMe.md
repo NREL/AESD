@@ -9,7 +9,7 @@ This [Haskell package](cesds-records.cabal) contains . . .
 3.  [automated tests](src/TestJSON.hs) for the library, and
 4.  [an example server](src/Main.hs) that implements the REST API and provides random, but consistent data and validates input.
 
-This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/ea52ec71c809996206df5657fd0f0e3d931f25a5, but see the note in the [change log](ChangeLog.md).
+This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/8c3b1aaca522cf26ec466cf9e7177e20b7ebdcb4, but see the note in the [change log](ChangeLog.md).
 
 ## Example usage of CESDS API
 
@@ -22,7 +22,7 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/ea5
 	  "server_id":"2LpkwQF386kJli07eBkbQMl3FCom",
 	  "server_type":"record_server",
 	  "models":["w","Q"],
-	  "version":0
+	  "version":1
 	}
 
 ### Attempt a request with malformed JSON
@@ -99,9 +99,9 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/ea5
 	{
 	  "count":3,
 	  "records":[
-	    {"variables":{"9hn":"E6O","2":"Ql6h","H9Bf":"7tY","EwHT":"SBm"}},
-	    {"variables":{"9hn":"bNE3","2":"Ql6h","H9Bf":"7tY","EwHT":"Tr"}},
-	    {"variables":{"9hn":"1Vcv","2":"Ql6h","H9Bf":"YPdZ","EwHT":"Tr"}}
+	    {"id":"uno","variables":{"9hn":"E6O","2":"Ql6h","H9Bf":"7tY","EwHT":"SBm"}},
+	    {"id":"duo","variables":{"9hn":"bNE3","2":"Ql6h","H9Bf":"7tY","EwHT":"Tr"}},
+	    {"id":"tre","variables":{"9hn":"1Vcv","2":"Ql6h","H9Bf":"YPdZ","EwHT":"Tr"}}
 	  ]
 	}
 
@@ -123,39 +123,30 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/ea5
 
 	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/work'
 	
-	{
-	  "status":[
-	    {"status":"pending","work_id":"GYIs2"},
-	    {"status":"running","work_id":"zGuZx4tzHalWLvmNOOsSTMqsc"},
-	    {"status":"success","work_id":"IC5P65YZEWaDoCz","result_id":"V5efDKAU8f7"},
-	    {"status":"success","work_id":"eUTB6l5JXkQYOHei9","result_id":"hA4fPQQEpLKbvwNW5"}
-	  ],
-	  "count":4
-	}
+	[
+	  {"status":"pending","work_id":"GYIs2"},
+	  {"status":"running","work_id":"zGuZx4tzHalWLvmNOOsSTMqsc"},
+	  {"status":"success","work_id":"IC5P65YZEWaDoCz","result_id":"V5efDKAU8f7"},
+	  {"status":"success","work_id":"eUTB6l5JXkQYOHei9","result_id":"hA4fPQQEpLKbvwNW5"}
+	]
 	
 	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/work'
 	
-	{
-	  "status":[
-	    {"status":"running","work_id":"GYIs2"},
-	    {"status":"failed","work_id":"zGuZx4tzHalWLvmNOOsSTMqsc","additional" : "random failure for testing"},
-	    {"status":"success","work_id":"IC5P65YZEWaDoCz","result_id":"V5efDKAU8f7"},
-	    {"status":"success","work_id":"eUTB6l5JXkQYOHei9","result_id":"hA4fPQQEpLKbvwNW5"}
-	  ],
-	  "count":4
-	}
+	[
+	  {"status":"running","work_id":"GYIs2"},
+	  {"status":"failed","work_id":"zGuZx4tzHalWLvmNOOsSTMqsc","additional" : "random failure for testing"},
+	  {"status":"success","work_id":"IC5P65YZEWaDoCz","result_id":"V5efDKAU8f7"},
+	  {"status":"success","work_id":"eUTB6l5JXkQYOHei9","result_id":"hA4fPQQEpLKbvwNW5"}
+	]
 	
 	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/work'
 	
-	{
-	  "status":[
-	    {"status":"success","work_id":"GYIs2","result_id":"KCovQuF"},
-	    {"status":"failed","work_id":"zGuZx4tzHalWLvmNOOsSTMqsc","additional" : "random failure for testing"},
-	    {"status":"success","work_id":"IC5P65YZEWaDoCz","result_id":"V5efDKAU8f7"},
-	    {"status":"success","work_id":"eUTB6l5JXkQYOHei9","result_id":"hA4fPQQEpLKbvwNW5"}
-	  ],
-	  "count":4
-	}
+	[
+	  {"status":"success","work_id":"GYIs2","result_id":"KCovQuF"},
+	  {"status":"failed","work_id":"zGuZx4tzHalWLvmNOOsSTMqsc","additional" : "random failure for testing"},
+	  {"status":"success","work_id":"IC5P65YZEWaDoCz","result_id":"V5efDKAU8f7"},
+	  {"status":"success","work_id":"eUTB6l5JXkQYOHei9","result_id":"hA4fPQQEpLKbvwNW5"}
+	]
 
 ### Submit work
 
@@ -167,11 +158,11 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/ea5
 
 	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/records/KCovQuF'
 	
-	{"variables":{"9hn":"E6O","2":"Ql6h","H9Bf":"7tY","EwHT":"SBm"}}
+	{"id":"qua","variables":{"9hn":"E6O","2":"Ql6h","H9Bf":"7tY","EwHT":"SBm"}}
 	
 	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/records?from=-28'
 	
-	{"count":1,"records":[{"variables":{"9hn":"E6O","2":"Ql6h","H9Bf":"7tY","EwHT":"SBm"}}]}
+	[{"id":"qua","variables":{"9hn":"E6O","2":"Ql6h","H9Bf":"7tY","EwHT":"SBm"}}]
 
 ### Attempt to submit work with duplicate primary keys
 
@@ -183,9 +174,9 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/ea5
 
 	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/bookmarks'
 	
-	{"count":1,"bookmark_ids":["myl7t8npVZbCPOCLCg"]}
+	["myl7t8npVZbCPOCLCg"]
 
-### List bookmarks
+### List bookmark
 
 	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/bookmarks/myl7t8npVZbCPOCLCg'
 	
@@ -203,7 +194,7 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/ea5
 
 	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/bookmarks?ZQ="Ry"'
 	
-	{"count":1,"bookmark_ids":["myl7t8npVZbCPOCLCg"]}
+	["myl7t8npVZbCPOCLCg"]
 
 ### Add a bookmark
 
@@ -241,31 +232,28 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/ea5
 
 	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/filters'
 	
-	{
-	  "count":20,
-	  "filter_ids":[
-	    "Cg7RdpzZYr0bs7",
-	    "pOeN9UfCdekdFUwh6uBlYrCYxPCN6",
-	    "88J33wDmU",
-	    "0rZRFzzLlhE2o888Rftl7J10YwfAEs5",
-	    "qKsRreE8h04v",
-	    "Bwm",
-	    "FUH2Agfzn3l09IFFkQ6m8Es",
-	    "A2cmZsolppMhHqSsdBLFK48vOa",
-	    "HqX6ReFe1xr3fc6XiwNP",
-	    "rZ2vZnY",
-	    "5CVCeVJ7jcyaCHIbXy5YoX",
-	    "GYNOqFtD",
-	    "phxLzqoK",
-	    "URK8NicF2HUIJKZNNzAayjRLqhm",
-	    "LhViaZEc2w2qwCGVDiPE953wEuuY91",
-	    "5JQ",
-	    "AcHNyrwe7gzGqbiAg8mouLU",
-	    "8Q0B5xWQ46wBOX0AKG8xBbENDHimLD",
-	    "B4Ho3FqHKXdM4BIzPuIkTNhJ0",
-	    "Tq6fYbU3TTRw"
-	  ]
-	}
+	[
+	  "Cg7RdpzZYr0bs7",
+	  "pOeN9UfCdekdFUwh6uBlYrCYxPCN6",
+	  "88J33wDmU",
+	  "0rZRFzzLlhE2o888Rftl7J10YwfAEs5",
+	  "qKsRreE8h04v",
+	  "Bwm",
+	  "FUH2Agfzn3l09IFFkQ6m8Es",
+	  "A2cmZsolppMhHqSsdBLFK48vOa",
+	  "HqX6ReFe1xr3fc6XiwNP",
+	  "rZ2vZnY",
+	  "5CVCeVJ7jcyaCHIbXy5YoX",
+	  "GYNOqFtD",
+	  "phxLzqoK",
+	  "URK8NicF2HUIJKZNNzAayjRLqhm",
+	  "LhViaZEc2w2qwCGVDiPE953wEuuY91",
+	  "5JQ",
+	  "AcHNyrwe7gzGqbiAg8mouLU",
+	  "8Q0B5xWQ46wBOX0AKG8xBbENDHimLD",
+	  "B4Ho3FqHKXdM4BIzPuIkTNhJ0",
+	  "Tq6fYbU3TTRw"
+	]
 
 ### Attempt to add a malformed filter
 
@@ -297,7 +285,7 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/ea5
 
 	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/filters?key="value"'
 	
-	{"count":1,"filter_ids":["HvuzvDYS"]}
+	["HvuzvDYS"]
 	
 	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/filters/HvuzvDYS'
 	

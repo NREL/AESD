@@ -48,7 +48,7 @@ instance Default Server where
     {
       identifier = "unidentified"
     , typ        = "record_server"
-    , version    = 0
+    , version    = 1
     , models     = []
     , status     = def
     }
@@ -81,7 +81,7 @@ validateServer Server{..} =
   do
     assert "empty server identifier"     $ identifier /= ""
     assert "illegal server type"         $ typ == "record_server"
-    assert "illegal version number"      $ version == 0
+    assert "illegal version number"      $ version == 1
     assert "duplicate model identifiers" $ noDuplicates models
 
 

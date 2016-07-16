@@ -31,7 +31,7 @@ arbitrarySubmission variables = -- FIXME: This can generate submission with a pr
     explicitVariables' <- sublistOf (inputVariables \\ randomVariables)
     record <- arbitraryRecord variables
     let
-      explicitVariables = filter ((`elem` explicitVariables') . fst) $ unRecord record
+      explicitVariables = filter ((`elem` explicitVariables') . fst) $ recordValues record
     timeout <- arbitraryPositive
     priority <- arbitrary
     return Submission{..}
