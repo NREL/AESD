@@ -14,8 +14,9 @@ import CESDS.Types (Tags(..))
 import CESDS.Types.Bookmark (Bookmark, BookmarkIdentifier, validateBookmark, validateBookmarks)
 import CESDS.Types.Filter (Filter, FilterIdentifier, validateFilter, validateFilters)
 import CESDS.Types.Model (Model(Model), ModelIdentifier, validateModel)
-import CESDS.Types.Record (Record(Record), RecordIdentifier, makeRecordList)
+import CESDS.Types.Record (Record(Record), RecordIdentifier)
 import CESDS.Types.Server (Server(Server), validateServer)
+import Control.Arrow ((***))
 import Control.Monad (void)
 import Control.Monad.Except (liftIO, throwError)
 import Control.Monad.Except.Util (assert)
@@ -28,9 +29,9 @@ import Data.Yaml (decodeFile)
 import NREL.Meters (metersRSF2, modelRSF2)
 import System.Environment (getArgs)
 
-import qualified CESDS.Types.Bookmark as Bookmark (Bookmark(..), makeBookmarkList)
+import qualified CESDS.Types.Bookmark as Bookmark (Bookmark(..))
 import qualified CESDS.Types.Command as Command (Command(..), Result(..))
-import qualified CESDS.Types.Filter as Filter (Filter(..), makeFilterList)
+import qualified CESDS.Types.Filter as Filter (Filter(..))
 import qualified CESDS.Types.Model as Model (Model(..))
 import qualified CESDS.Types.Server as Server (Server(..), Status(Okay))
 import qualified Data.HashMap.Strict as H
@@ -78,7 +79,7 @@ initialize access =
         {
           Server.identifier = "CESDS Haystack"
         , typ               = "record_server"
-        , version           = 0
+        , version           = 1
         , models            = [Model.identifier model]
         , status            = Server.Okay "operating normally"
         }
@@ -143,13 +144,13 @@ service =
         sets serverState {cacheManager = cacheManager'}
         if null rows
           then throwError "record not found"
-          else return . Record . H.toList . snd $ head rows
+          else return . uncurry Record . (pack . show *** H.toList) $ head rows
     getRecords RecordFilter{..} modelIdentifier =
       do
         serverState@ServerState{..} <- checkModel modelIdentifier
         (cacheManager', rows) <- refreshExtractCacheManager cacheManager rfFrom rfTo
         sets serverState {cacheManager = cacheManager'}
-        return . makeRecordList $ map (Record . H.toList . snd) rows
+        return $ map (uncurry Record . (pack . show *** H.toList)) rows
     postRecord _ modelIdentifier =
       do
         ServerState{..} <- checkModel modelIdentifier
@@ -174,7 +175,6 @@ service =
       do
         ServerState{..} <- checkModel modelIdentifier
         return
-          . Bookmark.makeBookmarkList
           . map (\b -> b {Bookmark.records = Nothing})
           $ filterBookmarks tags Nothing bookmarks
     getBookmark bookmarkIdentifier modelIdentifier =
@@ -199,7 +199,6 @@ service =
       do
         ServerState{..} <- checkModel modelIdentifier
         return
-          . Filter.makeFilterList
           . map (\f -> f {Filter.expression = Nothing})
           $ filterFilters tags Nothing filters
     getFilter filterIdentifier modelIdentifier =
@@ -267,4 +266,4 @@ main =
   do
     [configurationFile] <- getArgs
     Just access <- decodeFile configurationFile
-    runService 8090 service =<< initialize access
+    runService 8091 service =<< initialize access

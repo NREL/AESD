@@ -23,7 +23,7 @@ import Control.Arrow ((&&&), second)
 import Control.Monad (foldM, guard)
 import Control.Monad.Except (MonadIO)
 import Data.Daft.Vinyl.Derived ((<:))
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Maybe (catMaybes, fromMaybe, isNothing)
 import Data.Text (Text)
 import Data.Time.LocalTime (TimeZone(..))
 import Data.Time.Util (SecondsPOSIX, fromSecondsPOSIX)
@@ -89,11 +89,13 @@ fromSecondsPOSIX' HaystackAccess{..} =
 
 refreshExtractCacheManager :: MonadIO m => CacheManager -> Maybe SecondsPOSIX -> Maybe SecondsPOSIX -> m (CacheManager, [(SecondsPOSIX, Object')])
 refreshExtractCacheManager cacheManager@CacheManager{..} startRequest finishRequest =
-  do
-    let
-      startRequest' = fromMaybe (fst $ M.findMin cache) startRequest
-    cacheManager' <- refreshCacheManager cacheManager startRequest' finishRequest
-    return (cacheManager', extractForTimes startRequest finishRequest cacheManager')
+  if M.null cache && isNothing startRequest
+    then return (cacheManager, [])
+    else do
+           let
+             startRequest' = fromMaybe (fst $ M.findMin cache) startRequest
+           cacheManager' <- refreshCacheManager cacheManager startRequest' finishRequest
+           return (cacheManager', extractForTimes startRequest finishRequest cacheManager')
 
 
 refreshCacheManager :: MonadIO m => CacheManager -> SecondsPOSIX -> Maybe SecondsPOSIX -> m CacheManager

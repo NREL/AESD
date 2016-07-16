@@ -6,4 +6,8 @@
 
 ## 0.2.16.0  -- 2016-07-15
 
-* Conforms to verions 0 of CESDS Records API.
+* Conforms to verions 0 of CESDS Records API, but filtering fields in records is not supported.
+
+## 0.2.17.0  -- 2016-07-15
+
+* Conforms to verions 1 of CESDS Records API, but filtering fields in records is not supported.
