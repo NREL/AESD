@@ -1,5 +1,5 @@
 name:                cesds-records
-version:             0.2.9.0
+version:             0.2.10.0
 synopsis:            Implementation of CESDS record API
 description:         Implementation of CESDS record API.
 license:             AllRightsReserved
@@ -51,6 +51,7 @@ library
                   , text
                   , transformers
                   , unordered-containers
+                  , vector
                   , wai
                   , wai-util
                   , warp

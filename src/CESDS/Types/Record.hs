@@ -13,14 +13,13 @@ module CESDS.Types.Record (
 
 import CESDS.Types (Identifier, Val)
 import CESDS.Types.Variable (Variable, VariableIdentifier, canHaveVal, hasVariable)
-import Control.Arrow (second)
 import Control.Monad.Except (MonadError)
 import Control.Monad.Except.Util (assert)
-import Data.Aeson.Types (FromJSON(..), ToJSON(..), (.:), (.=), object, withObject)
+import Data.Aeson.Types (FromJSON(..), ToJSON(..), (.:), (.=), object, withArray, withObject)
 import Data.Function (on)
-import Data.HashMap.Strict (toList)
 import Data.List (sortBy)
 import Data.List.Util (noDuplicates)
+import Data.Vector (toList)
 import Data.String (IsString)
 import GHC.Generics (Generic)
 
@@ -51,14 +50,22 @@ instance FromJSON Record where
     withObject "RECORD" $ \o ->
       do
         recordIdentifier <- o .: "id"
-        variables        <- o .: "variables"
-        recordValues <-
-          sequence
-            [
-              (k, ) <$> parseJSON v
-            |
-              (k, v) <- toList variables
-            ]
+        recordValues <- withArray "VAR_VALUED_LIST"
+                          (\a ->
+                            sequence
+                              [
+                                withObject "VAR_VALUED_LIST"
+                                  (\o'' ->
+                                    do
+                                      k <- o'' .: "id"
+                                      v <- o'' .: "value"
+                                      return (k, v)
+                                  ) o'
+                              |
+                                o' <- toList a
+                              ]
+                          ) =<< o .: "variables"
+                        
         return Record{..}
 
 instance ToJSON Record where
@@ -66,7 +73,11 @@ instance ToJSON Record where
     object
       [
         "id"        .= recordIdentifier
-      , "variables" .= object (map (second toJSON) recordValues)
+      , "variables" .= [
+                         object ["id" .= k, "value" .= v]
+                       |
+                         (k, v) <-recordValues
+                       ]
       ]
 
 
