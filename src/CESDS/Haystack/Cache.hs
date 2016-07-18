@@ -66,7 +66,7 @@ timeKeys CacheManager{..} = M.keys cache
 extractTimeStamp :: Object' -> String
 extractTimeStamp o =
   let
-    Discrete s = o H.! "Time Stamp"
+    Discrete s = o H.! "time"
   in
     T.unpack s
 
