@@ -96,14 +96,36 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/8c3
 
 	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/records?from=-30'
 	
-	{
-	  "count":3,
-	  "records":[
-	    {"id":"uno","variables":{"9hn":"E6O","2":"Ql6h","H9Bf":"7tY","EwHT":"SBm"}},
-	    {"id":"duo","variables":{"9hn":"bNE3","2":"Ql6h","H9Bf":"7tY","EwHT":"Tr"}},
-	    {"id":"tre","variables":{"9hn":"1Vcv","2":"Ql6h","H9Bf":"YPdZ","EwHT":"Tr"}}
-	  ]
-	}
+	[
+	  {
+	    "id":"uno",
+	    "variables":{
+	      {"id":"9hn","value":"E6O"},
+	      {"id":"2","value":"Ql6h"},
+	      {"id":"H9Bf","value":"7tY"},
+	      {"id":"EwHT","value":"SBm"}
+	    }
+	  },
+	  {
+	    "id":"duo",
+	    "variables":{
+	      {"id":"9hn","value":"bNE3"},
+	      {"id":"2","value":"Ql6h"},
+	      {"id":"H9Bf","value":"7tY"},
+	      {"id":"EwHT","value":"Tr"}
+	    }
+	  },
+	  {
+	    "id":"tre",
+	    "variables":{
+	      {"id":"9hn","value":"1Vcv"},
+	      {"id":"2","value":"Ql6h"},
+	      {"id":"H9Bf","value":"YPdZ"},
+	      {"id":"EwHT","value":"Tr"}
+	    }
+	  }
+	]
+	
 
 ### Attempt to submit malformed work
 
@@ -158,11 +180,26 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/8c3
 
 	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/records/KCovQuF'
 	
-	{"id":"qua","variables":{"9hn":"E6O","2":"Ql6h","H9Bf":"7tY","EwHT":"SBm"}}
+	{
+	  "id":"qua",
+	  "variables":{
+	    {"id":"9hn","value":"E6O"},
+	    {"id":"2","value":"Ql6h"},
+	    {"id":"H9Bf","value":"7tY"},
+	    {"id":"EwHT","value":"SBm"}
+	}
 	
 	$ curl -H GET 'http://1lv11lamb01.nrel.gov:8090/models/JCF/records?from=-28'
 	
-	[{"id":"qua","variables":{"9hn":"E6O","2":"Ql6h","H9Bf":"7tY","EwHT":"SBm"}}]
+	[
+	  {"id":"qua",
+	  "variables":{
+	    {"id":"9hn","value":"E6O"},
+	    {"id":"2","value":"Ql6h"},
+	    {"id":"H9Bf","value":"7tY"},
+	    {"id":"EwHT","value":"SBm"}
+	  }
+	]
 
 ### Attempt to submit work with duplicate primary keys
 
