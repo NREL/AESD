@@ -225,53 +225,53 @@ The generation number is simple the Unix Epoch time in seconds.  Using that as t
 	$ curl -X GET 'http://1lv11lamb01.nrel.gov:8091/models/RSF2v0/records?from=1468640300&to=1468640960'
 	
 	[  
-	   {  
-	      "variables":{  
-	         "id":"epoch","value":1468640340,
-	         "id":"@1edb6d30-1e909c64","value":5.2928572573832104,
-	         "id":"time","value":"2016-07-15T21:39:00-06:00 Denver",
-	         "id":"@1edb6d30-6e697a28","value":4.822857243674142,
-	         "id":"@1edb6d30-9a89271e","value":0.3400000035762787,
-	         "id":"@1edb6d30-fa21e31d","value":0.1300000101327896
-	      },
-	      "id":"1468640340"
-	   },
-	   {  
-	      "variables":{  
-	         "id":"epoch","value":1468640365,
-	         "id":"@1edb6d30-1e909c64","value":5.2928572573832104,
-	         "id":"time","value":"2016-07-15T21:39:25-06:00 Denver",
-	         "id":"@1edb6d30-6e697a28","value":4.822857243674142,
-	         "id":"@1edb6d30-9a89271e","value":0.3400000035762787,
-	         "id":"@1edb6d30-fa21e31d","value":0.1300000101327896,
-	         "id":"@1edb6d30-a4ccaaf4","value":0.36000001430511475
-	      },
-	      "id":"1468640365"
-	   },
+	  { 
+	    "variables":[  
+	       {"id":"epoch","value":1468640340},
+	       {"id":"@1edb6d30-1e909c64","value":5.2928572573832104},
+	       {"id":"time","value":"2016-07-15T21:39:00-06:00 Denver"},
+	       {"id":"@1edb6d30-6e697a28","value":4.822857243674142},
+	       {"id":"@1edb6d30-9a89271e","value":0.3400000035762787},
+	       {"id":"@1edb6d30-fa21e31d","value":0.1300000101327896}
+	    ],
+	    "id":"1468640340"
+	  },
+	  {  
+	    "variables":[  
+	       {"id":"epoch","value":1468640365},
+	       {"id":"@1edb6d30-1e909c64","value":5.2928572573832104},
+	       {"id":"time","value":"2016-07-15T21:39:25-06:00 Denver"},
+	       {"id":"@1edb6d30-6e697a28","value":4.822857243674142},
+	       {"id":"@1edb6d30-9a89271e","value":0.3400000035762787},
+	       {"id":"@1edb6d30-fa21e31d","value":0.1300000101327896},
+	       {"id":"@1edb6d30-a4ccaaf4","value":0.36000001430511475}
+	    ],
+	    "id":"1468640365"
+	  },
 	
 	.
 	.
 	.
 
-	   {  
-	      "variables":{  
-	         "id":"epoch","value":1468640813,
-	         "id":"@1edb6d30-5d812ce6","value":-0.3400000035762787,
-	         "id":"@1edb6d30-d9847159","value":0,
-	         "id":"@1edb6d30-60aa00e5","value":0.3100000023841858,
-	         "id":"@1edb6d30-73828443","value":0.5099999904632568,
-	         "id":"@1edb6d30-1e909c64","value":0.33000001311302185,
-	         "id":"time","value":"2016-07-15T21:46:53-06:00 Denver",
-	         "id":"@1edb6d30-6e697a28","value":4.789999961853027,
-	         "id":"@1edb6d30-9a89271e","value":-3.0000001192092896e-2,
-	         "id":"@1edb6d30-fa21e31d","value":0.36000001430511475,
-	         "id":"@1edb6d30-f6668673","value":-0.23000000417232513,
-	         "id":"@1edb6d30-db52fab5","value":4.789999961853027,
-	         "id":"@1edb6d30-f64869a4","value":35.65999984741211,
-	         "id":"@1edb6d30-a4ccaaf4","value":0.36000001430511475
-	      },
-	      "id":"1468640813"
-	   }
+	  { 
+	    "variables":[  
+	       {"id":"epoch","value":1468640813},
+	       {"id":"@1edb6d30-5d812ce6","value":-0.3400000035762787},
+	       {"id":"@1edb6d30-d9847159","value":0},
+	       {"id":"@1edb6d30-60aa00e5","value":0.3100000023841858},
+	       {"id":"@1edb6d30-73828443","value":0.5099999904632568},
+	       {"id":"@1edb6d30-1e909c64","value":0.33000001311302185},
+	       {"id":"time","value":"2016-07-15T21:46:53-06:00 Denver"},
+	       {"id":"@1edb6d30-6e697a28","value":4.789999961853027},
+	       {"id":"@1edb6d30-9a89271e","value":-3.0000001192092896e-2},
+	       {"id":"@1edb6d30-fa21e31d","value":0.36000001430511475},
+	       {"id":"@1edb6d30-f6668673","value":-0.23000000417232513},
+	       {"id":"@1edb6d30-db52fab5","value":4.789999961853027},
+	       {"id":"@1edb6d30-f64869a4","value":35.65999984741211},
+	       {"id":"@1edb6d30-a4ccaaf4","value":0.36000001430511475}
+	    ],
+	    "id":"1468640813"
+	  }
 	]
 
 The server is combining observations at different measurement times: i.e., not all variables are measured at exactly the same time.  In fact some variables are measured at high frequency, and others at low frequency. One could imagine several strategies for dealing with this within the CESDS Records API:
@@ -288,20 +288,20 @@ We can also retreive the records after a certain time.
 	
 	[  
 	   {  
-	      "variables":{  
-	         "id":"epoch","value":1468640806,
-	         "id":"@1edb6d30-5d812ce6","value":-0.3400000035762787,
-	         "id":"time","value":"2016-07-15T21:46:46-06:00 Denver"
-	      },
+	      "variables":[  
+	         {"id":"epoch","value":1468640806},
+	         {"id":"@1edb6d30-5d812ce6","value":-0.3400000035762787},
+	         {"id":"time","value":"2016-07-15T21:46:46-06:00 Denver"}
+	      ],
 	      "id":"1468640806"
 	   },
 	   {  
-	      "variables":{  
-	         "id":"epoch","value":1468640813,
-	         "id":"@1edb6d30-5d812ce6","value":-0.3400000035762787,
-	         "id":"@1edb6d30-60aa00e5","value":0.3100000023841858,
-	         "id":"time","value":"2016-07-15T21:46:53-06:00 Denver"
-	      },
+	      "variables":[  
+	         {"id":"epoch","value":1468640813},
+	         {"id":"@1edb6d30-5d812ce6","value":-0.3400000035762787},
+	         {"id":"@1edb6d30-60aa00e5","value":0.3100000023841858},
+	         {"id":"time","value":"2016-07-15T21:46:53-06:00 Denver"}
+	      ],
 	      "id":"1468640813"
 	   }
 	]
