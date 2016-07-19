@@ -99,30 +99,30 @@ This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/8c3
 	[
 	  {
 	    "id":"uno",
-	    "variables":{
+	    "variables":[
 	      {"id":"9hn","value":"E6O"},
 	      {"id":"2","value":"Ql6h"},
 	      {"id":"H9Bf","value":"7tY"},
 	      {"id":"EwHT","value":"SBm"}
-	    }
+	    ]
 	  },
 	  {
 	    "id":"duo",
-	    "variables":{
+	    "variables":[
 	      {"id":"9hn","value":"bNE3"},
 	      {"id":"2","value":"Ql6h"},
 	      {"id":"H9Bf","value":"7tY"},
 	      {"id":"EwHT","value":"Tr"}
-	    }
+	    ]
 	  },
 	  {
 	    "id":"tre",
-	    "variables":{
+	    "variables":[
 	      {"id":"9hn","value":"1Vcv"},
 	      {"id":"2","value":"Ql6h"},
 	      {"id":"H9Bf","value":"YPdZ"},
 	      {"id":"EwHT","value":"Tr"}
-	    }
+	    ]
 	  }
 	]
 	
