@@ -1,0 +1,41 @@
+siteAccess     :
+  server       : xv11skys01.nrel.gov
+  root         : /api/nrel_wt_V7
+  authorization: ["bbush","<<PASSWORD GOES HERE>>"]
+  secure       : false
+  timeZone     : [-360, True, Denver]
+siteIdentifier : NWTCv0
+siteURI        : http://www.nrel.gov/nwtc/#RSF2v0
+siteName       : NWTC Version 0
+siteDescription: Selected power meters from the NWTC
+siteTags       :
+               ! 'DC.source'     : https://xv11skys01.nrel.gov/proj/nrel_wt_v7
+               ! 'DC.creator'    : Brian W Bush <brian.bush@nrel.gov>
+               ! 'DC.description': Selected power meters from the NWTC
+siteMeters     :
+               - "1dca834e-c6af46d6 NWTC Alstom Turbine Electricity Meter Turbine-Alstom kW Demand Forward"
+               - "1dca834e-69a3e57e NWTC Alstom Turbine Electricity Meter Turbine-Alstom kW Demand Reverse"
+               - "1dca834e-88ccc232 NWTC Building Main - Dyno 2.5MW Electricity Meter Dynamometer Research kW Demand Forward"
+               - "1dca834e-cc468b89 NWTC Building Main - Dyno 2.5MW Electricity Meter Dynamometer Research kW Demand Reverse"
+               - "1dcb9876-d6747947 NWTC Building Main Electricity Meter Main Bus 253 kW Demand Forward"
+               - "1dcb9876-bb870264 NWTC Building Main Electricity Meter Main Bus 253 kW Demand Reverse"
+               - "1dca834e-25374f22 NWTC GE Turbine Electricity Meter Turbine-GE kW Demand Forward"
+               - "1dca834e-1aad18f0 NWTC GE Turbine Electricity Meter Turbine-GE kW Demand Reverse"
+               - "1dca834e-86a9dfa0 NWTC Gamesa Turbine Electricity Meter Turbine-Gamesa kW Demand Forward"
+               - "1dca834e-7288fb1d NWTC Gamesa Turbine Electricity Meter Turbine-Gamesa kW Demand Reverse"
+               - "1e14632c-0e2fbc34 NWTC PV Electricity Meter Turbine-Row 2-PV Array kW Demand Forward"
+               - "1e14635a-de0340d9 NWTC PV Electricity Meter Turbine-Row 2-PV Array kW Demand Reverse"
+               - "1dca834e-c8f7dbee NWTC Siemens Turbine Electricity Meter Turbine-Siemens kW Demand Forward"
+               - "1dca834e-a8589fe8 NWTC Siemens Turbine Electricity Meter Turbine-Siemens kW Demand Reverse"
+               - "1dca834e-1efc0fb1 NWTC Turbine Main - N3 Met Tower Electricity Meter N-3 Met Tower kW Demand Forward"
+               - "1dca834e-a5de4d12 NWTC Turbine Main - N3 Met Tower Electricity Meter N-3 Met Tower kW Demand Reverse"
+               - "1dca834e-498ad3b4 NWTC Turbine Main - Row 1 Electricity Meter Turbine-Row 1 kW Demand Forward"
+               - "1dca834e-08374f33 NWTC Turbine Main - Row 1 Electricity Meter Turbine-Row 1 kW Demand Reverse"
+               - "1dca834e-af3a8dc2 NWTC Turbine Main - Row 3 Electricity Meter Turbine-Row 3 kW Demand Forward"
+               - "1dca834e-098bd30f NWTC Turbine Main - Row 3 Electricity Meter Turbine-Row 3 kW Demand Reverse"
+               - "1dca834e-5023f846 NWTC Turbine Main - Row 4 Electricity Meter Turbine-Row 4 kW Demand Forward"
+               - "1dca834e-c7c103f0 NWTC Turbine Main - Row 4 Electricity Meter Turbine-Row 4 kW Demand Reverse"
+               - "1dca834e-4aa9acf6 NWTC Turbine Main - Row 4A Electricity Meter Turbine-Row 4A kW Demand Forward"
+               - "1dca834e-14f1e54b NWTC Turbine Main - Row 4A Electricity Meter Turbine-Row 4A kW Demand Reverse"
+               - "1dca8118-55a18bbc NWTC Turbine Main Electricity Meter Building 253 Turbine Bus kW Demand Forward"
+               - "1dca8118-6509834d NWTC Turbine Main Electricity Meter Building 253 Turbine Bus kW Demand Reverse"

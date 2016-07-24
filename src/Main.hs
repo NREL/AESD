@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PackageImports    #-}
 {-# LANGUAGE RecordWildCards   #-}
 
 
@@ -7,9 +8,8 @@ module Main (
 ) where
 
 
-import CESDS.Haystack (HaystackAccess)
-import CESDS.Haystack.Cache (CacheManager(access, cache), makeCacheManager, refreshExtractCacheManager, timeKeys)
-import CESDS.Server (RecordFilter(..), ServerM, Service(..), gets, runService, sets)
+import CESDS.Haystack.Cache (CacheManager(cache), clearCache, makeCacheManager, refreshExtractCacheManager, timeKeys)
+import CESDS.Server (RecordFilter(..), ServerM, Service(..), gets, modifys, runService, sets)
 import CESDS.Types (Tags(..))
 import CESDS.Types.Bookmark (Bookmark, BookmarkIdentifier, validateBookmark, validateBookmarks)
 import CESDS.Types.Filter (Filter, FilterIdentifier, validateFilter, validateFilters)
@@ -19,14 +19,14 @@ import CESDS.Types.Server (Server(Server), validateServer)
 import Control.Arrow ((***))
 import Control.Monad (void)
 import Control.Monad.Except (liftIO, throwError)
-import Control.Monad.Except.Util (assert)
-import Data.List.Util (hasSubset)
+import "cesds-records" Control.Monad.Except.Util (assert)
+import "cesds-records" Data.List.Util (hasSubset)
 import Data.Maybe (fromMaybe)
 import Data.Text (pack, unpack)
 import Data.Time.Util (getSecondsPOSIX)
 import Data.UUID.V4 (nextRandom)
 import Data.Yaml (decodeFile)
-import NREL.Meters (metersRSF2, modelRSF2)
+import NREL.Meters (Site(siteAccess), meters, siteModel)
 import System.Environment (getArgs)
 
 import qualified CESDS.Types.Bookmark as Bookmark (Bookmark(..))
@@ -69,11 +69,11 @@ updateServerStats serverState@ServerState{..} =
       }
 
 
-initialize :: HaystackAccess -> IO ServerState
-initialize access =
+initialize :: Site -> IO ServerState
+initialize site =
   do
     let
-      model = modelRSF2
+      model = siteModel site
       server =
         Server
         {
@@ -85,8 +85,18 @@ initialize access =
         }
       bookmarks = []
       filters = []
-    cacheManager <- makeCacheManager access metersRSF2
+    cacheManager <- makeCacheManager (siteAccess site) $ meters site
     updateServerStats ServerState{..}
+
+
+reinitialize :: ServerState -> ServerState
+reinitialize serverState@ServerState{..} =
+  serverState
+  {
+    bookmarks = []
+  , filters   = []
+  , cacheManager = clearCache cacheManager
+  }
 
 
 validateServerState :: ServerState -> ServerM s ()
@@ -111,8 +121,7 @@ service =
         return server
     postServer (Command.Restart _) =
       do
-        ServerState{..} <- gets id
-        sets =<< liftIO (initialize $ access cacheManager)
+        modifys reinitialize
         return . Command.Result $ Just "server reinitialized"
     postServer (Command.Clear _) =
       postServer (Command.Restart [])
@@ -264,6 +273,6 @@ addFilter ms@ServerState{..} filter' =
 main :: IO ()
 main =
   do
-    [configurationFile] <- getArgs
-    Just access <- decodeFile configurationFile
-    runService 8091 service =<< initialize access
+    [configurationFile, port] <- getArgs
+    Just site <- decodeFile configurationFile
+    runService (read port) service =<< initialize site
