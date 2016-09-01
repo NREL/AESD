@@ -20,7 +20,7 @@ def get(api_url, model_id):
         .. code-block:: python
 
             import cesdspy
-            cesdspy.models.get('http://1lv11lamb01.nrel.gov:8091/models/RSF2v0')
+            cesdspy.models.get('http://1lv11lamb01.nrel.gov:8091', 'RSF2v0')
 
         .. code-block:: javascript
             :caption: **cesdspy.models.get response**
