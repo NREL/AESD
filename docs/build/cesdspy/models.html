@@ -1,0 +1,290 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cesdspy.models &#8212; CESDSpy</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="CESDSpy" href="../index.html" />
+    <link rel="up" title="Modules" href="../cesdspy.html" />
+    <link rel="next" title="cesdspy.records" href="records.html" />
+    <link rel="prev" title="cesdspy.servers" href="servers.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cesdspy.models">
+<span id="cesdspy-models"></span><h1><a class="reference internal" href="#module-cesdspy.models" title="cesdspy.models"><code class="xref py py-mod docutils literal"><span class="pre">cesdspy.models</span></code></a><a class="headerlink" href="#module-cesdspy.models" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="cesdspy.models.get">
+<code class="descclassname">cesdspy.models.</code><code class="descname">get</code><span class="sig-paren">(</span><em>api_url</em>, <em>model_id</em><span class="sig-paren">)</span><a class="headerlink" href="#cesdspy.models.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the model description object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>api_url</strong> (<em>string</em>) &#8211; The base url to query</li>
+<li><strong>model_id</strong> (<em>string</em>) &#8211; The ID of the model to get</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The model information</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">json</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Example</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cesdspy</span>
+<span class="n">cesdspy</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;http://1lv11lamb01.nrel.gov:8091/models/RSF2v0&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="literal-block-wrapper container" id="cesdspy-models-get-response">
+<div class="code-block-caption"><span class="caption-text"><strong>cesdspy.models.get response</strong></span><a class="headerlink" href="#cesdspy-models-get-response" title="Permalink to this code">¶</a></div>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;record_id_var&quot;</span><span class="o">:</span> <span class="s2">&quot;time&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;variables&quot;</span><span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="s2">&quot;display&quot;</span><span class="o">:</span> <span class="p">{</span>
+        <span class="s2">&quot;shortlabel&quot;</span><span class="o">:</span> <span class="s2">&quot;Time&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;label&quot;</span><span class="o">:</span> <span class="s2">&quot;Time Stamp&quot;</span>
+      <span class="p">},</span>
+      <span class="s2">&quot;domain&quot;</span><span class="o">:</span> <span class="p">{</span>
+        <span class="s2">&quot;set&quot;</span><span class="o">:</span> <span class="p">{</span>
+          <span class="s2">&quot;options&quot;</span><span class="o">:</span> <span class="p">[]</span>
+        <span class="p">}</span>
+      <span class="p">},</span>
+      <span class="s2">&quot;is_input&quot;</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="s2">&quot;var_id&quot;</span><span class="o">:</span> <span class="s2">&quot;time&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="s2">&quot;display&quot;</span><span class="o">:</span> <span class="p">{</span>
+        <span class="s2">&quot;shortlabel&quot;</span><span class="o">:</span> <span class="s2">&quot;Seconds&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;label&quot;</span><span class="o">:</span> <span class="s2">&quot;POSIX Seconds&quot;</span>
+      <span class="p">},</span>
+      <span class="s2">&quot;domain&quot;</span><span class="o">:</span> <span class="p">{</span>
+        <span class="s2">&quot;interval&quot;</span><span class="o">:</span> <span class="p">{</span>
+          <span class="s2">&quot;bounds&quot;</span><span class="o">:</span> <span class="p">[</span>
+            <span class="mi">315558000</span><span class="p">,</span>
+            <span class="kc">null</span>
+          <span class="p">]</span>
+        <span class="p">}</span>
+      <span class="p">},</span>
+      <span class="s2">&quot;is_input&quot;</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="s2">&quot;var_id&quot;</span><span class="o">:</span> <span class="s2">&quot;epoch&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;units&quot;</span><span class="o">:</span> <span class="p">{</span>
+        <span class="s2">&quot;scale&quot;</span><span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;SI&quot;</span><span class="o">:</span> <span class="p">[</span>
+          <span class="mi">0</span><span class="p">,</span>
+          <span class="mi">0</span><span class="p">,</span>
+          <span class="mi">1</span><span class="p">,</span>
+          <span class="mi">0</span><span class="p">,</span>
+          <span class="mi">0</span><span class="p">,</span>
+          <span class="mi">0</span><span class="p">,</span>
+          <span class="mi">0</span><span class="p">,</span>
+          <span class="mi">0</span>
+        <span class="p">]</span>
+      <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="p">...</span>
+  <span class="p">],</span>
+  <span class="s2">&quot;model_id&quot;</span><span class="o">:</span> <span class="s2">&quot;RSF2v0&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;time_key&quot;</span><span class="o">:</span> <span class="s2">&quot;epoch&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;model_uri&quot;</span><span class="o">:</span> <span class="s2">&quot;http://www.nrel.gov/sustainable_nrel/rsf.html#RSF2v0&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;generation&quot;</span><span class="o">:</span> <span class="mi">1472745315</span><span class="p">,</span>
+  <span class="s2">&quot;description&quot;</span><span class="o">:</span> <span class="s2">&quot;Selected power meters from the RSF 2&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;label&quot;</span><span class="o">:</span> <span class="s2">&quot;RSF 2 Version 0&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;record_count&quot;</span><span class="o">:</span> <span class="mi">189101</span><span class="p">,</span>
+  <span class="s2">&quot;tags&quot;</span><span class="o">:</span> <span class="p">{</span>
+    <span class="s2">&quot;DC.source&quot;</span><span class="o">:</span> <span class="s2">&quot;https://skyspark-ops.nrel.gov/proj/nrel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;DC.description&quot;</span><span class="o">:</span> <span class="s2">&quot;Selected power meters from the RSF 2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;DC.creator&quot;</span><span class="o">:</span> <span class="s2">&quot;Brian W Bush &lt;brian.bush@nrel.gov&gt;&quot;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="cesdspy.models.issue_command">
+<code class="descclassname">cesdspy.models.</code><code class="descname">issue_command</code><span class="sig-paren">(</span><em>api_url</em>, <em>model_id</em>, <em>body={}</em><span class="sig-paren">)</span><a class="headerlink" href="#cesdspy.models.issue_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Issue a command to a model</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>api_url</strong> (<em>str</em>) &#8211; The base url to query</li>
+<li><strong>model_id</strong> (<em>string</em>) &#8211; The ID of the model to get</li>
+<li><strong>body</strong> (<em>json</em>) &#8211; The command to issue</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The result of the issued command</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">json</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Example</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cesdspy</span>
+<span class="n">body</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;command&quot;</span><span class="p">:</span> <span class="s2">&quot;get_model_strategy&quot;</span>
+<span class="p">}</span>
+<span class="n">cesdspy</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">issue_command</span><span class="p">(</span><span class="s1">&#39;http://1lv11lamb01.nrel.gov:8091/&#39;</span><span class="p">,</span> <span class="s1">&#39;RSF2v0&#39;</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="literal-block-wrapper container" id="cesdspy-models-issue-command-response">
+<div class="code-block-caption"><span class="caption-text"><strong>cesdspy.models.issue_command response</strong></span><a class="headerlink" href="#cesdspy-models-issue-command-response" title="Permalink to this code">¶</a></div>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;result&quot;</span> <span class="o">:</span> <span class="s2">&quot;TODO&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="cesdspy.models.list">
+<code class="descclassname">cesdspy.models.</code><code class="descname">list</code><span class="sig-paren">(</span><em>api_url</em><span class="sig-paren">)</span><a class="headerlink" href="#cesdspy.models.list" title="Permalink to this definition">¶</a></dt>
+<dd><p>get a set model id</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>api_url</strong> (<em>string</em>) &#8211; The base url to query</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The set of model IDs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">array</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Example</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cesdspy</span>
+<span class="n">cesdspy</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="s1">&#39;http://1lv11lamb01.nrel.gov:8091/&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="literal-block-wrapper container" id="cesdspy-models-list-response">
+<div class="code-block-caption"><span class="caption-text"><strong>cesdspy.models.list response</strong></span><a class="headerlink" href="#cesdspy-models-list-response" title="Permalink to this code">¶</a></div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">[</span><span class="s2">&quot;RSF2v0&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">CESDSpy</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../cesdspy.html">Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="servers.html"><code class="docutils literal"><span class="pre">cesdspy.servers</span></code></a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#"><code class="docutils literal"><span class="pre">cesdspy.models</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="records.html"><code class="docutils literal"><span class="pre">cesdspy.records</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="work.html"><code class="docutils literal"><span class="pre">cesdspy.work</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="bookmarks.html"><code class="docutils literal"><span class="pre">cesdspy.bookmarks</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="filters.html"><code class="docutils literal"><span class="pre">cesdspy.filters</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../logging.html">Logging</a></li>
+</ul>
+
+
+<hr />
+<ul>
+    
+    <li class="toctree-l1"><a href="https://github.nrel.gov/nwunder2/cesdspy">Github</a></li>
+    
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../cesdspy.html">Modules</a><ul>
+      <li>Previous: <a href="servers.html" title="previous chapter"><code class="docutils literal"><span class="pre">cesdspy.servers</span></code></a></li>
+      <li>Next: <a href="records.html" title="next chapter"><code class="docutils literal"><span class="pre">cesdspy.records</span></code></a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="../_sources/cesdspy/models.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

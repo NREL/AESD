@@ -8,5 +8,8 @@ setup(
     author='Nick Wunder',
     author_email='nick.wunder@nrel.gov',
     packages=find_packages(),
-    install_requires=['requests']
+    install_requires=['requests'],
+    extras_require={
+        'dev': ['Sphinx', 'sphinxcontrib-httpdomain']
+    }
 )
