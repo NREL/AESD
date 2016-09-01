@@ -129,17 +129,18 @@ todo_include_todos = False
 
 html_theme = "alabaster"
 
-html_theme_options = {
-        "extra_nav_links": {
-            "Github": "https://github.nrel.gov/nwunder2/cesdspy"
-            }
-        }
+# html_theme_options = {
+#         "extra_nav_links": {
+#             "Github": "https://github.nrel.gov/nwunder2/cesdspy"
+#             }
+#         }
 
 html_sidebars = {
     '**': [
         'about.html',
         'navigation.html',
         'relations.html',
+        'others.html',
         'searchbox.html',
     ]
 }
