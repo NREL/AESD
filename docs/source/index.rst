@@ -18,10 +18,12 @@ Use
 --------------------------------------------------------------------------------
 .. code-block:: python
 
-  import cesdspy
-
-  cesdspy.models.get('http://1lv11lamb01.nrel.gov:8090'))
-  print(records.get('http://1lv11lamb01.nrel.gov:8090'))
+  >>> import cesdspy
+  >>> url = 'http://1lv11lamb01.nrel.gov:8090'
+  >>> models = cesdspy.models.list(url)
+  >>> records = cesdspy.records.list(url, models[0])
+  >>> print(records)
+  [{u'variables': [{u'id': u'NtA', u'value': u'vIf9'}], u'id': u'Il81Na1b665QiXyF'}]
 
 .. module:: cesdspy
 

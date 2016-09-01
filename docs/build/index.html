@@ -51,10 +51,12 @@
 </div>
 <div class="section" id="use">
 <h2>Use<a class="headerlink" href="#use" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cesdspy</span>
-
-<span class="n">cesdspy</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;http://1lv11lamb01.nrel.gov:8090&#39;</span><span class="p">))</span>
-<span class="k">print</span><span class="p">(</span><span class="n">records</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;http://1lv11lamb01.nrel.gov:8090&#39;</span><span class="p">))</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">cesdspy</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;http://1lv11lamb01.nrel.gov:8090&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">models</span> <span class="o">=</span> <span class="n">cesdspy</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">records</span> <span class="o">=</span> <span class="n">cesdspy</span><span class="o">.</span><span class="n">records</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">records</span><span class="p">)</span>
+<span class="go">[{u&#39;variables&#39;: [{u&#39;id&#39;: u&#39;NtA&#39;, u&#39;value&#39;: u&#39;vIf9&#39;}], u&#39;id&#39;: u&#39;Il81Na1b665QiXyF&#39;}]</span>
 </pre></div>
 </div>
 <span class="target" id="module-cesdspy"></span></div>
