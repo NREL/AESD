@@ -275,6 +275,47 @@
 </pre></div>
 </div>
 </div>
+<p><strong>API Info</strong>:</p>
+<blockquote>
+<div><dl class="get">
+<dt id="get--models-model_id-filters-filter_id">
+<code class="descname">GET </code><code class="descname">/models/{model_id}/filters/{filter_id}</code><a class="headerlink" href="#get--models-model_id-filters-filter_id" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Response JSON Object:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><strong>expr</strong> (<em>dict</em>) &#8211; </li>
+<li><strong>expr['not']</strong> (<em>dict</em>) &#8211; </li>
+<li><strong>expr['union']</strong> (<em>array(dict)</em>) &#8211; </li>
+<li><strong>expr['isect']</strong> (<em>array(dict)</em>) &#8211; </li>
+<li><strong>expr['var']</strong> (<em>string</em>) &#8211; a variable id</li>
+<li><strong>expr['value']</strong> (<em>string|double</em>) &#8211; a variable value</li>
+<li><strong>expr['set']</strong> (<em>string|double</em>) &#8211; a variable value</li>
+<li><strong>expr['interval']</strong> (<em>array(string|double)</em>) &#8211; a variable value</li>
+<li><strong>meta</strong> (<em>dict</em>) &#8211; </li>
+<li><strong>meta['filter_id']</strong> (<em>dict</em>) &#8211; a unique filter ID</li>
+<li><strong>meta['name']</strong> (<em>string</em>) &#8211; a filter name</li>
+<li><strong>meta['count']</strong> (<em>string</em>) &#8211; number of participating records</li>
+<li><strong>meta['color']</strong> (<em>string</em>) &#8211; hex color, e.g. &#8216;#ffffff&#8217;</li>
+<li><strong>meta['tags']</strong> (<em>dict</em>) &#8211; a set of tags</li>
+<li><strong>meta['tags'][tag_id]</strong> (<em>string(any)</em>) &#8211; a tag description</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> &#8211; json</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> &#8211; error description</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> &#8211; error description</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div></blockquote>
 </dd></dl>
 
 <dl class="function">
@@ -383,6 +424,52 @@
 </pre></div>
 </div>
 </div>
+<p><strong>API Info</strong>:</p>
+<blockquote>
+<div><dl class="get">
+<dt id="get--models-model_id-filters">
+<code class="descname">GET </code><code class="descname">/models/{model_id}/filters</code><a class="headerlink" href="#get--models-model_id-filters" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>tag_id</strong> (<em>string</em>) &#8211; a tag ID</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response JSON Object:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><strong>expr</strong> (<em>dict</em>) &#8211; </li>
+<li><strong>expr['not']</strong> (<em>dict</em>) &#8211; </li>
+<li><strong>expr['union']</strong> (<em>array(dict)</em>) &#8211; </li>
+<li><strong>expr['isect']</strong> (<em>array(dict)</em>) &#8211; </li>
+<li><strong>expr['var']</strong> (<em>string</em>) &#8211; a variable id</li>
+<li><strong>expr['value']</strong> (<em>string|double</em>) &#8211; a variable value</li>
+<li><strong>expr['set']</strong> (<em>string|double</em>) &#8211; a variable value</li>
+<li><strong>expr['interval']</strong> (<em>array(string|double)</em>) &#8211; a variable value</li>
+<li><strong>meta</strong> (<em>dict</em>) &#8211; </li>
+<li><strong>meta['filter_id']</strong> (<em>dict</em>) &#8211; a unique filter ID</li>
+<li><strong>meta['name']</strong> (<em>string</em>) &#8211; a filter name</li>
+<li><strong>meta['count']</strong> (<em>string</em>) &#8211; number of participating records</li>
+<li><strong>meta['color']</strong> (<em>string</em>) &#8211; hex color, e.g. &#8216;#ffffff&#8217;</li>
+<li><strong>meta['tags']</strong> (<em>dict</em>) &#8211; a set of tags</li>
+<li><strong>meta['tags'][tag_id]</strong> (<em>string(any)</em>) &#8211; a tag description</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> &#8211; json</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> &#8211; error description</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> &#8211; error description</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div></blockquote>
 </dd></dl>
 
 <dl class="function">
