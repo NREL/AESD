@@ -361,7 +361,7 @@ def remove(api_url, model_id, filter_id):
                 :statuscode 500: error description
     '''
     url = '{}/{}/{}/{}/{}'.format(api_url, root, model_id, endpoint, filter_id)
-    res = requests.delete(url, data=json.dumps(body))
+    res = requests.delete(url)
     try:
         res.raise_for_status()
         return res.json()
