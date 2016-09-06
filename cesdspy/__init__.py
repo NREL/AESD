@@ -5,6 +5,7 @@ __author__ = 'Nick Wunder'
 import servers
 import models
 import records
+import filters
 
 # Set default logging handler to avoid "No handler found" warnings.
 import logging
