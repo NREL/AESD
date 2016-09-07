@@ -45,27 +45,349 @@
   <div class="section" id="module-cesdspy.work">
 <span id="cesdspy-work"></span><h1><a class="reference internal" href="#module-cesdspy.work" title="cesdspy.work"><code class="xref py py-mod docutils literal"><span class="pre">cesdspy.work</span></code></a><a class="headerlink" href="#module-cesdspy.work" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
-<dt id="cesdspy.work.add">
-<code class="descclassname">cesdspy.work.</code><code class="descname">add</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cesdspy.work.add" title="Permalink to this definition">¶</a></dt>
-<dd><p>Todo</p>
+<dt id="cesdspy.work.cancel">
+<code class="descclassname">cesdspy.work.</code><code class="descname">cancel</code><span class="sig-paren">(</span><em>api_url</em>, <em>model_id</em>, <em>work_id</em><span class="sig-paren">)</span><a class="headerlink" href="#cesdspy.work.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancel work.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>api_url</strong> (<em>string</em>) &#8211; A url to query</li>
+<li><strong>model_id</strong> (<em>string</em>) &#8211; A model ID</li>
+<li><strong>work_id</strong> (<em>string</em>) &#8211; A work ID</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">result</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">json</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="literal-block-wrapper container" id="cesdspy-work-remove-success">
+<div class="code-block-caption"><span class="caption-text">cesdspy.work.remove success</span><a class="headerlink" href="#cesdspy-work-remove-success" title="Permalink to this code">¶</a></div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cesdspy</span>
+<span class="n">cesdspy</span><span class="o">.</span><span class="n">work</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="s1">&#39;http://1lv11lamb01.nrel.gov:8090&#39;</span><span class="p">,</span> <span class="s1">&#39;f0&#39;</span><span class="p">,</span> <span class="s1">&#39;abc&#39;</span><span class="p">)</span>
+
+<span class="c1"># Returns:</span>
+<span class="c1"># {</span>
+<span class="c1">#     &#39;result&#39;: &#39;ok&#39;</span>
+<span class="c1"># }</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper container" id="cesdspy-work-cancel-failure">
+<div class="code-block-caption"><span class="caption-text">cesdspy.work.cancel failure</span><a class="headerlink" href="#cesdspy-work-cancel-failure" title="Permalink to this code">¶</a></div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cesdspy</span>
+<span class="n">cesdspy</span><span class="o">.</span><span class="n">work</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="s1">&#39;http://1lv11lamb01.nrel.gov:8090&#39;</span><span class="p">,</span> <span class="s1">&#39;f0&#39;</span><span class="p">,</span> <span class="s1">&#39;abc&#39;</span><span class="p">)</span>
+
+<span class="c1"># Returns:</span>
+<span class="c1">#</span>
+<span class="c1"># {</span>
+<span class="c1">#     &#39;error&#39;: {</span>
+<span class="c1">#         &#39;status&#39;: 400,</span>
+<span class="c1">#         &#39;message&#39;: &#39;Bad Request&#39;,</span>
+<span class="c1">#         &#39;description&#39;: &#39;not supported&#39;</span>
+<span class="c1">#     }</span>
+<span class="c1"># }</span>
+</pre></div>
+</div>
+</div>
+<p><strong>API Info</strong>:</p>
+<blockquote>
+<div><dl class="delete">
+<dt id="delete--models-model_id-work-work">
+<code class="descname">DELETE </code><code class="descname">/models/{model_id}/work/{work}</code><a class="headerlink" href="#delete--models-model_id-work-work" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Response JSON Object:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><strong>result</strong> (<em>string</em>) &#8211; the result of delete</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> &#8211; json</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> &#8211; error description</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> &#8211; error description</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div></blockquote>
 </dd></dl>
 
 <dl class="function">
 <dt id="cesdspy.work.get">
-<code class="descclassname">cesdspy.work.</code><code class="descname">get</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cesdspy.work.get" title="Permalink to this definition">¶</a></dt>
-<dd><p>Todo</p>
+<code class="descclassname">cesdspy.work.</code><code class="descname">get</code><span class="sig-paren">(</span><em>api_url</em>, <em>model_id</em>, <em>work_id</em><span class="sig-paren">)</span><a class="headerlink" href="#cesdspy.work.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a specific work.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>api_url</strong> (<em>string</em>) &#8211; A url to query</li>
+<li><strong>model_id</strong> (<em>string</em>) &#8211; A model ID</li>
+<li><strong>work_id</strong> (<em>string</em>) &#8211; A work ID</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A work</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">json</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Example</p>
+<div class="literal-block-wrapper container" id="cesdspy-work-get-success">
+<div class="code-block-caption"><span class="caption-text">cesdspy.work.get success</span><a class="headerlink" href="#cesdspy-work-get-success" title="Permalink to this code">¶</a></div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cesdspy</span>
+<span class="n">cesdspy</span><span class="o">.</span><span class="n">work</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;http://1lv11lamb01.nrel.gov:8090&#39;</span><span class="p">,</span> <span class="s1">&#39;f0&#39;</span><span class="p">,</span> <span class="s1">&#39;X7Rsg&#39;</span><span class="p">)</span>
+
+<span class="c1"># Returns:</span>
+<span class="c1"># {</span>
+<span class="c1">#     &quot;status&quot;: &quot;success&quot;,</span>
+<span class="c1">#     &quot;work_id&quot;: &quot;X7Rsg&quot;,</span>
+<span class="c1">#     &quot;result_id&quot;: &quot;NIKm9EnR3hjvfV&quot;</span>
+<span class="c1"># }</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper container" id="cesdspy-work-get-failure-1">
+<div class="code-block-caption"><span class="caption-text">cesdspy.work.get failure 1</span><a class="headerlink" href="#cesdspy-work-get-failure-1" title="Permalink to this code">¶</a></div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cesdspy</span>
+<span class="n">cesdspy</span><span class="o">.</span><span class="n">work</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;http://1lv11lamb01.nrel.gov:8090&#39;</span><span class="p">,</span> <span class="s1">&#39;f0&#39;</span><span class="p">,</span> <span class="s1">&#39;abcd&#39;</span><span class="p">)</span>
+
+<span class="c1"># Response:</span>
+<span class="c1"># {</span>
+<span class="c1">#     &#39;error&#39;: {</span>
+<span class="c1">#         &#39;status&#39;: 400,</span>
+<span class="c1">#         &#39;message&#39;: &#39;Bad Request&#39;,</span>
+<span class="c1">#         &#39;description&#39;: &#39;work not found&#39;</span>
+<span class="c1">#     }</span>
+<span class="c1"># }</span>
+</pre></div>
+</div>
+</div>
+<p><strong>API Info</strong>:</p>
+<blockquote>
+<div><dl class="get">
+<dt id="get--models-model_id-work-work_id">
+<code class="descname">GET </code><code class="descname">/models/{model_id}/work/{work_id}</code><a class="headerlink" href="#get--models-model_id-work-work_id" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Response JSON Object:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><strong>status</strong> (<em>string</em>) &#8211; work status</li>
+<li><strong>work_id</strong> (<em>string</em>) &#8211; a work ID</li>
+<li><strong>additional</strong> &#8211; a additional ID</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> &#8211; json</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> &#8211; error description</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> &#8211; error description</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="cesdspy.work.issue">
+<code class="descclassname">cesdspy.work.</code><code class="descname">issue</code><span class="sig-paren">(</span><em>api_url</em>, <em>model_id</em>, <em>body={}</em><span class="sig-paren">)</span><a class="headerlink" href="#cesdspy.work.issue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Issue work.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>api_url</strong> (<em>string</em>) &#8211; A url to query</li>
+<li><strong>model_id</strong> (<em>string</em>) &#8211; A model ID</li>
+<li><strong>body</strong> (<em>json</em>) &#8211; Work to issue</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">work submission result</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">json</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="literal-block-wrapper container" id="cesdspy-work-issue-success">
+<div class="code-block-caption"><span class="caption-text">cesdspy.work.issue success</span><a class="headerlink" href="#cesdspy-work-issue-success" title="Permalink to this code">¶</a></div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cesdspy</span>
+<span class="n">work</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;explicit&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;Pw0Z&#39;</span>
+            <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mf">2.0</span>
+        <span class="p">}</span>
+    <span class="p">],</span>
+    <span class="s1">&#39;random&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s1">&#39;nZ&#39;</span>
+    <span class="p">],</span>
+    <span class="s1">&#39;timeout&#39;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>
+    <span class="s1">&#39;priority&#39;</span><span class="p">:</span> <span class="mi">0</span>
+<span class="p">}</span>
+<span class="n">cesdspy</span><span class="o">.</span><span class="n">work</span><span class="o">.</span><span class="n">issue</span><span class="p">(</span><span class="s1">&#39;http://1lv11lamb01.nrel.gov:8090&#39;</span><span class="p">,</span> <span class="s1">&#39;XXp&#39;</span><span class="p">,</span> <span class="n">work</span><span class="p">)</span>
+
+<span class="c1"># Returns:</span>
+<span class="c1"># {</span>
+<span class="c1">#     &quot;work_id&quot;: &quot;abc&quot;,</span>
+<span class="c1">#     &quot;generation&quot;: 42,</span>
+<span class="c1">#     &quot;estimated_completion&quot;: 123</span>
+<span class="c1"># }</span>
+</pre></div>
+</div>
+</div>
+<p><strong>API Info</strong>:</p>
+<blockquote>
+<div><dl class="post">
+<dt id="post--models-model_id-work">
+<code class="descname">POST </code><code class="descname">/models/{model_id}/work</code><a class="headerlink" href="#post--models-model_id-work" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Request JSON Object:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><strong>explicit</strong> (<em>array(dict)</em>) &#8211; </li>
+<li><strong>random</strong> (<em>array(string)</em>) &#8211; </li>
+<li><strong>timeout</strong> (<em>int</em>) &#8211; </li>
+<li><strong>priority</strong> (<em>int</em>) &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> &#8211; json</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> &#8211; error description</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> &#8211; error description</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div></blockquote>
 </dd></dl>
 
 <dl class="function">
 <dt id="cesdspy.work.list">
-<code class="descclassname">cesdspy.work.</code><code class="descname">list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cesdspy.work.list" title="Permalink to this definition">¶</a></dt>
-<dd><p>Todo</p>
+<code class="descclassname">cesdspy.work.</code><code class="descname">list</code><span class="sig-paren">(</span><em>api_url</em>, <em>model_id</em>, <em>query={}</em><span class="sig-paren">)</span><a class="headerlink" href="#cesdspy.work.list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all work. Provide tag information in query to search for specific items.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>api_url</strong> (<em>string</em>) &#8211; A url to query</li>
+<li><strong>model_id</strong> (<em>string</em>) &#8211; A model ID</li>
+<li><strong>query</strong> (<em>json</em>) &#8211; The query params</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A set of work</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">json</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="literal-block-wrapper container" id="cesdspy-work-list-success-1">
+<div class="code-block-caption"><span class="caption-text">cesdspy.work.list success 1</span><a class="headerlink" href="#cesdspy-work-list-success-1" title="Permalink to this code">¶</a></div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cesdspy</span>
+<span class="n">cesdspy</span><span class="o">.</span><span class="n">work</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="s1">&#39;http://1lv11lamb01.nrel.gov:8090&#39;</span><span class="p">,</span> <span class="s1">&#39;XXp&#39;</span><span class="p">)</span>
+
+<span class="c1"># Returns:</span>
+<span class="c1"># [</span>
+<span class="c1">#     {</span>
+<span class="c1">#         &quot;status&quot;: &quot;success&quot;,</span>
+<span class="c1">#         &quot;work_id&quot;: &quot;OGXnJpuRgSvU7KpTXpXY06&quot;,</span>
+<span class="c1">#         &quot;result_id&quot;: &quot;Il81Na1b665QiXyF&quot;</span>
+<span class="c1">#     },</span>
+<span class="c1">#     ...</span>
+<span class="c1"># ]</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper container" id="cesdspy-work-list-success-2">
+<div class="code-block-caption"><span class="caption-text">cesdspy.work.list success 2</span><a class="headerlink" href="#cesdspy-work-list-success-2" title="Permalink to this code">¶</a></div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cesdspy</span>
+<span class="n">cesdspy</span><span class="o">.</span><span class="n">work</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="s1">&#39;http://1lv11lamb01.nrel.gov:8090&#39;</span><span class="p">,</span> <span class="s1">&#39;f0&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;failed&#39;</span><span class="p">})</span>
+
+<span class="c1"># Returns:</span>
+<span class="c1"># [</span>
+<span class="c1">#     {</span>
+<span class="c1">#         &quot;status&quot;: &quot;failed&quot;,</span>
+<span class="c1">#         &quot;work_id&quot;: &quot;pRXld2YbWfN1c8XU4d0tVp5Q&quot;,</span>
+<span class="c1">#         &quot;additional&quot;: &quot;0uLKujNXJwh6qV8LAqQTrCjQs0Dd&quot;</span>
+<span class="c1">#     },</span>
+<span class="c1">#     ...</span>
+<span class="c1"># ]</span>
+</pre></div>
+</div>
+</div>
+<p><strong>API Info</strong>:</p>
+<blockquote>
+<div><dl class="get">
+<dt id="get--models-model_id-work">
+<code class="descname">GET </code><code class="descname">/models/{model_id}/work</code><a class="headerlink" href="#get--models-model_id-work" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>status</strong> (<em>string</em>) &#8211; a tag ID</li>
+<li><strong>from</strong> (<em>string</em>) &#8211; start generation</li>
+<li><strong>to</strong> (<em>string</em>) &#8211; end generation</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response JSON Object:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><strong>status</strong> (<em>string</em>) &#8211; work status</li>
+<li><strong>work_id</strong> (<em>string</em>) &#8211; a work ID</li>
+<li><strong>additional</strong> &#8211; a additional ID</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> &#8211; json</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> &#8211; error description</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> &#8211; error description</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
-<dl class="function">
-<dt id="cesdspy.work.remove">
-<code class="descclassname">cesdspy.work.</code><code class="descname">remove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cesdspy.work.remove" title="Permalink to this definition">¶</a></dt>
-<dd><p>Todo</p>
+</div></blockquote>
 </dd></dl>
 
 </div>

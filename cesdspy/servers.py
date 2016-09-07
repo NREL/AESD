@@ -36,7 +36,7 @@ def get(api_url):
               "version": 1
             }
 
-    API Info:
+    **API Info**:
 
         .. http:get:: /
 
@@ -79,7 +79,7 @@ def issue_command(api_url, body={}):
             #     "result" : "ok"
             # }
 
-    API Info:
+    **API Info**:
 
         .. http:post:: /command
 

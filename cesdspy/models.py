@@ -85,7 +85,7 @@ def get(api_url, model_id):
             #   }
             # }
 
-    API Info:
+    **API Info**:
 
         .. http:post:: /models/{model_id}
 
@@ -123,7 +123,7 @@ def list(api_url):
             #     "RSF2v0"
             # ]
 
-    API Info:
+    **API Info**:
 
         .. http:post:: /
 
@@ -165,7 +165,7 @@ def issue_command(api_url, model_id, body={}):
             #     "result" : "default strategy"
             # }
 
-    API Info:
+    **API Info**:
 
         .. http:post:: /models/{model_id}/command
 

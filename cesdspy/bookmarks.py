@@ -108,9 +108,7 @@ def list(api_url, model_id, query={}):
                 :statuscode 500: error description
     '''
     url = '{}/{}/{}/{}'.format(api_url, root, model_id, endpoint)
-    print(query)
     res = requests.get(url, params=query)
-    print(res.url)
     try:
         res.raise_for_status()
         return res.json()
