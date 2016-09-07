@@ -57,9 +57,9 @@ author = u'Nick Wunder'
 # built documents.
 #
 # The short X.Y version.
-version = u'0.1.0'
+version = u'0.2.0'
 # The full version, including alpha/beta/rc tags.
-release = u'0.1.0'
+release = u'0.2.0'
 # import re
 # ver_re = re.compile(r'version\s*=\s*"([0-9a-z.]+)"')
 # version = [ver_re.search(line).group(1)
