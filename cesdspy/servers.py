@@ -1,10 +1,11 @@
 import requests
 import logging
+from utils.errors import buildErrorPacket
 
 log = logging.getLogger(__name__)
 
 def get(api_url):
-    """Get information about a CESDS server
+    """Get information about a CESDS server.
 
     Args:
         api_url (string): The base url to query
@@ -35,15 +36,15 @@ def get(api_url):
               "version": 1
             }
 
-    Note:
+    **API Info**:
 
         .. http:get:: /
 
-            :>json string server_id: the server's id
-            :>json string server_type: the server type, e.g. "record_server"
-            :>json string version: the CESDS API version number
-            :>json array models: a list of the server's model ids
-            :>json json status: the server's status
+            :>resjson string server_id: the server's id
+            :>resjson string server_type: the server type, e.g. "record_server"
+            :>resjson string version: the CESDS API version number
+            :>resjson array models: a list of the server's model ids
+            :>resjson json status: the server's status
     """
     res = requests.get(api_url)
     try:
@@ -51,18 +52,19 @@ def get(api_url):
         return res.json()
     except:
         log.error('%s - %s', res.status_code, res.text)
+        return buildErrorPacket(res)
 
 def issue_command(api_url, body={}):
-    """Issue a command to a server
+    """Issue a server command.
 
     Args:
-        api_url (str): The base url to query
-        body (json): The command to issue
+        api_url (str): A url to query
+        body (json): A command to issue
 
     Returns:
         json: The result of the issued command
 
-    Example:
+    Examples:
 
         .. code-block:: python
 
@@ -72,36 +74,19 @@ def issue_command(api_url, body={}):
             }
             cesdspy.servers.issue_command('http://1lv11lamb01.nrel.gov:8091/', body)
 
-        .. code-block:: javascript
-            :caption: **cesdspy.servers.issue_command response**
+            # Returns:
+            # {
+            #     "result" : "ok"
+            # }
 
-            {
-                "result" : "TODO"
-            }
-
-    Note:
+    **API Info**:
 
         .. http:post:: /command
 
-            :form string command: one of {"restart", "clear", "set_model_strategy", "get_model_strategy"}
-            :form array(any) param: command parameters
+            :reqjson string command: one of {"restart", "clear", "set_model_strategy", "get_model_strategy"}
+            :reqjson array(any) param: command parameters
 
-            :json string result: the result of the issued command
-
-            **Example request**:
-
-            .. sourcecode:: http
-
-                GET /command HTTP/1.1
-                Host: http://1lv11lamb01.nrel.gov:8091
-                Accept: application/json
-
-            **Example response**:
-
-            .. sourcecode:: http
-
-                HTTP/1.1 200 OK
-                Content-Type: text/json
+            :resjson string result: the result of the issued command
 
           :statuscode 200: json
           :statuscode 400: error message
@@ -114,3 +99,4 @@ def issue_command(api_url, body={}):
         return res.json()
     except:
         log.error(' POST %s %s - %s', url, res.status_code, res.text)
+        return buildErrorPacket(res)

@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.1.0',
+        VERSION:     '0.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -47,7 +47,7 @@
 <dl class="function">
 <dt id="cesdspy.servers.get">
 <code class="descclassname">cesdspy.servers.</code><code class="descname">get</code><span class="sig-paren">(</span><em>api_url</em><span class="sig-paren">)</span><a class="headerlink" href="#cesdspy.servers.get" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get information about a CESDS server</p>
+<dd><p>Get information about a CESDS server.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -82,43 +82,48 @@
 </pre></div>
 </div>
 </div>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<dl class="last get">
+<p><strong>API Info</strong>:</p>
+<blockquote>
+<div><dl class="get">
 <dt id="get--">
 <code class="descname">GET </code><code class="descname">/</code><a class="headerlink" href="#get--" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Response JSON Object:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><ul class="first last simple">
-<li><strong>server_id</strong> (<em>string</em>) &#8211; the server&#8217;s id</li>
-<li><strong>server_type</strong> (<em>string</em>) &#8211; the server type, e.g. &#8220;record_server&#8221;</li>
-<li><strong>version</strong> (<em>string</em>) &#8211; the CESDS API version number</li>
-<li><strong>models</strong> (<em>array</em>) &#8211; a list of the server&#8217;s model ids</li>
-<li><strong>status</strong> (<em>json</em>) &#8211; the server&#8217;s status</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name" colspan="2">&gt;resjson string server_id:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">the server&#8217;s id</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">&gt;resjson string server_type:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">the server type, e.g. &#8220;record_server&#8221;</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">&gt;resjson string version:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">the CESDS API version number</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">&gt;resjson array models:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">a list of the server&#8217;s model ids</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">&gt;resjson json status:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">the server&#8217;s status</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
-</div>
+</div></blockquote>
 </dd></dl>
 
 <dl class="function">
 <dt id="cesdspy.servers.issue_command">
 <code class="descclassname">cesdspy.servers.</code><code class="descname">issue_command</code><span class="sig-paren">(</span><em>api_url</em>, <em>body={}</em><span class="sig-paren">)</span><a class="headerlink" href="#cesdspy.servers.issue_command" title="Permalink to this definition">¶</a></dt>
-<dd><p>Issue a command to a server</p>
+<dd><p>Issue a server command.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>api_url</strong> (<em>str</em>) &#8211; The base url to query</li>
-<li><strong>body</strong> (<em>json</em>) &#8211; The command to issue</li>
+<li><strong>api_url</strong> (<em>str</em>) &#8211; A url to query</li>
+<li><strong>body</strong> (<em>json</em>) &#8211; A command to issue</li>
 </ul>
 </td>
 </tr>
@@ -130,25 +135,22 @@
 </tr>
 </tbody>
 </table>
-<p class="rubric">Example</p>
+<p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cesdspy</span>
 <span class="n">body</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;command&quot;</span><span class="p">:</span> <span class="s2">&quot;get_model_strategy&quot;</span>
 <span class="p">}</span>
 <span class="n">cesdspy</span><span class="o">.</span><span class="n">servers</span><span class="o">.</span><span class="n">issue_command</span><span class="p">(</span><span class="s1">&#39;http://1lv11lamb01.nrel.gov:8091/&#39;</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span>
+
+<span class="c1"># Returns:</span>
+<span class="c1"># {</span>
+<span class="c1">#     &quot;result&quot; : &quot;ok&quot;</span>
+<span class="c1"># }</span>
 </pre></div>
 </div>
-<div class="literal-block-wrapper container" id="cesdspy-servers-issue-command-response">
-<div class="code-block-caption"><span class="caption-text"><strong>cesdspy.servers.issue_command response</strong></span><a class="headerlink" href="#cesdspy-servers-issue-command-response" title="Permalink to this code">¶</a></div>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="s2">&quot;result&quot;</span> <span class="o">:</span> <span class="s2">&quot;TODO&quot;</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</div>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<dl class="last post">
+<p><strong>API Info</strong>:</p>
+<blockquote>
+<div><dl class="post">
 <dt id="post--command">
 <code class="descname">POST </code><code class="descname">/command</code><a class="headerlink" href="#post--command" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
@@ -156,28 +158,17 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">form string command:</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">reqjson string command:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body">one of {&#8220;restart&#8221;, &#8220;clear&#8221;, &#8220;set_model_strategy&#8221;, &#8220;get_model_strategy&#8221;}</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">form array(any) param:</th></tr>
+<tr class="field-even field"><th class="field-name" colspan="2">reqjson array(any) param:</th></tr>
 <tr class="field-even field"><td>&nbsp;</td><td class="field-body">command parameters</td>
 </tr>
-<tr class="field-odd field"><th class="field-name" colspan="2">json string result:</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">resjson string result:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body">the result of the issued command</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Example request</strong>:</p>
-<div class="highlight-http"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/command</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
-<span class="na">Host</span><span class="o">:</span> <span class="l">http://1lv11lamb01.nrel.gov:8091</span>
-<span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
-</pre></div>
-</div>
-<p><strong>Example response</strong>:</p>
-<div class="highlight-http"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">200</span> <span class="ne">OK</span>
-<span class="na">Content-Type</span><span class="o">:</span> <span class="l">text/json</span>
-</pre></div>
-</div>
 </div></blockquote>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -194,7 +185,7 @@
 </table>
 </dd></dl>
 
-</div>
+</div></blockquote>
 </dd></dl>
 
 </div>

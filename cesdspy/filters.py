@@ -99,31 +99,31 @@ def list(api_url, model_id, query={}):
             #     }
             # }
 
-        **API Info**:
+    **API Info**:
 
-            .. http:get:: /models/{model_id}/filters
+        .. http:get:: /models/{model_id}/filters
 
-                :param string tag_id: a tag ID
+            :param string tag_id: a tag ID
 
-                :resjson dict expr:
-                :resjson dict expr['not']:
-                :resjson array(dict) expr['union']:
-                :resjson array(dict) expr['isect']:
-                :resjson string expr['var']: a variable id
-                :resjson string|double expr['value']: a variable value
-                :resjson string|double expr['set']: a variable value
-                :resjson array(string|double) expr['interval']: a variable value
-                :resjson dict meta:
-                :resjson dict meta['filter_id']: a unique filter ID
-                :resjson string meta['name']: a filter name
-                :resjson string meta['count']: number of participating records
-                :resjson string meta['color']: hex color, e.g. '#ffffff'
-                :resjson dict meta['tags']: a set of tags
-                :resjson string(any) meta['tags'][tag_id]: a tag description
+            :resjson dict expr:
+            :resjson dict expr['not']:
+            :resjson array(dict) expr['union']:
+            :resjson array(dict) expr['isect']:
+            :resjson string expr['var']: a variable id
+            :resjson string|double expr['value']: a variable value
+            :resjson string|double expr['set']: a variable value
+            :resjson array(string|double) expr['interval']: a variable value
+            :resjson dict meta:
+            :resjson dict meta['filter_id']: a unique filter ID
+            :resjson string meta['name']: a filter name
+            :resjson string meta['count']: number of participating records
+            :resjson string meta['color']: hex color, e.g. '#ffffff'
+            :resjson dict meta['tags']: a set of tags
+            :resjson string(any) meta['tags'][tag_id]: a tag description
 
-                :statuscode 200: json
-                :statuscode 400: error description
-                :statuscode 500: error description
+            :statuscode 200: json
+            :statuscode 400: error description
+            :statuscode 500: error description
     '''
     url = '{}/{}/{}/{}'.format(api_url, root, model_id, endpoint)
     res = requests.get(url, params=query)
@@ -188,29 +188,29 @@ def get(api_url, model_id, filter_id):
             #     }
             # }
 
-        **API Info**:
+    **API Info**:
 
-            .. http:get:: /models/{model_id}/filters/{filter_id}
+        .. http:get:: /models/{model_id}/filters/{filter_id}
 
-                :resjson dict expr:
-                :resjson dict expr['not']:
-                :resjson array(dict) expr['union']:
-                :resjson array(dict) expr['isect']:
-                :resjson string expr['var']: a variable id
-                :resjson string|double expr['value']: a variable value
-                :resjson string|double expr['set']: a variable value
-                :resjson array(string|double) expr['interval']: a variable value
-                :resjson dict meta:
-                :resjson dict meta['filter_id']: a unique filter ID
-                :resjson string meta['name']: a filter name
-                :resjson string meta['count']: number of participating records
-                :resjson string meta['color']: hex color, e.g. '#ffffff'
-                :resjson dict meta['tags']: a set of tags
-                :resjson string(any) meta['tags'][tag_id]: a tag description
+            :resjson dict expr:
+            :resjson dict expr['not']:
+            :resjson array(dict) expr['union']:
+            :resjson array(dict) expr['isect']:
+            :resjson string expr['var']: a variable id
+            :resjson string|double expr['value']: a variable value
+            :resjson string|double expr['set']: a variable value
+            :resjson array(string|double) expr['interval']: a variable value
+            :resjson dict meta:
+            :resjson dict meta['filter_id']: a unique filter ID
+            :resjson string meta['name']: a filter name
+            :resjson string meta['count']: number of participating records
+            :resjson string meta['color']: hex color, e.g. '#ffffff'
+            :resjson dict meta['tags']: a set of tags
+            :resjson string(any) meta['tags'][tag_id]: a tag description
 
-                :statuscode 200: json
-                :statuscode 400: error description
-                :statuscode 500: error description
+            :statuscode 200: json
+            :statuscode 400: error description
+            :statuscode 500: error description
     '''
     url = '{}/{}/{}/{}/{}'.format(api_url, root, model_id, endpoint, filter_id)
     res = requests.get(url)
@@ -327,29 +327,29 @@ def add(api_url, model_id, body={}):
             #     }
             # }
 
-        **API Info**:
+    **API Info**:
 
-            .. http:post:: /models/{model_id}/filters
+        .. http:post:: /models/{model_id}/filters
 
-                :reqjson dict expr:
-                :reqjson dict expr['not']:
-                :reqjson array(dict) expr['union']:
-                :reqjson array(dict) expr['isect']:
-                :reqjson string expr['var']: a variable id
-                :reqjson string|double expr['value']: a variable value
-                :reqjson string|double expr['set']: a variable value
-                :reqjson array(string|double) expr['interval']: a variable value
-                :reqjson dict meta:
-                :reqjson dict meta['filter_id']: a unique filter ID
-                :reqjson string meta['name']: a filter name
-                :reqjson string meta['count']: number of participating records
-                :reqjson string meta['color']: hex color, e.g. '#ffffff'
-                :reqjson dict meta['tags']: a set of tags
-                :reqjson string(any) meta['tags'][tag_id]: a tag description
+            :reqjson dict expr:
+            :reqjson dict expr['not']:
+            :reqjson array(dict) expr['union']:
+            :reqjson array(dict) expr['isect']:
+            :reqjson string expr['var']: a variable id
+            :reqjson string|double expr['value']: a variable value
+            :reqjson string|double expr['set']: a variable value
+            :reqjson array(string|double) expr['interval']: a variable value
+            :reqjson dict meta:
+            :reqjson dict meta['filter_id']: a unique filter ID
+            :reqjson string meta['name']: a filter name
+            :reqjson string meta['count']: number of participating records
+            :reqjson string meta['color']: hex color, e.g. '#ffffff'
+            :reqjson dict meta['tags']: a set of tags
+            :reqjson string(any) meta['tags'][tag_id]: a tag description
 
-                :statuscode 200: json
-                :statuscode 400: error description
-                :statuscode 500: error description
+            :statuscode 200: json
+            :statuscode 400: error description
+            :statuscode 500: error description
     '''
     url = '{}/{}/{}/{}'.format(api_url, root, model_id, endpoint)
     res = requests.post(url, data=json.dumps(body))
@@ -400,15 +400,15 @@ def remove(api_url, model_id, filter_id):
             #     }
             # }
 
-        **API Info**:
+    **API Info**:
 
-            .. http:delete:: /models/{model_id}/filters/{filter_id}
+        .. http:delete:: /models/{model_id}/filters/{filter_id}
 
-                :resjson string result: the result of delete
+            :resjson string result: the result of delete
 
-                :statuscode 200: json
-                :statuscode 400: error description
-                :statuscode 500: error description
+            :statuscode 200: json
+            :statuscode 400: error description
+            :statuscode 500: error description
     '''
     url = '{}/{}/{}/{}/{}'.format(api_url, root, model_id, endpoint, filter_id)
     res = requests.delete(url)

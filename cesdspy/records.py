@@ -1,8 +1,9 @@
 import requests
 import logging
+from utils.errors import buildErrorPacket
+import json
 
 log = logging.getLogger(__name__)
-
 root = 'models'
 """The root endpoint"""
 endpoint = 'records'
@@ -27,23 +28,21 @@ def get(api_url, model_id, record_id, query={}):
             import cesdspy.records
             records.get('http://1lv11lamb01.nrel.gov:8091', 'RSF2v0', '1468500823')
 
-        .. code-block:: javascript
-            :caption: **cesdspy.records.get response**
-
-            {
-              'variables': [
-                {
-                  'id': '@1edb6d30-5d812ce6',
-                  'value': -0.7799999713897705
-                },
-                {
-                  'id': '@1edb6d30-d9847159',
-                  'value': -33.380001068115234
-                },
-                ...
-              ],
-              'id': '1468500823'
-            }
+            # Returns:
+            # {
+            #   'variables': [
+            #     {
+            #       'id': '@1edb6d30-5d812ce6',
+            #       'value': -0.7799999713897705
+            #     },
+            #     {
+            #       'id': '@1edb6d30-d9847159',
+            #       'value': -33.380001068115234
+            #     },
+            #     ...
+            #   ],
+            #   'id': '1468500823'
+            # }
 
     Example:
 
@@ -55,22 +54,31 @@ def get(api_url, model_id, record_id, query={}):
             }
             records.get('http://1lv11lamb01.nrel.gov:8091', 'RSF2v0', '1468500823', query)
 
-        .. code-block:: javascript
-            :caption: **cesdspy.records.get with query response**
+            # Returns:
+            # {
+            #   'variables': [
+            #     {
+            #       'id': '@1edb6d30-fa21e31d',
+            #       'value': 0.10500000417232513
+            #     },
+            #     {
+            #       'id': '@1edb6d30-d9847159',
+            #       'value': -33.380001068115234
+            #     }
+            #   ],
+            #   'id': '1468500823'
+            # }
 
-            {
-              'variables': [
-                {
-                  'id': '@1edb6d30-fa21e31d',
-                  'value': 0.10500000417232513
-                },
-                {
-                  'id': '@1edb6d30-d9847159',
-                  'value': -33.380001068115234
-                }
-              ],
-              'id': '1468500823'
-            }
+    **API Info**:
+
+        .. http:get:: /models/{model_id}/records
+
+            :resjson array(dict) variables: A list of variables each with 'id' and 'value' keys
+            :resjson string id: A record ID
+
+            :statuscode 200: json
+            :statuscode 400: error description
+            :statuscode 500: error description
     """
     url = '{}/{}/{}/{}/{}'.format(api_url, root, model_id, endpoint, record_id)
     res = requests.get(url, params=query)
@@ -79,6 +87,7 @@ def get(api_url, model_id, record_id, query={}):
         return res.json()
     except:
         log.error('%s - %s', res.status_code, res.text)
+        return buildErrorPacket(res)
 
 def list(api_url, model_id, query={}):
     """Get a single record
@@ -92,7 +101,7 @@ def list(api_url, model_id, query={}):
     Returns:
         json: A list of records
 
-    Example:
+    Examples:
 
         .. code-block:: python
 
@@ -104,26 +113,35 @@ def list(api_url, model_id, query={}):
             }
             cesdspy.records.get('http://1lv11lamb01.nrel.gov:8091/', 'RSF2v0', query)
 
-        .. code-block:: javascript
-            :caption: **cesdspy.records.list response**
+            # Returns:
+            # [
+            #     {
+            #       'variables': [
+            #         {
+            #           'id': '@1edb6d30-5d812ce6',
+            #           'value': -0.7799999713897705
+            #         },
+            #         {
+            #           'id': '@1edb6d30-d9847159',
+            #           'value': -29.600000381469727
+            #         },
+            #         ...
+            #       ],
+            #       'id': '1468500780'
+            #     },
+            #     ...
+            # ]
 
-            [
-                {
-                  'variables': [
-                    {
-                      'id': '@1edb6d30-5d812ce6',
-                      'value': -0.7799999713897705
-                    },
-                    {
-                      'id': '@1edb6d30-d9847159',
-                      'value': -29.600000381469727
-                    },
-                    ...
-                  ],
-                  'id': '1468500780'
-                },
-                ...
-            ]
+    **API Info**:
+
+        .. http:get:: /models/{model_id}/records/{record_id}
+
+            :resjson array(dict) variables: A list of variables each with 'id' and 'value' keys
+            :resjson string id: A record ID
+
+            :statuscode 200: json
+            :statuscode 400: error description
+            :statuscode 500: error description
     """
     url = '{}/{}/{}/{}'.format(api_url, root, model_id, endpoint)
     res = requests.get(url, params=query)
@@ -132,6 +150,7 @@ def list(api_url, model_id, query={}):
         return res.json()
     except:
         log.error('%s - %s', res.status_code, res.text)
+        return buildErrorPacket(res)
 
 def insert(api_url, model_id, body={}):
     """Add a single record
@@ -144,7 +163,7 @@ def insert(api_url, model_id, body={}):
     Returns:
         json: The result of the insert
 
-    Example:
+    Examples:
 
         .. code-block:: python
 
@@ -164,17 +183,29 @@ def insert(api_url, model_id, body={}):
             }
             cesdspy.records.insert('http://1lv11lamb01.nrel.gov:8091/', 'RSF2v0', record)
 
-        .. code-block:: javascript
-            :caption: **cesdspy.records.insert response**
+            # Returns:
+            # {
+            #     "result": "ok"
+            # }
 
-            {
-                "result": "ok"
-            }
+    **API Info**:
+
+        .. http:post:: /models/{model_id}/records
+
+            :reqjson array(dict) variables: A list of variables each with 'id' and 'value' keys
+            :reqjson string id: A record ID
+
+            :resjson string result: The result of the insert
+
+            :statuscode 200: json
+            :statuscode 400: error description
+            :statuscode 500: error description
     """
     url = '{}/{}/{}/{}'.format(api_url, root, model_id, endpoint)
-    res = requests.post(url, data=body)
+    res = requests.post(url, data=json.dumps(body))
     try:
         res.raise_for_status()
         return res.json()
     except:
         log.error('%s - %s', res.status_code, res.text)
+        return buildErrorPacket(res)
