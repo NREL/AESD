@@ -6,6 +6,7 @@ import servers
 import models
 import records
 import filters
+import bookmarks
 
 # Set default logging handler to avoid "No handler found" warnings.
 import logging
