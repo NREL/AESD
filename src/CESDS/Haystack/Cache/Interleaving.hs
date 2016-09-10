@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards   #-}
 
 
-module CESDS.Haystack.Cache (
+module CESDS.Haystack.Cache.Interleaving (
   CacheManager(..)
 , clearCache
 , makeCacheManager

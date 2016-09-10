@@ -7,12 +7,13 @@ module NREL.Meters (
   Site(..)
 , meters
 , siteModel
+, siteModels
 ) where
 
 
 import CESDS.Haystack (HaystackAccess)
 import CESDS.Types (Tags(..))
-import CESDS.Types.Model (Model(..))
+import CESDS.Types.Model as M (Model(..))
 import CESDS.Types.Variable as V (Display(..), Domain(..), Units(..), Variable(..), VariableIdentifier)
 import Control.Arrow ((***))
 import Data.Aeson.Types (FromJSON, ToJSON)
@@ -94,7 +95,7 @@ siteModel site@Site{..} =
                                      , color      = Nothing
                                      }
                     , domain       = Interval Nothing Nothing
-                    , units        = Just $ Units 2 1 (-3) 0 0 0 0 0 1000
+                    , units        = Nothing -- FIXME Just $ Units 2 1 (-3) 0 0 0 0 0 1000
                     , isInput      = False
                     }
                   |
@@ -104,3 +105,36 @@ siteModel site@Site{..} =
     timeKey     = Just "epoch"
   in
     Model{..}
+
+
+siteModels :: Site -> [Model]
+siteModels site@Site{..} =
+  let
+    prototype = siteModel site { siteMeters = [] }
+  in
+    [
+      prototype
+      {
+        M.identifier = identifier'
+      , uri          = Nothing -- FIXME
+      , name         = label'
+      , description  = Just "ADDITIONAL METADATA WILL BE ADDED SOON" -- FIXME
+      , tags         = Just $ Tags [("units", "TO BE ADDED SOON")] -- FIXME
+      , variables    = Variable
+                       {
+                         V.identifier = "measurement"
+                       , display      = Display
+                                        {
+                                          label      = label'
+                                        , shortLabel = Just identifier'
+                                        , color      = Nothing
+                                        }
+                       , domain       = Interval Nothing Nothing
+                       , units        = Nothing -- FIXME Just $ Units 2 1 (-3) 0 0 0 0 0 1000
+                       , isInput      = False
+                       }
+                       : variables prototype
+      }
+    |
+      (label', identifier') <- meters site
+    ]
