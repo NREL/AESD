@@ -1,5 +1,5 @@
 name:                cesds-records
-version:             0.2.10.0
+version:             0.2.11.0
 synopsis:            Implementation of CESDS record API
 description:         Implementation of CESDS record API.
 license:             AllRightsReserved
@@ -34,9 +34,6 @@ library
                     CESDS.Types.Server
                     CESDS.Types.Work
                     CESDS.Types.Variable
-                    Control.Monad.Except.Util
-                    Data.List.Util
-                    Data.String.Util
   build-depends   : base >=4.8 && <4.9
                   , aeson
                   , bytestring
@@ -45,6 +42,7 @@ library
                   , http-types
                   , mtl
                   , network-uri
+                  , raft
                   , scientific
                   , scotty
                   , stm
@@ -79,6 +77,7 @@ test-suite cesds-json-parsing
                   , mtl
                   , network-uri
                   , QuickCheck
+                  , raft
                   , scientific
                   , scotty
                   , stm
@@ -115,6 +114,7 @@ executable cesds-server
                   , mtl
                   , network-uri
                   , QuickCheck
+                  , raft
                   , scientific
                   , scotty
                   , stm
