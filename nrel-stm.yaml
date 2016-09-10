@@ -6,12 +6,12 @@ siteAccess     :
   timeZone     : [-360, True, Denver]
 siteIdentifier : RSF2v1
 siteURI        : http://www.nrel.gov/sustainable_nrel/rsf.html#RSF2v1
-siteName       : RSF 2 Version 0
-siteDescription: Selected power meters from the RSF 2
+siteName       : RSF 2 Version 1
+siteDescription: Sensors from NREL South Table Mesa
 siteTags       :
                ! 'DC.source'     : https://skyspark-ops.nrel.gov/proj/nrel
                ! 'DC.creator'    : Brian W Bush <brian.bush@nrel.gov>
-               ! 'DC.description': Selected power meters from the RSF 2
+               ! 'DC.description': NREL sTM Sensors
 siteMeters     :
                -  "1b2e175f-9758af0d Central Plant East Campus Chilled Water (from FTLB) Energy Rate"
                -  "1b178091-1c03af90 Central Plant East Campus Chilled Water (from FTLB) Flow Rate"

@@ -1,17 +1,17 @@
 siteAccess     :
   server       : xv11skys01.nrel.gov
   root         : /api/nrel_wt_V7
-  authorization: ["bbush","<<PASSWORD GOES HERE>>"]
+  authorization: ["bbush","<<PUT THE PASSWORD HERE>>"]
   secure       : false
   timeZone     : [-360, True, Denver]
 siteIdentifier : NWTCv0
-siteURI        : http://www.nrel.gov/nwtc/#RSF2v0
-siteName       : NWTC Version 0
-siteDescription: Selected power meters from the NWTC
+siteURI        : http://www.nrel.gov/nwtc/#RSF2v1
+siteName       : NWTC Version 1
+siteDescription: Sensors from NREL National Wind Technology Center
 siteTags       :
                ! 'DC.source'     : https://xv11skys01.nrel.gov/proj/nrel_wt_v7
                ! 'DC.creator'    : Brian W Bush <brian.bush@nrel.gov>
-               ! 'DC.description': Selected power meters from the NWTC
+               ! 'DC.description': NREL NWTC sensors
 siteMeters     :
                - "1dca834e-c6af46d6 NWTC Alstom Turbine Electricity Meter Turbine-Alstom kW Demand Forward"
                - "1dca834e-69a3e57e NWTC Alstom Turbine Electricity Meter Turbine-Alstom kW Demand Reverse"
