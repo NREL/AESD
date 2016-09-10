@@ -1,5 +1,5 @@
 name:                cesds-records-haystack
-version:             0.2.18.0
+version:             0.2.19.0
 synopsis:            Haystack support for CESDS records API.
 description:         Haystack support for CESDS records API.
 license:             AllRightsReserved
@@ -26,8 +26,6 @@ library
   hs-source-dirs  : src
   exposed-modules : CESDS.Haystack
                     CESDS.Haystack.Cache
-                    Data.Aeson.Util
-                    Data.Time.Util
                     NREL.Meters
   build-depends   : base >=4.8 && <4.9
                   , aeson
@@ -39,6 +37,7 @@ library
                   , http-conduit
                   , mtl
                   , network-uri
+                  , raft
                   , scientific
                   , text
                   , time
@@ -63,6 +62,7 @@ executable cesds-haystack-server
                   , http-conduit
                   , mtl
                   , network-uri
+                  , raft
                   , scientific
                   , text
                   , time
