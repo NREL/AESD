@@ -22,6 +22,7 @@ module CESDS.Haystack.Cache.Memory (
 import CESDS.Haystack (EpochSeconds, HaystackAccess(..), HaystackTimes(..), Measurement, TimeStamp, haystackHisRead, sEpochSeconds, sMeasurement, sTimeStamp)
 import CESDS.Types (Val(..))
 import CESDS.Types.Variable (VariableIdentifier)
+import Control.Applicative ((<|>))
 import Control.Arrow ((&&&))
 import Control.Monad.Except (MonadError)
 import Control.Monad.Trans (MonadIO)
@@ -68,15 +69,17 @@ fromSecondsPOSIX' HaystackAccess{..} =
 refreshExtractCacheManager :: (MonadIO m, MonadError String m) => HaystackAccess -> VariableIdentifier -> Maybe SecondsPOSIX -> Maybe SecondsPOSIX -> CacheM m [(SecondsPOSIX, Object')]
 refreshExtractCacheManager access variable startRequest finishRequest =
   do
+    startCache <- fmap (sEpochSeconds <:) <$> keysMinimum variable
     let
-      minimum' Nothing Nothing   = Nothing
-      minimum' Nothing (Just y)  = Just y
-      minimum' (Just x) Nothing  = Just x
-      minimum' (Just x) (Just y) = Just $ minimum [x, y]
-    startRequest' <- minimum' startRequest . fmap (sEpochSeconds <:) <$> keysMinimum variable
+      startRequest' = startRequest <|> startCache
     if isNothing startRequest'
       then return []
-      else map asObject <$> lookupRange (fetchHistory access) variable ((sEpochSeconds =:) <$> startRequest') ((sEpochSeconds =:) <$> finishRequest)
+      else map asObject
+             <$> lookupRange
+                 (fetchHistory access)
+                 variable
+                 ((sEpochSeconds =:) <$> startRequest')
+                 ((sEpochSeconds =:) <$> finishRequest)
 
 
 fetchHistory :: MonadIO m => HaystackAccess -> VariableIdentifier -> Maybe (FieldRec '[EpochSeconds]) -> Maybe (FieldRec '[EpochSeconds]) -> CacheM m [(FieldRec '[EpochSeconds], FieldRec '[TimeStamp, Measurement])]
