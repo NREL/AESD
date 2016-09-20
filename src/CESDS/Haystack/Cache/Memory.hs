@@ -25,15 +25,16 @@ import CESDS.Types.Variable (VariableIdentifier)
 import Control.Arrow ((&&&))
 import Control.Monad.Except (MonadError)
 import Control.Monad.Trans (MonadIO)
-import Data.Daft.Cache (Cache(..), minimum')
+import Data.Daft.Cache (Cache(..))
 import Data.Daft.Cache.Memory (Container, MemoryCacheT, emptyContainer, evalCacheT, execCacheT, runCacheT)
 import Data.Daft.Vinyl.FieldRec ((=:), (<:))
 import Data.Maybe (isNothing)
-import Data.Text (Text)
+import Data.Text (Text, unpack)
 import Data.Time.LocalTime (TimeZone(..))
 import Data.Time.Util (SecondsPOSIX, fromSecondsPOSIX)
 import Data.Vinyl.Derived (FieldRec)
 import Data.Vinyl.Lens (rcast)
+import Debug.Trace (trace)
 
 import qualified Data.HashMap.Strict as H
 
@@ -67,8 +68,13 @@ fromSecondsPOSIX' HaystackAccess{..} =
 refreshExtractCacheManager :: (MonadIO m, MonadError String m) => HaystackAccess -> VariableIdentifier -> Maybe SecondsPOSIX -> Maybe SecondsPOSIX -> CacheM m [(SecondsPOSIX, Object')]
 refreshExtractCacheManager access variable startRequest finishRequest =
   do
+    let
+      minimum' Nothing Nothing   = Nothing
+      minimum' Nothing (Just y)  = Just y
+      minimum' (Just x) Nothing  = Just x
+      minimum' (Just x) (Just y) = Just $ minimum [x, y]
     startRequest' <- minimum' startRequest . fmap (sEpochSeconds <:) <$> keysMinimum variable
-    if isNothing startRequest
+    if isNothing startRequest'
       then return []
       else map asObject <$> lookupRange (fetchHistory access) variable ((sEpochSeconds =:) <$> startRequest') ((sEpochSeconds =:) <$> finishRequest)
 
@@ -80,7 +86,9 @@ fetchHistory access variable startRequest finishRequest =
       Just startRequest' = fromSecondsPOSIX' access . (sEpochSeconds <:) <$> startRequest
       finishRequest' = fromSecondsPOSIX' access . (sEpochSeconds <:) <$> finishRequest
     x <- haystackHisRead access variable $ maybe AfterTime (flip TimeRange) finishRequest' startRequest'
-    return $ map (rcast &&& rcast) x
+    return
+      . trace ("Reading sensor " ++ unpack variable ++ " from " ++ show startRequest ++ " to " ++ show finishRequest ++ ".")
+      $ map (rcast &&& rcast) x
 
 
 type Object' = H.HashMap VariableIdentifier Val
