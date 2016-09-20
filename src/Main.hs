@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TupleSections     #-}
@@ -9,8 +10,8 @@ module Main (
 
 
 import CESDS.Haystack (HaystackAccess)
-import CESDS.Haystack.Cache.Memory (CacheM(..), cacheSize, clearCache, makeCache, refreshExtractCacheManager, runCacheT, timeKeys)
-import CESDS.Server (RecordFilter(..), ServerT, Service(..), gets, modifys, runService, sets)
+import CESDS.Haystack.Cache.Memory (Cached, cacheSize, evalCacheT, runCacheT, makeCache, refreshExtractCacheManager, timeKeys)
+import CESDS.Server (RecordFilter(..), ServerM, Service(..), gets, modifys, runService, sets)
 import CESDS.Types (Tags(..))
 import CESDS.Types.Bookmark (Bookmark, BookmarkIdentifier, validateBookmark, validateBookmarks)
 import CESDS.Types.Filter (Filter, FilterIdentifier, validateFilter, validateFilters)
@@ -20,7 +21,6 @@ import CESDS.Types.Server (Server(Server), validateServer)
 import Control.Arrow ((***))
 import Control.Monad (void)
 import Control.Monad.Except (liftIO, throwError)
-import Control.Monad.Trans (lift)
 import Data.List.Util (hasSubset)
 import Data.Maybe (fromMaybe)
 import Data.Text (pack, unpack)
@@ -38,15 +38,13 @@ import qualified CESDS.Types.Server as Server (Server(..), Status(Okay))
 import qualified Data.HashMap.Strict as H
 
 
-type ServerM = ServerT ServerState CacheM
-
-
 data ServerState =
   ServerState
   {
     server :: Server
   , models :: H.HashMap ModelIdentifier ModelState
   , access :: HaystackAccess
+  , cache  :: Cached
   }
 
 
@@ -94,18 +92,17 @@ withFilters serverState modelIdentifier f =
     }
 
 
-recordIdentifiers :: ServerState -> ModelIdentifier -> ServerM [RecordIdentifier]
+recordIdentifiers :: ServerState -> ModelIdentifier -> ServerM ServerState [RecordIdentifier]
 recordIdentifiers ServerState{..} modelIdentifier =
-  map (pack . show)
-    <$> lift (timeKeys modelIdentifier)
+  flip evalCacheT cache $ map (pack . show) <$> timeKeys modelIdentifier
 
 
-updateServerStats :: ServerState -> ServerM ServerState
+updateServerStats :: ServerState -> ServerM ServerState ServerState
 updateServerStats serverState@ServerState{..} =
   do
-    g <- liftIO $ getSecondsPOSIX
+    g <- liftIO getSecondsPOSIX
     models' <- mapM (\modelState@ModelState{..} -> do
-                                                     n <- lift . cacheSize $ Model.identifier model
+                                                     n <- flip evalCacheT cache . cacheSize $ Model.identifier model
                                                      return
                                                        modelState
                                                        {
@@ -123,11 +120,11 @@ updateServerStats serverState@ServerState{..} =
       }
 
 
-updateModelStats :: ServerState -> ModelIdentifier -> ServerM ServerState
+updateModelStats :: ServerState -> ModelIdentifier -> ServerM ServerState ServerState
 updateModelStats serverState@ServerState{..} modelIdentifier =
   do
     g <- liftIO getSecondsPOSIX
-    n <- lift $ cacheSize modelIdentifier
+    n <- flip evalCacheT cache $ cacheSize modelIdentifier
     return
       . withModel serverState modelIdentifier
       $ \model -> model
@@ -137,7 +134,7 @@ updateModelStats serverState@ServerState{..} modelIdentifier =
                   }
 
 
-initialize :: Site -> ServerM ServerState
+initialize :: Site -> IO ServerState
 initialize site =
   do
     let
@@ -160,8 +157,8 @@ initialize site =
         , status            = Server.Okay "operating normally"
         }
       access = siteAccess site
-    lift . makeCache $ meters site
-    updateServerStats ServerState{..}
+      cache = makeCache $ meters site
+    return ServerState{..}
 
 
 reinitialize :: ServerState -> ServerState
@@ -181,7 +178,7 @@ reinitializeModel modelState@ModelState{..} =
   } -- FIXME
 
 
-validateServerState :: ServerState -> ServerM ()
+validateServerState :: ServerState -> ServerM ServerState ()
 validateServerState serverState@ServerState{..} =
   do
     validateServer server
@@ -197,7 +194,7 @@ validateServerState serverState@ServerState{..} =
       ]
 
 
-service :: Service ServerState CacheM
+service :: Service ServerState
 service =
   let
     getServer =
@@ -237,14 +234,16 @@ service =
         (_, serverState@ServerState{..}) <- checkModel modelIdentifier
         let
           recordIdentifier = read . unpack <$> rfRecord
-        rows <- lift $ refreshExtractCacheManager access modelIdentifier recordIdentifier recordIdentifier
+        (rows, cache') <- flip runCacheT cache $ refreshExtractCacheManager access modelIdentifier recordIdentifier recordIdentifier
+        sets $ serverState {cache = cache'}
         if null rows
           then throwError "record not found"
           else return . uncurry Record . (pack . show *** H.toList) $ head rows
     getRecords RecordFilter{..} modelIdentifier =
       do
         (_, serverState@ServerState{..}) <- checkModel modelIdentifier
-        rows <- lift $ refreshExtractCacheManager access modelIdentifier rfFrom rfTo
+        (rows, cache') <- flip runCacheT cache $ refreshExtractCacheManager access modelIdentifier rfFrom rfTo
+        sets $ serverState {cache = cache'}
         return $ map (uncurry Record . (pack . show *** H.toList)) rows
     postRecord _ modelIdentifier =
       do
@@ -318,14 +317,14 @@ service =
     Service{..}
 
 
-checkModel :: ModelIdentifier -> ServerM (ModelState, ServerState)
+checkModel :: ModelIdentifier -> ServerM ServerState (ModelState, ServerState)
 checkModel modelIdentifier =
   do
     serverState@ServerState{..} <- gets id
     maybe
       (throwError "model not found")
       (return . (, serverState))
-      $ (modelIdentifier `H.lookup` models :: Maybe ModelState)
+      (modelIdentifier `H.lookup` models :: Maybe ModelState)
 
 
 filterBookmarks :: Tags -> Maybe BookmarkIdentifier -> [Bookmark] -> [Bookmark]
@@ -338,7 +337,7 @@ filterFilters tags Nothing = filter ((`hasSubset` unTags tags) . unTags . fromMa
 filterFilters tags filterIdentifier = filterFilters tags Nothing . filter ((== filterIdentifier) . Filter.identifier)
     
 
-addBookmark :: ModelIdentifier -> ServerState -> Bookmark -> ServerM (ServerState, Bookmark)
+addBookmark :: ModelIdentifier -> ServerState -> Bookmark -> ServerM ServerState (ServerState, Bookmark)
 addBookmark modelIdentifier serverState@ServerState{..} bookmark =
   do
     let
@@ -353,7 +352,7 @@ addBookmark modelIdentifier serverState@ServerState{..} bookmark =
       $ withBookmarks serverState modelIdentifier (bookmark' :)
 
 
-addFilter :: ModelIdentifier -> ServerState -> Filter -> ServerM (ServerState, Filter)
+addFilter :: ModelIdentifier -> ServerState -> Filter -> ServerM ServerState (ServerState, Filter)
 addFilter modelIdentifier serverState@ServerState{..} filter' =
   do
     let
@@ -372,4 +371,4 @@ main =
   do
     [configurationFile, port] <- getArgs
     Just site <- decodeFile configurationFile
-    runService runCacheT (read port) service =<< initialize site
+    runService (read port) service =<< initialize site

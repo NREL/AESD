@@ -1,11 +1,15 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TupleSections     #-}
 
 
 module CESDS.Haystack.Cache.Memory (
-  CacheM
+  Cached
+, CacheM
+, evalCacheT
+, execCacheT
 , runCacheT
 , clearCache
 , makeCache
@@ -19,8 +23,10 @@ import CESDS.Haystack (EpochSeconds, HaystackAccess(..), HaystackTimes(..), Meas
 import CESDS.Types (Val(..))
 import CESDS.Types.Variable (VariableIdentifier)
 import Control.Arrow ((&&&))
+import Control.Monad.Except (MonadError)
+import Control.Monad.Trans (MonadIO)
 import Data.Daft.Cache (Cache(..), minimum')
-import Data.Daft.Cache.Memory (MemoryCacheT(..))
+import Data.Daft.Cache.Memory (Container, MemoryCacheT, emptyContainer, evalCacheT, execCacheT, runCacheT)
 import Data.Daft.Vinyl.FieldRec ((=:), (<:))
 import Data.Maybe (isNothing)
 import Data.Text (Text)
@@ -32,18 +38,21 @@ import Data.Vinyl.Lens (rcast)
 import qualified Data.HashMap.Strict as H
 
 
-type CacheM = MemoryCacheT VariableIdentifier (FieldRec '[EpochSeconds]) (FieldRec '[TimeStamp, Measurement]) IO
+type Cached = Container VariableIdentifier (FieldRec '[EpochSeconds]) (FieldRec '[TimeStamp, Measurement])
 
 
-makeCache :: [(Text, VariableIdentifier)] -> CacheM ()
-makeCache = initializeCache . fmap snd
+type CacheM = MemoryCacheT VariableIdentifier (FieldRec '[EpochSeconds]) (FieldRec '[TimeStamp, Measurement])
 
 
-timeKeys :: VariableIdentifier -> CacheM [SecondsPOSIX]
+makeCache :: [(Text, VariableIdentifier)] -> Cached
+makeCache = emptyContainer . fmap snd
+
+
+timeKeys :: MonadError String m => VariableIdentifier -> CacheM m [SecondsPOSIX]
 timeKeys = fmap (map (sEpochSeconds <:)) . keysList
 
 
-cacheSize :: VariableIdentifier -> CacheM Int
+cacheSize :: MonadError String m => VariableIdentifier -> CacheM m Int
 cacheSize = keysCount
 
 
@@ -55,7 +64,7 @@ fromSecondsPOSIX' HaystackAccess{..} =
     fromSecondsPOSIX TimeZone{..}
 
 
-refreshExtractCacheManager :: HaystackAccess -> VariableIdentifier -> Maybe SecondsPOSIX -> Maybe SecondsPOSIX -> CacheM [(SecondsPOSIX, Object')]
+refreshExtractCacheManager :: (MonadIO m, MonadError String m) => HaystackAccess -> VariableIdentifier -> Maybe SecondsPOSIX -> Maybe SecondsPOSIX -> CacheM m [(SecondsPOSIX, Object')]
 refreshExtractCacheManager access variable startRequest finishRequest =
   do
     startRequest' <- minimum' startRequest . fmap (sEpochSeconds <:) <$> keysMinimum variable
@@ -64,7 +73,7 @@ refreshExtractCacheManager access variable startRequest finishRequest =
       else map asObject <$> lookupRange (fetchHistory access) variable ((sEpochSeconds =:) <$> startRequest') ((sEpochSeconds =:) <$> finishRequest)
 
 
-fetchHistory :: HaystackAccess -> VariableIdentifier -> Maybe (FieldRec '[EpochSeconds]) -> Maybe (FieldRec '[EpochSeconds]) -> CacheM [(FieldRec '[EpochSeconds], FieldRec '[TimeStamp, Measurement])]
+fetchHistory :: MonadIO m => HaystackAccess -> VariableIdentifier -> Maybe (FieldRec '[EpochSeconds]) -> Maybe (FieldRec '[EpochSeconds]) -> CacheM m [(FieldRec '[EpochSeconds], FieldRec '[TimeStamp, Measurement])]
 fetchHistory access variable startRequest finishRequest =
   do
     let 
