@@ -1,94 +1,151 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 
 module CESDS.Types.Bookmark (
   BookmarkIdentifier
-, Bookmark(..)
-, validateBookmark
-, validateBookmarks
+, BookmarkMeta
+, identifier
+, name
+, numberOfRecords
+, intervalContent
+, setContent
+, withBookmarkMeta
+, IntervalContent
+, firstRecord
+, lastRecord
+, SetContent
+, setIdentifiers
+, BookmarkMetas
+, bookmarks
 ) where
 
 
-import CESDS.Types (Color, Identifier, Tags, object')
+import CESDS.Types.Internal ()
 import CESDS.Types.Record (RecordIdentifier)
-import Control.Monad.Except (MonadError)
-import Control.Monad.Except.Util (assert)
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
-import Data.List.Util (deleteOn, hasSubset, noDuplicates, notDuplicatedIn)
-import Data.Maybe (fromMaybe)
-import Data.String (IsString)
-import Data.Text (Text)
+import Control.Applicative ((<|>))
+import Control.Lens.Getter ((^.))
+import Control.Lens.Lens (Lens', lens)
+import Data.Default (Default(..))
+import Data.ProtocolBuffers (Decode, Encode, Message, Optional, Packed, Repeated, Required, Value, getField, putField)
+import Data.Word (Word64)
 import GHC.Generics (Generic)
 
 
-type BookmarkIdentifier = Identifier
+type BookmarkIdentifier = String
 
 
-data Bookmark =
-  Bookmark
+data IntervalContent =
+  IntervalContent
   {
-    identifier :: Maybe BookmarkIdentifier
-  , name       :: Text
-  , size       :: Int
-  , color      :: Maybe Color
-  , tags       :: Maybe Tags
-  , records    :: Maybe [RecordIdentifier]
+    firstRecord' :: Optional 1 (Value RecordIdentifier)
+  , lastRecord'  :: Optional 2 (Value RecordIdentifier)
   }
-    deriving (Eq, Generic, Read, Show)
+    deriving (Generic, Show)
 
-instance FromJSON Bookmark where
-  parseJSON =
-    withObject "BOOKMARK" $ \o ->
-      do
-        meta <- withObject "BOOKMARK_META"
-                  (\o' ->
-                    do
-                      identifier <- o' .:? "bookmark_id"
-                      name       <- o' .:  "name"
-                      size       <- o' .:  "count"
-                      color      <- o' .:? "color"
-                      tags       <- o' .:? "tags"
-                      let records  = Nothing
-                      return Bookmark{..}
-                  )
-                  =<< o .: "meta"
-        records <- o .:? "record_ids"
-        return $ meta {records = records}
+instance Default IntervalContent where
+  def = IntervalContent (putField Nothing) (putField Nothing)
 
-instance ToJSON Bookmark where
-  toJSON Bookmark{..} =
-    object'
-      $ maybe id ((:) . ("record_ids" .=)) records
-      [
-        "meta" .= object'
-                    [
-                      "bookmark_id" .= identifier
-                    , "name"        .= name
-                    , "count"       .= size
-                    , "color"       .= color
-                    , "tags"        .= tags
-                    ]
-      ]
+instance Decode IntervalContent
+
+instance Encode IntervalContent
 
 
-validateBookmark :: (IsString e, MonadError e m) => [Bookmark] -> [RecordIdentifier]-> Bookmark -> m ()
-validateBookmark bookmarks recordIdentifiers bookmark =
-  do
-    assert "duplicate bookmark identifiers" $ notDuplicatedIn identifier bookmark bookmarks
-    assert "no record identifiers in bookmark" $ maybe False (not . null) $ records bookmark
-    assert "incorrect bookmark size" $ size bookmark == maybe 0 length (records bookmark)
-    assert "invalid record identifiers" $ recordIdentifiers `hasSubset` fromMaybe [] (records bookmark)
+firstRecord :: Lens' IntervalContent (Maybe RecordIdentifier)
+firstRecord = lens (getField . firstRecord') (\s x -> s {firstRecord' = putField x})
 
 
-validateBookmarks :: (IsString e, MonadError e m) => [RecordIdentifier] -> [Bookmark] -> m ()
-validateBookmarks recordIdentifiers bookmarks =
-  do
-    assert "duplicate bookmark identifiers" $ noDuplicates $ map identifier bookmarks
-    sequence_
-      [
-        validateBookmark (deleteOn identifier bookmark bookmarks) recordIdentifiers bookmark
-      |
-        bookmark <-  bookmarks
-      ]
+lastRecord :: Lens' IntervalContent (Maybe RecordIdentifier)
+lastRecord = lens (getField . lastRecord') (\s x -> s {lastRecord' = putField x})
+
+
+data SetContent =
+  SetContent
+  {
+     setIdentifiers' :: Packed 1 (Value RecordIdentifier)
+  }
+    deriving (Generic, Show)
+
+instance Default SetContent where
+  def = SetContent $ putField []
+
+instance Decode SetContent
+
+instance Encode SetContent
+
+
+setIdentifiers :: Lens' SetContent [RecordIdentifier]
+setIdentifiers = lens (getField . setIdentifiers') (\s x -> s {setIdentifiers' = putField x})
+
+
+data BookmarkMeta =
+  BookmarkMeta
+  {
+    identifier'      :: Optional 1 (Value BookmarkIdentifier)
+  , name'            :: Required 2 (Value String            )
+  , numberOfRecords' :: Optional 3 (Value Word64            )
+  , intervalContent' :: Optional 4 (Message IntervalContent )
+  , setContent'      :: Optional 5 (Message SetContent      )
+  }
+    deriving (Generic, Show)
+
+instance Default BookmarkMeta where
+  def =
+    BookmarkMeta
+    {
+      identifier'      = putField Nothing
+    , name'            = putField ""
+    , numberOfRecords' = putField Nothing
+    , intervalContent' = putField Nothing
+    , setContent'      = putField Nothing
+    }
+
+instance Decode BookmarkMeta
+
+instance Encode BookmarkMeta
+
+
+identifier :: Lens' BookmarkMeta (Maybe BookmarkIdentifier)
+identifier = lens (getField . identifier') (\s x -> s {identifier' = putField x})
+
+
+name :: Lens' BookmarkMeta String
+name = lens (getField . name') (\s x -> s {name' = putField x})
+
+
+numberOfRecords :: Lens' BookmarkMeta (Maybe Word64)
+numberOfRecords = lens (getField . numberOfRecords') (\s x -> s {numberOfRecords' = putField x})
+
+
+intervalContent :: Lens' BookmarkMeta (Maybe IntervalContent)
+intervalContent = lens (getField . intervalContent') (\s x -> s {intervalContent' = putField x})
+
+
+setContent :: Lens' BookmarkMeta (Maybe SetContent)
+setContent = lens (getField . setContent') (\s x -> s {setContent' = putField x})
+
+
+withBookmarkMeta :: BookmarkMeta  -> (Word64 -> a) -> (IntervalContent -> a) -> (SetContent -> a) -> Maybe a
+withBookmarkMeta x f g h =
+      f <$> x ^. numberOfRecords
+  <|> g <$> x ^. intervalContent
+  <|> h <$> x ^. setContent
+
+
+data BookmarkMetas =
+  BookmarkMetas
+  {
+     bookmarks' :: Repeated 1 (Message BookmarkMeta)
+  }
+    deriving (Generic, Show)
+
+instance Default BookmarkMetas where
+  def = BookmarkMetas $ putField []
+
+instance Decode BookmarkMetas
+
+instance Encode BookmarkMetas
+
+
+bookmarks :: Lens' BookmarkMetas [BookmarkMeta]
+bookmarks = lens (getField . bookmarks') (\s x -> s {bookmarks' = putField x})

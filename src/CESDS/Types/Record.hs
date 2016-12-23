@@ -1,95 +1,218 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TupleSections     #-}
+{-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE DeriveGeneric   #-}
+{-# LANGUAGE RankNTypes      #-}
+{-# LANGUAGE RecordWildCards #-}
 
 
 module CESDS.Types.Record (
-  RecordIdentifier
-, Record(..)
-, validateRecord
+  VarValue
+, varValue
+, RecordIdentifier
+, RecordContent
+, Record
+, record
+, RecordList
+, recordList
+, RecordTable
+, variableIdentifiers
+, recordIdentifiers
+, realTable
+, integerTable
+, stringTable
+, withTable
+, recordTable
+, RecordData
+, list
+, table
+, recordData
 ) where
 
 
-import CESDS.Types (Identifier, Val)
-import CESDS.Types.Variable (Variable, VariableIdentifier, canHaveVal, hasVariable)
-import Control.Monad.Except (MonadError)
-import Control.Monad.Except.Util (assert)
-import Data.Aeson.Types (FromJSON(..), ToJSON(..), (.:), (.=), object, withArray, withObject)
-import Data.Function (on)
-import Data.List (sortBy)
-import Data.List.Util (noDuplicates)
-import Data.Vector (toList)
-import Data.String (IsString)
+import CESDS.Types (DataValue, Doubles, Integers, Strings, realValue, reals, integerValue, integers, stringValue, strings)
+import CESDS.Types.Internal ()
+import CESDS.Types.Variable (VariableIdentifier)
+import Control.Applicative ((<|>))
+import Control.Arrow (second)
+import Control.Lens.Getter ((^.))
+import Control.Lens.Lens (Lens', lens)
+import Control.Lens.Setter ((.~))
+import Data.Default (Default(..))
+import Data.Int (Int64)
+import Data.List.Split (chunksOf)
+import Data.Maybe (fromMaybe)
+import Data.ProtocolBuffers (Decode, Encode, Message, Optional, Packed, Repeated, Required, Value, getField, putField)
 import GHC.Generics (Generic)
 
-import qualified CESDS.Types.Variable as Variable (Variable(..))
+
+type RecordIdentifier = Int64
 
 
-type RecordIdentifier = Identifier
+data VarValue =
+  VarValue
+  {
+    varIdentifier' :: Required 1 (Value   VariableIdentifier)
+  , varValue'      :: Required 2 (Message DataValue         )
+  }
+    deriving (Generic, Show)
+
+instance Default VarValue where
+  def = VarValue (putField 0) (putField def) -- FIXME
+
+instance Decode VarValue
+
+instance Encode VarValue
+
+
+varValue :: Lens' VarValue (VariableIdentifier, DataValue)
+varValue =
+  lens
+    (\VarValue{..} -> (getField varIdentifier'      , getField varValue'    ))
+    (\s (k, v)     -> s {varIdentifier' = putField k, varValue' = putField v})
 
 
 data Record =
   Record
   {
-    recordIdentifier :: RecordIdentifier
-  , recordValues     :: [(VariableIdentifier, Val)]
+    recordIdentifier' :: Required 1 (Value RecordIdentifier)
+  , varValues'        :: Repeated 2 (Message VarValue      )
   }
-    deriving (Generic, Read, Show)
+    deriving (Generic, Show)
 
-instance Eq Record where
-  x == y =
-    recordIdentifier x == recordIdentifier y
-    &&
-    sort (recordValues x) == sort (recordValues y)
-      where
-        sort = sortBy (compare `on` fst)
+instance Default Record where
+  def = Record (putField 0) (putField  def)
 
-instance FromJSON Record where
-  parseJSON =
-    withObject "RECORD" $ \o ->
-      do
-        recordIdentifier <- o .: "id"
-        recordValues <- withArray "VAR_VALUED_LIST"
-                          (\a ->
-                            sequence
-                              [
-                                withObject "VAR_VALUED_LIST"
-                                  (\o'' ->
-                                    do
-                                      k <- o'' .: "id"
-                                      v <- o'' .: "value"
-                                      return (k, v)
-                                  ) o'
-                              |
-                                o' <- toList a
-                              ]
-                          ) =<< o .: "variables"
-                        
-        return Record{..}
+instance Decode Record
 
-instance ToJSON Record where
-  toJSON Record{..} =
-    object
-      [
-        "id"        .= recordIdentifier
-      , "variables" .= [
-                         object ["id" .= k, "value" .= v]
-                       |
-                         (k, v) <-recordValues
-                       ]
-      ]
+instance Encode Record
 
 
-validateRecord :: (IsString e, MonadError e m) => [Variable] -> Record -> m ()
-validateRecord variables Record{..} =
-  do
-    assert "duplicate variables in record" $ noDuplicates $ map fst recordValues
-    sequence_
-      [
-        do
-          variable' <- variables `hasVariable` variable
-          Variable.domain variable' `canHaveVal` value
-      |
-        (variable, value) <- recordValues
-      ]
+type RecordContent = (RecordIdentifier, [(VariableIdentifier, DataValue)])
+
+
+record :: Lens' Record RecordContent
+record =
+  lens
+    (\Record{..} -> (getField recordIdentifier'      , (^. varValue) <$> getField varValues'                ))
+    (\s (k, v)   -> s {recordIdentifier' = putField k, varValues' = putField $ flip (varValue .~) def <$>  v})
+
+
+data RecordList =
+  RecordList
+  {
+    recordList' :: Repeated 1 (Message Record)
+  }
+    deriving (Generic, Show)
+
+instance Default RecordList where
+  def = RecordList $ putField []
+
+instance Decode RecordList
+
+instance Encode RecordList
+
+
+recordList :: Lens' RecordList [RecordContent]
+recordList =
+  lens
+    (\RecordList{..} -> (^. record) <$> getField recordList')
+    (\s x         -> s {recordList' = putField $ flip (record .~) def <$> x})
+
+
+data RecordTable =
+  RecordTable
+  {
+    variableIdentifiers' :: Packed   1 (Value   VariableIdentifier)
+  , recordIdentifiers'   :: Packed   2 (Value   RecordIdentifier  )
+  , realTable'           :: Optional 3 (Message Doubles           )
+  , integerTable'        :: Optional 4 (Message Integers          )
+  , stringTable'         :: Optional 5 (Message Strings           )
+  }
+    deriving (Generic, Show)
+
+instance Default RecordTable where
+  def = RecordTable (putField []) (putField []) (putField Nothing) (putField Nothing) (putField Nothing)
+
+instance Decode RecordTable
+
+instance Encode RecordTable
+
+
+variableIdentifiers :: Lens' RecordTable [VariableIdentifier]
+variableIdentifiers = lens (getField . variableIdentifiers')  (\s x -> s {variableIdentifiers' = putField x})
+
+
+recordIdentifiers :: Lens' RecordTable [RecordIdentifier]
+recordIdentifiers = lens (getField . recordIdentifiers')  (\s x -> s {recordIdentifiers' = putField x})
+
+
+realTable:: Lens' RecordTable (Maybe [Double])
+realTable =
+  lens
+    (fmap (^. reals) . getField . realTable')
+    (\s x -> s {realTable' = putField $ flip (reals .~) def <$> x})
+
+
+integerTable:: Lens' RecordTable (Maybe [Int64])
+integerTable =
+  lens
+    (fmap (^. integers) . getField . integerTable')
+    (\s x -> s {integerTable' = putField $ flip (integers .~) def <$> x})
+
+
+stringTable:: Lens' RecordTable (Maybe [String])
+stringTable =
+  lens
+    (fmap (^. strings) . getField . stringTable')
+    (\s x -> s {stringTable' = putField $ flip (strings .~) def <$> x})
+
+
+withTable :: RecordTable -> ([Double] -> a) -> ([Int64] -> a) -> ([String] -> a) -> Maybe a
+withTable x f g h =
+      f <$> x ^. realTable
+  <|> g <$> x ^. integerTable
+  <|> h <$> x ^. stringTable
+
+
+recordTable :: RecordTable -> [RecordContent]
+recordTable t =
+  let
+    relens :: Lens' RecordTable (Maybe [a]) -> Lens' DataValue (Maybe a) -> Maybe [DataValue]
+    relens tlens dlens = fmap (flip (dlens .~) def . Just) <$> t ^. tlens
+    vids = t ^. variableIdentifiers
+    vals =
+      fromMaybe []
+         $  relens realTable    realValue
+        <|> relens integerTable integerValue
+        <|> relens stringTable  stringValue
+  in
+    map (second $ zip vids)
+      $ zip (t ^. recordIdentifiers)
+      $ chunksOf (length vids) vals
+
+
+data RecordData =
+  RecordData
+  {
+    list'  :: Optional 1 (Message RecordList )
+  , table' :: Optional 2 (Message RecordTable)
+  }
+    deriving (Generic, Show)
+
+instance Decode RecordData
+
+instance Encode RecordData
+
+
+list :: Lens' RecordData (Maybe RecordList)
+list = lens (getField . list') (\s x -> s {list' = putField x})
+
+
+table :: Lens' RecordData(Maybe RecordTable)
+table = lens (getField . table') (\s x -> s {table' = putField x})
+
+
+recordData :: RecordData -> [RecordContent]
+recordData x =
+  fromMaybe []
+     $  (^. recordList) <$> x ^. list
+    <|> recordTable     <$> x ^. table

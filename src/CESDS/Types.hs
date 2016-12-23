@@ -1,109 +1,188 @@
-{-# LANGUAGE DeriveAnyClass       #-}
-{-# LANGUAGE DeriveGeneric        #-}
-{-# LANGUAGE FlexibleInstances    #-}
-
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DataKinds     #-}
 
 
 module CESDS.Types (
-  Identifier
-, Color
-, Tags(..)
-, Generation
-, isSimpleJSON
-, Val(..)
-, valAsString
-, isDiscrete
-, object'
+  VersionIdentifier
+, OptionalInt32
+, int32
+, OptionalUInt32
+, uint32
+, OptionalString
+, string
+, DataValue
+, realValue
+, integerValue
+, stringValue
+, withDataValue
+, Doubles
+, reals
+, Integers
+, integers
+, Strings
+, strings
 ) where
 
 
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Pair, Value(Null, Number, String), object, withObject, withText)
-import Data.Colour.SRGB (Colour, sRGB24reads, sRGB24shows)
-import Data.HashMap.Strict (toList)
-import Data.Scientific (Scientific)
-import Data.Text (Text, pack, unpack)
+import CESDS.Types.Internal ()
+import Control.Applicative ((<|>))
+import Control.Lens.Getter ((^.))
+import Control.Lens.Lens (Lens', lens)
+import Data.Default (Default(..))
+import Data.Int (Int32, Int64)
+import Data.ProtocolBuffers (Decode, Encode, Optional, Packed, Repeated, Required, Value, getField, putField)
+import Data.Word (Word32)
 import GHC.Generics (Generic)
-import Network.URI (URI, parseURI)
 
 
-type Identifier = Text
+type VersionIdentifier = Word32
 
 
-type Color = Colour Double
+data OptionalInt32 =
+  OptionalInt32
+  {
+    int32' :: Required 1 (Value Int32)
+  }
+    deriving (Generic, Show)
 
-instance Read Color where
-  readsPrec _ = sRGB24reads
+instance Default OptionalInt32 where
+  def = OptionalInt32 $ putField 0
 
-instance Show Color where
-  showsPrec _ = sRGB24shows
+instance Decode OptionalInt32
 
-instance FromJSON Color where
-  parseJSON = withText "COLOR" $ return . read . unpack
-
-instance ToJSON Color where
-  toJSON = String . pack . show
-
-
-newtype Tags = Tags {unTags :: [Pair]}
-  deriving (Generic, Read, Show)
-
-instance Eq Tags where
-  Tags x == Tags y = object x == object y
-
-instance FromJSON Tags where
-  parseJSON =
-    withObject "tags" $ return . Tags . toList
-
-instance ToJSON Tags where
-  toJSON = object . unTags
+instance Encode OptionalInt32
 
 
-type Generation = Int
+int32 :: Lens' OptionalInt32 Int32
+int32 = lens (getField . int32') (\s x -> s {int32' = putField x})
 
 
-instance Read URI where
-  readsPrec _ s = case parseURI s of
-                    Nothing  -> []
-                    Just uri -> [(uri, "")]
+data OptionalUInt32 =
+  OptionalUInt32
+  {
+    uint32' :: Required 1 (Value Word32)
+  }
+    deriving (Generic, Show)
 
-instance FromJSON URI where
-  parseJSON = withText "URI" $ return . read . unpack
+instance Default OptionalUInt32 where
+  def = OptionalUInt32 $ putField 0
 
-instance ToJSON URI where
-  toJSON = String . pack . show
+instance Decode OptionalUInt32
 
-
-isSimpleJSON :: Value -> Bool
-isSimpleJSON (String _) = True
-isSimpleJSON (Number _) = True
-isSimpleJSON _          = False
+instance Encode OptionalUInt32
 
 
-data Val =
-    Continuous Scientific
-  | Discrete   Text
-    deriving (Eq, Ord, Read, Show)
-
-instance FromJSON Val where
-  parseJSON (Number x) = return $ Continuous x
-  parseJSON (String x) = return $ Discrete   x
-  parseJSON x          = fail $ "invalid value \"" ++ show x ++ "\""
-
-instance ToJSON Val where
-  toJSON (Continuous x) = Number x
-  toJSON (Discrete   x) = String x
+uint32 :: Lens' OptionalUInt32 Word32
+uint32 = lens (getField .uint32') (\s x ->  s {uint32' = putField x})
 
 
-valAsString :: Val -> String
-valAsString (Continuous x) = show x
-valAsString (Discrete   x) = unpack x
+data OptionalString =
+  OptionalString
+  {
+    string' :: Required 1 (Value String)
+  }
+    deriving (Generic, Show)
+
+instance Default OptionalString where
+  def = OptionalString $ putField ""
+
+instance Decode OptionalString
+
+instance Encode OptionalString
 
 
-isDiscrete :: Val -> Bool
-isDiscrete (Discrete _ ) = True
-isDiscrete _             = False
+string :: Lens' OptionalString String
+string = lens (getField . string') (\s x -> s {string' = putField x})
 
 
-object' :: [Pair] -> Value
-object' = object . filter ((/= Null) . snd)
+data DataValue =
+  DataValue
+  {
+    realValue'    :: Optional 1 (Value Double)
+  , integerValue' :: Optional 2 (Value Int64 )
+  , stringValue'  :: Optional 3 (Value String)
+  }
+    deriving (Generic, Show)
+
+instance Default DataValue where
+  def = DataValue (putField Nothing) (putField Nothing) (putField Nothing)
+
+instance Decode DataValue
+
+instance Encode DataValue
+
+
+realValue :: Lens' DataValue (Maybe Double)
+realValue = lens (getField . realValue') (\s x -> s {realValue' = putField x})
+
+
+integerValue :: Lens' DataValue (Maybe Int64)
+integerValue = lens (getField . integerValue') (\s x -> s {integerValue' = putField x})
+
+
+stringValue :: Lens' DataValue (Maybe String)
+stringValue = lens (getField . stringValue') (\s x -> s {stringValue' = putField x})
+
+
+withDataValue :: DataValue -> (Double -> a) -> (Int64 -> a) -> (String -> a) -> Maybe a
+withDataValue x f g h =
+      f <$> x ^. realValue
+  <|> g <$> x ^. integerValue
+  <|> h <$> x ^. stringValue
+    
+
+data Doubles =
+  Doubles
+  {
+    reals' :: Packed 1 (Value Double)
+  }
+    deriving (Generic, Show)
+
+instance Default Doubles where
+  def = Doubles $ putField []
+
+instance Decode Doubles
+
+instance Encode Doubles
+
+
+reals :: Lens' Doubles [Double]
+reals = lens (getField . reals') (\s x -> s {reals' = putField x})
+
+
+data Integers =
+  Integers
+  {
+    integers' :: Packed 1 (Value Int64)
+  }
+    deriving (Generic, Show)
+
+instance Default Integers where
+  def = Integers $ putField []
+
+instance Decode Integers
+
+instance Encode Integers
+
+
+integers :: Lens' Integers [Int64]
+integers = lens (getField . integers') (\s x -> s {integers' = putField x})
+
+
+data Strings =
+  Strings
+  {
+    strings' :: Repeated 1 (Value String)
+  }
+    deriving (Generic, Show)
+
+instance Default Strings where
+  def = Strings $ putField []
+
+instance Decode Strings
+
+instance Encode Strings
+
+
+strings :: Lens' Strings [String]
+strings = lens (getField . strings') (\s x -> s {strings' = putField x})

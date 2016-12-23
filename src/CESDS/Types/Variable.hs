@@ -1,220 +1,112 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE DeriveGeneric   #-}
+{-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE RecordWildCards #-}
 
 
 module CESDS.Types.Variable (
   VariableIdentifier
-, Variable(..)
-, validateVariable
-, hasVariable
-, canHaveVal
-, Display(..)
-, Domain(..)
-, validateDomain
-, isSet
-, SetValue
-, compatibleDomains
-, Units(..)
+, VarMeta
+, identifier
+, name
+, units
+, varType
 ) where
 
 
-import CESDS.Types (Color, Identifier, Val(..), object')
-import Control.Applicative ((<|>))
-import Control.Monad (when)
-import Control.Monad.Except (MonadError, throwError)
-import Control.Monad.Except.Util (assert)
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.!=), (.=), withObject)
-import Data.List (find)
-import Data.List.Util (notDuplicatedIn, sameElements)
-import Data.Scientific (Scientific)
-import Data.String (IsString)
-import Data.Text (Text)
+import CESDS.Types.Internal ()
+import Control.Lens.Lens (Lens', lens)
+import Data.Default (Default(..))
+import Data.Int (Int32)
+import Data.ProtocolBuffers (Decode, Encode, Enumeration, Optional, Packed, Required, Value, getField, putField)
 import GHC.Generics (Generic)
 
 
-type VariableIdentifier = Identifier
+type VariableIdentifier = Int32
 
 
-data Variable =
-  Variable
+data VarType = RealVar | IntegerVar | StringVar
+  deriving (Bounded, Enum, Eq, Generic, Ord, Show)
+
+
+data VarMeta =
+  VarMeta
   {
-    identifier :: VariableIdentifier
-  , display    :: Display
-  , domain     :: Domain
-  , units      :: Maybe Units
-  , isInput    :: Bool
+    identifier' :: Required 1 (Value       VariableIdentifier)
+  , name'       :: Required 2 (Value       String            )
+  , isInput'    :: Optional 3 (Value       Bool              ) -- FIXME: Delete this.
+  , units'      :: Optional 4 (Value       String            )
+  , si'         :: Packed   5 (Value       Int32             )
+  , scale'      :: Required 6 (Value       Double            )
+  , varType'    :: Required 7 (Enumeration VarType           )
   }
-    deriving (Eq, Generic, Read, Show)
+    deriving (Generic, Show)
 
-instance FromJSON Variable where
-  parseJSON =
-    withObject "VAR" $ \o ->
-      do
-        identifier <- o .:  "var_id"
-        display    <- o .:  "display"
-        domain     <- o .:  "domain"
-        units      <- o .:? "units"
-        isInput    <- o .:  "is_input" .!= False
-        return Variable{..}
-
-instance ToJSON Variable where
-  toJSON Variable{..} =
-    object'
-      [
-        "var_id"   .= identifier
-      , "display"  .= display
-      , "domain"   .= domain
-      , "units"    .= units
-      , "is_input" .= isInput
-      ]
-
-
-validateVariable :: (IsString e, MonadError e m) => [VariableIdentifier] -> Variable -> m ()
-validateVariable variableIdentifiers Variable{..} =
-  do
-    assert "duplicate variable identifiers" $ notDuplicatedIn id identifier variableIdentifiers
-    validateDomain domain
-
-
-hasVariable :: (IsString e, MonadError e m) => [Variable] -> VariableIdentifier -> m Variable
-hasVariable variables variableIdentifier =
-  maybe
-    (throwError "missing variable")
-    return
-    $ find ((== variableIdentifier) . identifier) variables
-
-
-canHaveVal :: (IsString e, MonadError e m) => Domain -> Val -> m ()
-canHaveVal (Interval Nothing  Nothing ) (Continuous _) = return ()
-canHaveVal (Interval Nothing  (Just u)) (Continuous x) = assert "value not in domain" $           x <= u
-canHaveVal (Interval (Just l) Nothing ) (Continuous x) = assert "value not in domain" $ l <= x          
-canHaveVal (Interval (Just l) (Just u)) (Continuous x) = assert "value not in domain" $ l <= x && x <= u
-canHaveVal (Set []                    ) (Discrete   _) = return ()
-canHaveVal (Set ys                    ) (Discrete   x) = assert "value incompatible with domain" $ x `elem` ys
-canHaveVal _                            _              = throwError "value not in domain"
-
-
-data Display =
-  Display
-  {
-    label      :: Text
-  , shortLabel :: Maybe Text
-  , color      :: Maybe Color
-  }
-    deriving (Eq, Generic, Read, Show)
-
-instance FromJSON Display where
-  parseJSON =
-    withObject "VAR disp" $ \o ->
-      do
-        label      <- o .:  "label"
-        shortLabel <- o .:? "shortlabel"
-        color      <- o .:? "color"
-        return Display{..}
-
-instance ToJSON Display where
-  toJSON Display{..} =
-    object'
-      [
-        "label"      .= label
-      , "shortlabel" .= shortLabel
-      , "color"      .= color
-      ]
-
-
-data Domain =
-    Interval
+instance Default VarMeta where
+  def =
+    VarMeta
     {
-      lowerBound :: Maybe Scientific
-    , upperBound :: Maybe Scientific
+      identifier' = putField 0
+    , name'       = putField ""
+    , isInput'    = putField Nothing
+    , units'      = putField Nothing
+    , si'         = putField $ replicate 8 0
+    , scale'      = putField 1
+    , varType'    = putField RealVar
     }
-  | Set 
-    {
-      options :: [SetValue]
-    }
-    deriving (Generic, Read, Show)
 
-instance Eq Domain where
-  Interval xl xu == Interval yl yu = xl == yl && xu == yu
-  Set x          == Set y          = x `sameElements` y
-  _              == _              = False
+instance Decode VarMeta
 
-instance FromJSON Domain where
-  parseJSON =
-    withObject "VAR domain" $ \o ->
-      (parseInterval =<< o .: "interval") <|> (parseSet =<< o .: "set")
-    where
-      parseInterval =
-        withObject "VAR domain interval" $ \o' ->
-          do
-            bounds <- o' .: "bounds"
-            when (length bounds /= 2)
-              $ fail "VAR domain interval bounds must contain two entries"
-            let
-              [lowerBound, upperBound] = bounds
-            return Interval{..}
-      parseSet =
-        withObject "VAR domain set" $ \o' ->
-          do
-            options <- o' .:? "options" .!= []
-            return Set{..}
-
-instance ToJSON Domain where
-  toJSON Interval{..} = object' ["interval" .= object' ["bounds"  .= [lowerBound, upperBound]]]
-  toJSON Set{..}      = object' ["set"      .= object' ["options" .= options                 ]]
+instance Encode VarMeta
 
 
-validateDomain :: (IsString e, MonadError e m) => Domain -> m ()
-validateDomain (Interval (Just l) (Just u)) = assert "lower bound greater than upper bound" $ l <= u
-validateDomain _                            = return ()
+identifier :: Lens' VarMeta Int32
+identifier = lens (getField . identifier') (\s x -> s {identifier' = putField x})
 
 
-isSet :: Domain -> Bool
-isSet Set{} = True
-isSet _     = False
+name :: Lens' VarMeta String
+name = lens (getField . name') (\s x -> s {name' = putField x})
 
 
-type SetValue = Text
-
-
-compatibleDomains :: (IsString e, MonadError e m) => Domain -> Domain -> m ()
-compatibleDomains Interval{} Interval{} = return ()
-compatibleDomains Set{}      Set{}      = return ()
-compatibleDomains _          _          = throwError "incompatible domains"
-
-
-data Units =
-  Units
-  {
-    lengthExponent      :: Int
-  , massExponent        :: Int
-  , timeExponent        :: Int
-  , currentExponent     :: Int
-  , temperatureExponent :: Int
-  , molExponent         :: Int
-  , intensityExponent   :: Int
-  , angleExponent       :: Int
-  , scale               :: Scientific
-  }
-    deriving (Eq, Generic, Read, Show)
-
-instance FromJSON Units where
-  parseJSON =
-    withObject "VAR units" $ \o ->
-      do
-        si <- o .: "SI"
-        when (length si /= 8)
-          $ fail "VAR units SI must contain eight entries"
+units :: Lens' VarMeta VarUnits
+units =
+  lens
+    (
+      \VarMeta{..} ->
         let
-          [lengthExponent, massExponent, timeExponent, currentExponent, temperatureExponent, molExponent, intensityExponent, angleExponent] = si
-        scale <- o .:? "scale" .!= 1
-        return Units{..}
+          unitName = getField units'
+          [lengthExponent, massExponent, timeExponent, currentExponent, temperatureExponent, molExponent, intensityExponent, angleExponent] = getField si'
+          scale = getField scale'
+        in
+          VarUnits{..}
+    )
+    (
+      \s VarUnits{..} ->
+        s
+        {
+          si'    = putField [lengthExponent, massExponent, timeExponent, currentExponent, temperatureExponent, molExponent, intensityExponent, angleExponent]
+        , scale' = putField scale
+        }
+    )
 
-instance ToJSON Units where
-  toJSON Units{..} =
-    object'
-      [
-        "SI"    .= [lengthExponent, massExponent, timeExponent, currentExponent, temperatureExponent, molExponent, intensityExponent, angleExponent]
-      , "scale" .= scale
-      ]
+
+varType :: Lens' VarMeta VarType
+varType = lens (getField . varType') (\s x -> s {varType' = putField x})
+
+data VarUnits =
+  VarUnits
+  {
+    unitName            :: Maybe String
+  , lengthExponent      :: Int32
+  , massExponent        :: Int32
+  , timeExponent        :: Int32
+  , currentExponent     :: Int32
+  , temperatureExponent :: Int32
+  , molExponent         :: Int32
+  , intensityExponent   :: Int32
+  , angleExponent       :: Int32
+  , scale               :: Double
+  }
+    deriving (Eq, Generic, Ord, Show)
+
+instance Default VarUnits where
+  def = VarUnits Nothing 0 0 0 0 0 0 0 0 1

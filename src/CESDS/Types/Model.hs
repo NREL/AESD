@@ -1,107 +1,85 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 
 module CESDS.Types.Model (
   ModelIdentifier
-, Model(..)
-, validateModels
-, validateModel
+, ModelMetas
+, models
+, ModelMeta
+, identifier
+, name
+, uri
+, varMeta
 ) where
 
 
-import CESDS.Types (Generation, Identifier, Tags, object')
-import CESDS.Types.Variable (Variable, VariableIdentifier, validateVariable)
-import Control.Monad.Except (MonadError)
-import Control.Monad.Except.Util (assert)
-import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), (.:), (.:?), (.=), withObject)
-import Data.List (delete)
-import Data.List.Util (noDuplicates, notDuplicatedIn)
-import Data.String (IsString)
-import Data.Text (Text)
+import CESDS.Types.Internal ()
+import CESDS.Types.Variable (VarMeta)
+import Control.Lens.Lens (Lens', lens)
+import Data.Default (Default(..))
+import Data.ProtocolBuffers (Decode, Encode, Message, Repeated, Required, Value, getField, putField)
 import GHC.Generics (Generic)
-import Network.URI (URI)
-
-import qualified CESDS.Types.Variable as Variable (Variable(..))
 
 
-type ModelIdentifier = Identifier
+type ModelIdentifier = String
 
 
-data Model =
-  Model
+data ModelMeta =
+  ModelMeta
   {
-    identifier  :: ModelIdentifier
-  , uri         :: Maybe URI
-  , name        :: Text
-  , description :: Maybe Text
-  , tags        :: Maybe Tags
-  , generation  :: Generation
-  , recordCount :: Int
-  , variables   :: [Variable]
-  , primaryKey  :: VariableIdentifier
-  , timeKey     :: Maybe VariableIdentifier
+    identifier' :: Required 1 (Value   ModelIdentifier)
+  , name'       :: Required 2 (Value   String         )
+  , uri'        :: Required 3 (Value   String         )
+  , varMeta'    :: Repeated 4 (Message VarMeta        )
   }
-    deriving (Eq, Generic, Read, Show)
+    deriving (Generic, Show)
 
-instance FromJSON Model where
-  parseJSON = withObject "MODEL" $ \o ->
-                do
-                  identifier  <- o .:  "model_id"
-                  uri         <- o .:? "model_uri"
-                  name        <- o .:  "label"
-                  description <- o .:? "description"
-                  tags        <- o .:? "tags"
-                  generation  <- o .:  "generation"
-                  recordCount <- o .:  "record_count"
-                  variables   <- o .:  "variables"
-                  primaryKey  <- o .:  "record_id_var"
-                  timeKey     <- o .:? "time_key"
-                  return Model{..}
+instance Default ModelMeta where
+  def =
+    ModelMeta
+    {
+      identifier'  = putField ""
+    , name'        = putField ""
+    , uri'         = putField ""
+    , varMeta'     = putField def
+    }
 
-instance ToJSON Model where
-  toJSON Model{..} = object'
-                       [
-                         "model_id"      .= identifier
-                       , "model_uri"     .= uri
-                       , "label"         .= name
-                       , "description"   .= description
-                       , "tags"          .= tags
-                       , "generation"    .= generation
-                       , "record_count"  .= recordCount
-                       , "variables"     .= variables
-                       , "record_id_var" .= primaryKey
-                       , "time_key"      .= timeKey
-                       ]
+instance Decode ModelMeta
+
+instance Encode ModelMeta
 
 
-validateModels :: (IsString e, MonadError e m) => [Model] -> m ()
-validateModels models =
-  do
-    let
-      modelIdentifiers = identifier <$> models
-    assert "duplicate model identifiers" $ noDuplicates modelIdentifiers
-    sequence_
-      [
-        validateModel (identifier model `delete` modelIdentifiers) model
-      |
-        model <- models
-      ]
+identifier :: Lens' ModelMeta String
+identifier = lens (getField . identifier') (\s x -> s {identifier' = putField x})
 
 
-validateModel :: (IsString e, MonadError e m) => [ModelIdentifier] -> Model -> m ()
-validateModel modelIdentifiers Model{..} =
-  do
-    assert "duplicate model identifiers" $ notDuplicatedIn id identifier modelIdentifiers
-    let
-      variables' = map Variable.identifier variables
-    assert "duplicate variable identifiers" $ noDuplicates variables'
-    assert "invalid record key" $ primaryKey `elem` variables'
-    assert "invalid time key" $ maybe True (`elem` variables') timeKey
-    sequence_
-      [
-        validateVariable (Variable.identifier variable `delete` variables') variable
-      |
-        variable <- variables
-      ]
+name :: Lens' ModelMeta String
+name = lens (getField . name') (\s x -> s {name' = putField x})
+
+
+uri :: Lens' ModelMeta String
+uri = lens (getField . uri') (\s x -> s {uri' = putField x})
+
+
+varMeta :: Lens' ModelMeta [VarMeta]
+varMeta = lens (getField . varMeta') (\s x -> s {varMeta' = putField x})
+
+
+data ModelMetas =
+  ModelMetas
+  {
+     models' :: Repeated 1 (Message ModelMeta)
+  }
+    deriving (Generic, Show)
+
+instance Default ModelMetas where
+  def = ModelMetas $ putField []
+
+instance Decode ModelMetas
+
+instance Encode ModelMetas
+
+
+models :: Lens' ModelMetas [ModelMeta]
+models = lens (getField . models') (\s x -> s {models' = putField x})

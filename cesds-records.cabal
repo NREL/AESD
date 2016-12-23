@@ -1,5 +1,5 @@
 name:                cesds-records
-version:             0.2.11.0
+version:             0.3.0.0
 synopsis:            Implementation of CESDS record API
 description:         Implementation of CESDS record API.
 license:             AllRightsReserved
@@ -24,107 +24,42 @@ source-repository head
  
 library
   hs-source-dirs  : src
-  exposed-modules : CESDS.Server
-                    CESDS.Types
+  exposed-modules : CESDS.Types
                     CESDS.Types.Bookmark
-                    CESDS.Types.Command
-                    CESDS.Types.Filter
+                    CESDS.Types.Internal
                     CESDS.Types.Model
                     CESDS.Types.Record
-                    CESDS.Types.Server
-                    CESDS.Types.Work
+                    CESDS.Types.Request
+                    CESDS.Types.Response
                     CESDS.Types.Variable
   build-depends   : base >=4.8 && <4.9
-                  , aeson
                   , bytestring
-                  , colour
+                  , cereal
                   , data-default
-                  , http-types
-                  , mtl
-                  , network-uri
+                  , lens
+                  , protobuf
                   , raft
-                  , scientific
-                  , scotty
+                  , split
                   , stm
                   , text
-                  , transformers
-                  , unordered-containers
-                  , vector
-                  , wai
-                  , wai-util
-                  , warp
+                  , websockets
   default-language: Haskell2010
   ghc-options     : -Wall -O2
-
-test-suite cesds-json-parsing
-  main-is         : TestJSON.hs
-  hs-source-dirs  : src
-  other-modules   : CESDS.Types.Test
-                    CESDS.Types.Bookmark.Test
-                    CESDS.Types.Command.Test
-                    CESDS.Types.Filter.Test
-                    CESDS.Types.Model.Test
-                    CESDS.Types.Record.Test
-                    CESDS.Types.Server.Test
-                    CESDS.Types.Work.Test
-                    CESDS.Types.Variable.Test
-  build-depends   : base               
-                  , aeson
-                  , bytestring
-                  , colour
-                  , data-default
-                  , http-types
-                  , mtl
-                  , network-uri
-                  , QuickCheck
-                  , raft
-                  , scientific
-                  , scotty
-                  , stm
-                  , text
-                  , unordered-containers
-                  , vector
-                  , wai
-                  , wai-util
-                  , warp
-  buildable       : True               
-  type            : exitcode-stdio-1.0 
-  default-language: Haskell2010        
-  ghc-options     : -Wall -O2          
 
 executable cesds-server
   main-is         : Main.hs
   hs-source-dirs  : src
-  other-modules   : CESDS.Server
-                    CESDS.Types.Test
-                    CESDS.Types.Bookmark.Test
-                    CESDS.Types.Command.Test
-                    CESDS.Types.Filter.Test
-                    CESDS.Types.Model.Test
-                    CESDS.Types.Record.Test
-                    CESDS.Types.Server.Test
-                    CESDS.Types.Work.Test
-                    CESDS.Types.Variable.Test
   build-depends   : base               
-                  , aeson
                   , bytestring
-                  , colour
+                  , cereal
                   , data-default
-                  , http-types
-                  , mtl
-                  , network-uri
-                  , QuickCheck
+                  , lens
+                  , protobuf
                   , raft
-                  , scientific
-                  , scotty
+                  , split
                   , stm
                   , text
-                  , transformers
-                  , unordered-containers
-                  , vector
-                  , wai
-                  , wai-util
-                  , warp
+                  , websockets
   buildable       : True               
   default-language: Haskell2010        
   ghc-options     : -Wall -O2          
