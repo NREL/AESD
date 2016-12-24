@@ -10,7 +10,7 @@ module CESDS.Types.Bookmark (
 , numberOfRecords
 , intervalContent
 , setContent
-, withBookmarkMeta
+, onBookmarkMeta
 , IntervalContent
 , firstRecord
 , lastRecord
@@ -125,8 +125,8 @@ setContent :: Lens' BookmarkMeta (Maybe SetContent)
 setContent = lens (getField . setContent') (\s x -> s {setContent' = putField x})
 
 
-withBookmarkMeta :: BookmarkMeta  -> (Word64 -> a) -> (IntervalContent -> a) -> (SetContent -> a) -> Maybe a
-withBookmarkMeta x f g h =
+onBookmarkMeta :: (Word64 -> a) -> (IntervalContent -> a) -> (SetContent -> a) -> BookmarkMeta -> Maybe a
+onBookmarkMeta f g h x =
       f <$> x ^. numberOfRecords
   <|> g <$> x ^. intervalContent
   <|> h <$> x ^. setContent

@@ -5,29 +5,27 @@
 
 module CESDS.Types.Request (
   Request
-, withRequest
+, onRequest
 , LoadModelsMeta
 , loadModelsMeta
-, withLoadModelsMeta
+, onLoadModelsMeta
 , LoadRecordsData
 , loadRecordsData
-, withLoadRecordsData
+, onLoadRecordsData
 , LoadBookmarkMeta
 , loadBookmarkMeta
-, withLoadBookmarkMeta
+, onLoadBookmarkMeta
 , SaveBookmarkMeta
 , saveBookmarkMeta
-, withSaveBookmarkMeta
+, onSaveBookmarkMeta
 ) where
 
 
-import CESDS.Types (OptionalInt32, int32)
 import CESDS.Types.Bookmark (BookmarkIdentifier, BookmarkMeta)
-import CESDS.Types.Internal ()
+import CESDS.Types.Internal (OptionalInt32, int32)
 import CESDS.Types.Model (ModelIdentifier)
 import CESDS.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>))
-import Control.Arrow ((&&&))
 import Control.Lens.Getter ((^.))
 import Control.Lens.Setter ((.~))
 import Control.Monad (join)
@@ -55,8 +53,8 @@ loadBookmarkMeta :: Maybe Int32 -> ModelIdentifier -> Maybe BookmarkIdentifier -
 loadBookmarkMeta i m b = (request i) {loadBookmarkMeta' = putField . Just $ LoadBookmarkMeta (putField m) (putField b)}
 
 
-withLoadBookmarkMeta :: Monad m => LoadBookmarkMeta -> (ModelIdentifier -> Maybe BookmarkIdentifier -> m a) -> m a
-withLoadBookmarkMeta = flip uncurry . (getField . loadBookmarkModelIdentifier &&& getField . loadBookmarkIdentifier)
+onLoadBookmarkMeta :: Monad m => (ModelIdentifier -> Maybe BookmarkIdentifier -> m a) -> LoadBookmarkMeta -> m a
+onLoadBookmarkMeta f LoadBookmarkMeta{..} = f (getField loadBookmarkModelIdentifier) (getField loadBookmarkIdentifier)
 
 
 data SaveBookmarkMeta =
@@ -76,8 +74,8 @@ saveBookmarkMeta :: Maybe Int32 -> ModelIdentifier -> BookmarkMeta -> Request
 saveBookmarkMeta i m b = (request i) {saveBookmarkMeta' = putField . Just $ SaveBookmarkMeta (putField m) (putField b)}
 
 
-withSaveBookmarkMeta :: Monad m => SaveBookmarkMeta -> (ModelIdentifier -> BookmarkMeta -> m a) -> m a
-withSaveBookmarkMeta = flip uncurry . (getField . saveBookmarkModelIdentifier &&& getField . saveBookmark)
+onSaveBookmarkMeta :: Monad m => (ModelIdentifier -> BookmarkMeta -> m a) -> SaveBookmarkMeta -> m a
+onSaveBookmarkMeta f SaveBookmarkMeta{..} = f (getField saveBookmarkModelIdentifier) (getField saveBookmark)
 
 
 data LoadModelsMeta =
@@ -96,8 +94,8 @@ loadModelsMeta :: Maybe Int32 -> Maybe ModelIdentifier -> Request
 loadModelsMeta i m = (request i) {loadModelsMeta' = putField . Just . LoadModelsMeta $ putField m}
 
 
-withLoadModelsMeta :: Monad m => LoadModelsMeta -> (Maybe ModelIdentifier -> m a) -> m a
-withLoadModelsMeta = flip id . getField . modelIdentifier
+onLoadModelsMeta :: Monad m => (Maybe ModelIdentifier -> m a) -> LoadModelsMeta -> m a
+onLoadModelsMeta f LoadModelsMeta{..} = f (getField modelIdentifier)
 
 
 data LoadRecordsData =
@@ -119,8 +117,8 @@ loadRecordsData :: Maybe Int32 -> ModelIdentifier -> Maybe Word64 -> [VariableId
 loadRecordsData i m n v b = (request i) {loadRecordsData' = putField . Just $ LoadRecordsData (putField m) (putField n) (putField v) (putField b)}
 
 
-withLoadRecordsData :: Monad m => LoadRecordsData -> (ModelIdentifier -> Maybe Word64 -> [VariableIdentifier] -> Maybe BookmarkIdentifier -> m a) -> m a
-withLoadRecordsData LoadRecordsData{..} f =
+onLoadRecordsData :: Monad m => (ModelIdentifier -> Maybe Word64 -> [VariableIdentifier] -> Maybe BookmarkIdentifier -> m a) -> LoadRecordsData -> m a
+onLoadRecordsData f LoadRecordsData{..} =
   f
     (getField modelIdentifier'   )
     (getField maxRecords         )
@@ -159,14 +157,14 @@ request :: Maybe Int32 -> Request
 request i = def {requestIdentifier = putField $ flip (int32 .~ ) def <$> i}
 
 
-withRequest :: Monad m
-            => Request
-            -> (Maybe Int32 -> LoadModelsMeta   -> m (Maybe a))
+onRequest :: Monad m
+            => (Maybe Int32 -> LoadModelsMeta   -> m (Maybe a))
             -> (Maybe Int32 -> LoadRecordsData  -> m (Maybe a))
             -> (Maybe Int32 -> LoadBookmarkMeta -> m (Maybe a))
             -> (Maybe Int32 -> SaveBookmarkMeta -> m (Maybe a))
+            -> Request
             -> m (Maybe a)
-withRequest Request{..} f g h i =
+onRequest f g h i Request{..} =
   let
     t = (^. int32) <$> getField requestIdentifier
   in

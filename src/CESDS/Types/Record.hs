@@ -19,18 +19,18 @@ module CESDS.Types.Record (
 , realTable
 , integerTable
 , stringTable
-, withTable
+, onTable
 , recordTable
 , RecordData
 , list
 , table
 , recordData
-, withRecordContent
+, onRecordContent
 ) where
 
 
-import CESDS.Types (DataValue, Doubles, Integers, Strings, realValue, reals, integerValue, integers, stringValue, strings, withDataValue)
-import CESDS.Types.Internal ()
+import CESDS.Types (DataValue, realValue, integerValue, onDataValue, stringValue)
+import CESDS.Types.Internal (Doubles, Integers, Strings, reals, integers, strings)
 import CESDS.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>))
 import Control.Arrow (second)
@@ -167,8 +167,8 @@ stringTable =
     (\s x -> s {stringTable' = putField $ flip (strings .~) def <$> x})
 
 
-withTable :: RecordTable -> ([Double] -> a) -> ([Int64] -> a) -> ([String] -> a) -> Maybe a
-withTable x f g h =
+onTable :: ([Double] -> a) -> ([Int64] -> a) -> ([String] -> a) -> RecordTable -> Maybe a
+onTable f g h x =
       f <$> x ^. realTable
   <|> g <$> x ^. integerTable
   <|> h <$> x ^. stringTable
@@ -219,10 +219,13 @@ recordData x =
     <|> recordTable     <$> x ^. table
 
 
-withRecordContent :: [RecordContent]
-                  -> (Double -> a)
-                  -> (Int64  -> a)
-                  -> (String -> a)
-                  -> a
-                  -> [(RecordIdentifier, [(VariableIdentifier, a)])]
-withRecordContent x f g h d = fmap (second (fmap (second (\v -> fromMaybe d $ withDataValue v f g h)))) x
+onRecordContent :: (Double -> a)
+                -> (Int64  -> a)
+                -> (String -> a)
+                -> a
+                -> [RecordContent]
+                -> [(RecordIdentifier, [(VariableIdentifier, a)])]
+onRecordContent f g h d =
+  fmap
+    . second
+    $ fmap (second $ fromMaybe d . onDataValue f g h)

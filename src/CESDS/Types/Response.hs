@@ -11,13 +11,13 @@ module CESDS.Types.Response (
 , modelMetas
 , records
 , bookmarkMetas
-, withResponse
+, onResponse
 ) where
 
 
-import CESDS.Types (OptionalInt32, VersionIdentifier, int32)
+import CESDS.Types (VersionIdentifier)
 import CESDS.Types.Bookmark (BookmarkMeta, BookmarkMetas, bookmarks)
-import CESDS.Types.Internal ()
+import CESDS.Types.Internal (OptionalInt32, int32)
 import CESDS.Types.Model (ModelMeta, ModelMetas, models)
 import CESDS.Types.Record (RecordContent, RecordData, recordData)
 import Control.Applicative ((<|>))
@@ -103,18 +103,18 @@ bookmarkMetas =
     (\s x -> s {bookmarkMetas' = putField $ flip (bookmarks .~) def <$> x})
 
 
-withResponse :: Monad m
-             => Response
-             -> (Maybe Int32 -> String -> m (Maybe a))
-             -> (Maybe Int32 -> [ModelMeta] -> m (Maybe a))
-             -> (Maybe Int32 -> [RecordContent] -> m (Maybe a))
-             -> (Maybe Int32 -> [BookmarkMeta] -> m (Maybe a))
-             -> m (Maybe a)
-withResponse x f g h i =
+onResponse :: Monad m
+           => (Maybe Int32 -> String -> m (Maybe a))
+           -> (Maybe Int32 -> [ModelMeta] -> m (Maybe a))
+           -> (Maybe Int32 -> [RecordContent] -> m (Maybe a))
+           -> (Maybe Int32 -> [BookmarkMeta] -> m (Maybe a))
+           -> Response
+           -> m (Maybe a)
+onResponse f g h i x =
   let
     n = x ^. identifier
   in
-    fmap join
+    fmap join -- FIXME: Is there a simpler name for 'fmap join . sequence'?
        . sequence
        $  f n              <$> x ^. responseError
       <|> g n              <$> x ^. modelMetas   

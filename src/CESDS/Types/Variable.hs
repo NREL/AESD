@@ -93,6 +93,7 @@ units =
 varType :: Lens' VarMeta VarType
 varType = lens (fromMaybe RealVar . getField . varType') (\s x -> s {varType' = putField $ Just x})
 
+
 data VarUnits =
   VarUnits
   {
