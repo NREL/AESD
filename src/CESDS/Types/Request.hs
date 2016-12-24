@@ -21,7 +21,7 @@ module CESDS.Types.Request (
 ) where
 
 
-import CESDS.Types  (OptionalInt32, int32)
+import CESDS.Types (OptionalInt32, int32)
 import CESDS.Types.Bookmark (BookmarkIdentifier)
 import CESDS.Types.Internal ()
 import CESDS.Types.Model (ModelIdentifier)
@@ -30,6 +30,7 @@ import Control.Applicative ((<|>))
 import Control.Arrow ((&&&))
 import Control.Lens.Getter ((^.))
 import Control.Lens.Setter ((.~))
+import Control.Monad (join)
 import Data.Default (Default(..))
 import Data.Int (Int32)
 import Data.ProtocolBuffers (Decode, Encode, Message, Optional, Repeated, Required, Value, getField, putField)
@@ -160,17 +161,18 @@ request i = def {requestIdentifier = putField $ flip (int32 .~ ) def <$> i}
 
 withRequest :: Monad m
             => Request
-            -> (Maybe Int32 -> LoadModelsMeta   -> m a)
-            -> (Maybe Int32 -> LoadRecordsData  -> m a)
-            -> (Maybe Int32 -> LoadBookmarkMeta -> m a)
-            -> (Maybe Int32 -> SaveBookmarkMeta -> m a)
+            -> (Maybe Int32 -> LoadModelsMeta   -> m (Maybe a))
+            -> (Maybe Int32 -> LoadRecordsData  -> m (Maybe a))
+            -> (Maybe Int32 -> LoadBookmarkMeta -> m (Maybe a))
+            -> (Maybe Int32 -> SaveBookmarkMeta -> m (Maybe a))
             -> m (Maybe a)
 withRequest Request{..} f g h i =
-  maybe (return Nothing) (fmap Just)
-    $ let
-        t = (^. int32) <$> getField requestIdentifier
-      in
-            f t <$> getField loadModelsMeta'
-        <|> g t <$> getField loadRecordsData'
-        <|> h t <$> getField loadBookmarkMeta'
-        <|> i t <$> getField saveBookmarkMeta'
+  let
+    t = (^. int32) <$> getField requestIdentifier
+  in
+    fmap join
+       . sequence
+       $  f t <$> getField loadModelsMeta'
+      <|> g t <$> getField loadRecordsData'
+      <|> h t <$> getField loadBookmarkMeta'
+      <|> i t <$> getField saveBookmarkMeta'

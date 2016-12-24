@@ -17,6 +17,7 @@ import CESDS.Types.Internal ()
 import Control.Lens.Lens (Lens', lens)
 import Data.Default (Default(..))
 import Data.Int (Int32)
+import Data.Maybe (fromMaybe)
 import Data.ProtocolBuffers (Decode, Encode, Enumeration, Optional, Packed, Required, Value, getField, putField)
 import GHC.Generics (Generic)
 
@@ -31,13 +32,13 @@ data VarType = RealVar | IntegerVar | StringVar
 data VarMeta =
   VarMeta
   {
-    identifier' :: Required 1 (Value       VariableIdentifier)
+    identifier' :: Optional 1 (Value       VariableIdentifier)
   , name'       :: Required 2 (Value       String            )
   , isInput'    :: Optional 3 (Value       Bool              ) -- FIXME: Delete this.
   , units'      :: Optional 4 (Value       String            )
   , si'         :: Packed   5 (Value       Int32             )
   , scale'      :: Required 6 (Value       Double            )
-  , varType'    :: Required 7 (Enumeration VarType           )
+  , varType'    :: Optional 7 (Enumeration VarType           )
   }
     deriving (Generic, Show)
 
@@ -45,13 +46,13 @@ instance Default VarMeta where
   def =
     VarMeta
     {
-      identifier' = putField 0
+      identifier' = putField $ Just 0
     , name'       = putField ""
     , isInput'    = putField Nothing
     , units'      = putField Nothing
     , si'         = putField $ replicate 8 0
     , scale'      = putField 1
-    , varType'    = putField RealVar
+    , varType'    = putField $ Just RealVar
     }
 
 instance Decode VarMeta
@@ -60,7 +61,7 @@ instance Encode VarMeta
 
 
 identifier :: Lens' VarMeta Int32
-identifier = lens (getField . identifier') (\s x -> s {identifier' = putField x})
+identifier = lens (fromMaybe 0 . getField . identifier') (\s x -> s {identifier' = putField $ Just x})
 
 
 name :: Lens' VarMeta String
@@ -90,7 +91,7 @@ units =
 
 
 varType :: Lens' VarMeta VarType
-varType = lens (getField . varType') (\s x -> s {varType' = putField x})
+varType = lens (fromMaybe RealVar . getField . varType') (\s x -> s {varType' = putField $ Just x})
 
 data VarUnits =
   VarUnits

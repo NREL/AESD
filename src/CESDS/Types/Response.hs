@@ -24,6 +24,7 @@ import Control.Applicative ((<|>))
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens (Lens', lens)
 import Control.Lens.Setter ((.~))
+import Control.Monad (join)
 import Data.Default (Default(..))
 import Data.Int (Int32)
 import Data.ProtocolBuffers (Decode, Encode, Message, Optional, Required, Value, getField, putField)
@@ -102,10 +103,20 @@ bookmarkMetas =
     (\s x -> s {bookmarkMetas' = putField $ flip (bookmarks .~) def <$> x})
 
 
-withResponse :: Monad m => Response -> (String -> m a) -> ([ModelMeta] -> m a) -> ([RecordContent] -> m a) -> ([BookmarkMeta] -> m a) -> m (Maybe a)
+withResponse :: Monad m
+             => Response
+             -> (Maybe Int32 -> String -> m (Maybe a))
+             -> (Maybe Int32 -> [ModelMeta] -> m (Maybe a))
+             -> (Maybe Int32 -> [RecordContent] -> m (Maybe a))
+             -> (Maybe Int32 -> [BookmarkMeta] -> m (Maybe a))
+             -> m (Maybe a)
 withResponse x f g h i =
-  maybe (return Nothing) (fmap Just)
-     $  f              <$> x ^. responseError
-    <|> g              <$> x ^. modelMetas
-    <|> h . recordData <$> x ^. records
-    <|> i              <$> x ^. bookmarkMetas
+  let
+    n = x ^. identifier
+  in
+    fmap join
+       . sequence
+       $  f n              <$> x ^. responseError
+      <|> g n              <$> x ^. modelMetas   
+      <|> h n . recordData <$> x ^. records      
+      <|> i n              <$> x ^. bookmarkMetas
