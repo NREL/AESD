@@ -25,10 +25,11 @@ module CESDS.Types.Record (
 , list
 , table
 , recordData
+, withRecordContent
 ) where
 
 
-import CESDS.Types (DataValue, Doubles, Integers, Strings, realValue, reals, integerValue, integers, stringValue, strings)
+import CESDS.Types (DataValue, Doubles, Integers, Strings, realValue, reals, integerValue, integers, stringValue, strings, withDataValue)
 import CESDS.Types.Internal ()
 import CESDS.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>))
@@ -216,3 +217,12 @@ recordData x =
   fromMaybe []
      $  (^. recordList) <$> x ^. list
     <|> recordTable     <$> x ^. table
+
+
+withRecordContent :: [RecordContent]
+                  -> (Double -> a)
+                  -> (Int64  -> a)
+                  -> (String -> a)
+                  -> a
+                  -> [(RecordIdentifier, [(VariableIdentifier, a)])]
+withRecordContent x f g h d = fmap (second (fmap (second (\v -> fromMaybe d $ withDataValue v f g h)))) x

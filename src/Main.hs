@@ -3,10 +3,9 @@ module Main (
 ) where
 
 
-import CESDS.Types (realValue)
+import CESDS.Types.Record (withRecordContent)
 import CESDS.Types.Request (loadModelsMeta, loadRecordsData)
 import CESDS.Types.Response (withResponse)
-import Control.Arrow (second)
 import Control.Lens.Getter ((^.))
 import Control.Monad (void)
 import Network.WebSockets (receiveData, runClient, sendBinaryData)
@@ -35,7 +34,7 @@ main =
             void $ withResponse z
               (const $ (>> return Nothing) . print)
               (const $ (>> return Nothing) . print)
-              (const $ (>> return Nothing) . print . second (fmap (second (^. realValue))) . head)
+              (const $ (>> return Nothing) . print . head . (\w -> withRecordContent w Just (const Nothing) (const Nothing) Nothing))
               (const $ (>> return Nothing) . print)
             loop $ n + 1
       loop 1
