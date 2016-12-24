@@ -22,7 +22,7 @@ module CESDS.Types.Request (
 
 
 import CESDS.Types (OptionalInt32, int32)
-import CESDS.Types.Bookmark (BookmarkIdentifier)
+import CESDS.Types.Bookmark (BookmarkIdentifier, BookmarkMeta)
 import CESDS.Types.Internal ()
 import CESDS.Types.Model (ModelIdentifier)
 import CESDS.Types.Variable (VariableIdentifier)
@@ -62,8 +62,8 @@ withLoadBookmarkMeta = flip uncurry . (getField . loadBookmarkModelIdentifier &&
 data SaveBookmarkMeta =
   SaveBookmarkMeta
   {
-    saveBookmarkModelIdentifier :: Required 1 (Value ModelIdentifier   )
-  , saveBookmarkIdentifier      :: Required 2 (Value BookmarkIdentifier)
+    saveBookmarkModelIdentifier :: Required 1 (Value   ModelIdentifier)
+  , saveBookmark                :: Required 2 (Message BookmarkMeta   )
   }
     deriving (Generic, Show)
 
@@ -72,12 +72,12 @@ instance Decode SaveBookmarkMeta
 instance Encode SaveBookmarkMeta
 
 
-saveBookmarkMeta :: Maybe Int32 -> ModelIdentifier -> BookmarkIdentifier -> Request
+saveBookmarkMeta :: Maybe Int32 -> ModelIdentifier -> BookmarkMeta -> Request
 saveBookmarkMeta i m b = (request i) {saveBookmarkMeta' = putField . Just $ SaveBookmarkMeta (putField m) (putField b)}
 
 
-withSaveBookmarkMeta :: Monad m => SaveBookmarkMeta -> (ModelIdentifier -> BookmarkIdentifier -> m a) -> m a
-withSaveBookmarkMeta = flip uncurry . (getField . saveBookmarkModelIdentifier &&& getField . saveBookmarkIdentifier)
+withSaveBookmarkMeta :: Monad m => SaveBookmarkMeta -> (ModelIdentifier -> BookmarkMeta -> m a) -> m a
+withSaveBookmarkMeta = flip uncurry . (getField . saveBookmarkModelIdentifier &&& getField . saveBookmark)
 
 
 data LoadModelsMeta =
