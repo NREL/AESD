@@ -185,8 +185,8 @@ recordTable t =
         <|> relens integerTable integerValue
         <|> relens stringTable  stringValue
   in
-    map (second $ zip vids)
-      $ zip (t ^. recordIdentifiers)
+    fmap (second $ zip vids)
+      . zip (t ^. recordIdentifiers)
       $ chunksOf (length vids) vals
 
 
