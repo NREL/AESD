@@ -1,5 +1,5 @@
 name:                cesds-records
-version:             0.3.2.0
+version:             0.3.3.0
 synopsis:            Implementation of CESDS record API
 description:         Implementation of CESDS record API.
 license:             AllRightsReserved
@@ -24,21 +24,27 @@ source-repository head
  
 library
   hs-source-dirs  : src
-  exposed-modules : CESDS.Types
+  exposed-modules : CESDS.Records.Client
+                    CESDS.Types
                     CESDS.Types.Bookmark
                     CESDS.Types.Model
                     CESDS.Types.Record
                     CESDS.Types.Request
                     CESDS.Types.Response
                     CESDS.Types.Variable
-  other-modules   : CESDS.Types.Internal
+  other-modules   : Control.Concurrent.Util
+                    CESDS.Types.Internal
   build-depends   : base >=4.8 && <4.9
                   , bytestring
                   , cereal
+                  , containers
                   , data-default
+                  , eprocess
                   , lens
+                  , mtl
                   , protobuf
                   , split
+                  , stm
                   , websockets
   default-language: Haskell2010
   ghc-options     : -Wall -O2
@@ -49,11 +55,15 @@ executable cesds-server
   build-depends   : base               
                   , bytestring
                   , cereal
+                  , containers
                   , data-default
+                  , eprocess
                   , lens
+                  , mtl
                   , protobuf
                   , split
+                  , stm
                   , websockets
   buildable       : True               
   default-language: Haskell2010        
-  ghc-options     : -Wall -O2          
+  ghc-options     : -Wall -O2 -threaded

@@ -5,6 +5,7 @@
 
 module CESDS.Types.Request (
   Request
+, requestIdentifier
 , onRequest
 , LoadModelsMeta
 , loadModelsMeta
@@ -27,6 +28,7 @@ import CESDS.Types.Model (ModelIdentifier)
 import CESDS.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>))
 import Control.Lens.Getter ((^.))
+import Control.Lens.Lens (Lens', lens)
 import Control.Lens.Setter ((.~))
 import Control.Monad (join)
 import Data.Default (Default(..))
@@ -49,8 +51,8 @@ instance Decode LoadBookmarkMeta
 instance Encode LoadBookmarkMeta
 
 
-loadBookmarkMeta :: Maybe Int32 -> ModelIdentifier -> Maybe BookmarkIdentifier -> Request
-loadBookmarkMeta i m b = (request i) {loadBookmarkMeta' = putField . Just $ LoadBookmarkMeta (putField m) (putField b)}
+loadBookmarkMeta :: ModelIdentifier -> Maybe BookmarkIdentifier -> Request
+loadBookmarkMeta m b = def {loadBookmarkMeta' = putField . Just $ LoadBookmarkMeta (putField m) (putField b)}
 
 
 onLoadBookmarkMeta :: Monad m => (ModelIdentifier -> Maybe BookmarkIdentifier -> m a) -> LoadBookmarkMeta -> m a
@@ -70,8 +72,8 @@ instance Decode SaveBookmarkMeta
 instance Encode SaveBookmarkMeta
 
 
-saveBookmarkMeta :: Maybe Int32 -> ModelIdentifier -> BookmarkMeta -> Request
-saveBookmarkMeta i m b = (request i) {saveBookmarkMeta' = putField . Just $ SaveBookmarkMeta (putField m) (putField b)}
+saveBookmarkMeta :: ModelIdentifier -> BookmarkMeta -> Request
+saveBookmarkMeta m b = def {saveBookmarkMeta' = putField . Just $ SaveBookmarkMeta (putField m) (putField b)}
 
 
 onSaveBookmarkMeta :: Monad m => (ModelIdentifier -> BookmarkMeta -> m a) -> SaveBookmarkMeta -> m a
@@ -90,8 +92,8 @@ instance Decode LoadModelsMeta
 instance Encode LoadModelsMeta
 
 
-loadModelsMeta :: Maybe Int32 -> Maybe ModelIdentifier -> Request
-loadModelsMeta i m = (request i) {loadModelsMeta' = putField . Just . LoadModelsMeta $ putField m}
+loadModelsMeta :: Maybe ModelIdentifier -> Request
+loadModelsMeta m = def {loadModelsMeta' = putField . Just . LoadModelsMeta $ putField m}
 
 
 onLoadModelsMeta :: Monad m => (Maybe ModelIdentifier -> m a) -> LoadModelsMeta -> m a
@@ -113,8 +115,8 @@ instance Decode LoadRecordsData
 instance Encode LoadRecordsData
 
 
-loadRecordsData :: Maybe Int32 -> ModelIdentifier -> Maybe Word64 -> [VariableIdentifier] -> Maybe BookmarkIdentifier -> Request
-loadRecordsData i m n v b = (request i) {loadRecordsData' = putField . Just $ LoadRecordsData (putField m) (putField n) (putField v) (putField b)}
+loadRecordsData :: ModelIdentifier -> Maybe Word64 -> [VariableIdentifier] -> Maybe BookmarkIdentifier -> Request
+loadRecordsData m n v b = def {loadRecordsData' = putField . Just $ LoadRecordsData (putField m) (putField n) (putField v) (putField b)}
 
 
 onLoadRecordsData :: Monad m => (ModelIdentifier -> Maybe Word64 -> [VariableIdentifier] -> Maybe BookmarkIdentifier -> m a) -> LoadRecordsData -> m a
@@ -129,12 +131,12 @@ onLoadRecordsData f LoadRecordsData{..} =
 data Request =
   Request
   {
-    requestVersion    :: Required 1 (Value   Word32          )
-  , requestIdentifier :: Optional 2 (Message OptionalInt32   )
-  , loadModelsMeta'   :: Optional 3 (Message LoadModelsMeta  )
-  , loadRecordsData'  :: Optional 4 (Message LoadRecordsData )
-  , loadBookmarkMeta' :: Optional 5 (Message LoadBookmarkMeta)
-  , saveBookmarkMeta' :: Optional 6 (Message SaveBookmarkMeta)
+    requestVersion     :: Required 1 (Value   Word32          )
+  , requestIdentifier' :: Optional 2 (Message OptionalInt32   )
+  , loadModelsMeta'    :: Optional 3 (Message LoadModelsMeta  )
+  , loadRecordsData'   :: Optional 4 (Message LoadRecordsData )
+  , loadBookmarkMeta'  :: Optional 5 (Message LoadBookmarkMeta)
+  , saveBookmarkMeta'  :: Optional 6 (Message SaveBookmarkMeta)
   }
     deriving (Generic, Show)
 
@@ -153,8 +155,11 @@ instance Decode Request
 instance Encode Request
 
 
-request :: Maybe Int32 -> Request
-request i = def {requestIdentifier = putField $ flip (int32 .~ ) def <$> i}
+requestIdentifier :: Lens' Request (Maybe Int32)
+requestIdentifier =
+  lens
+    (fmap (^. int32) . getField . requestIdentifier')
+    (\s x -> s {requestIdentifier' = putField $ flip (int32 .~) def <$> x})
 
 
 onRequest :: Monad m
@@ -166,7 +171,7 @@ onRequest :: Monad m
             -> m (Maybe a)
 onRequest f g h i Request{..} =
   let
-    t = (^. int32) <$> getField requestIdentifier
+    t = (^. int32) <$> getField requestIdentifier'
   in
     fmap join
        . sequence
