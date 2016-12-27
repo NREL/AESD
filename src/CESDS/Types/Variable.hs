@@ -14,6 +14,7 @@ module CESDS.Types.Variable (
 
 
 import CESDS.Types.Internal ()
+import CESDS.Types.Value (VarType(RealVar))
 import Control.Lens.Lens (Lens', lens)
 import Data.Default (Default(..))
 import Data.Int (Int32)
@@ -23,10 +24,6 @@ import GHC.Generics (Generic)
 
 
 type VariableIdentifier = Int32
-
-
-data VarType = RealVar | IntegerVar | StringVar
-  deriving (Bounded, Enum, Eq, Generic, Ord, Show)
 
 
 data VarMeta =

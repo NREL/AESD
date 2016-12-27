@@ -29,8 +29,8 @@ module CESDS.Types.Record (
 ) where
 
 
-import CESDS.Types (DataValue, realValue, integerValue, onDataValue, stringValue)
 import CESDS.Types.Internal (Doubles, Integers, Strings, reals, integers, strings)
+import CESDS.Types.Value (DataValue, realValue, integerValue, onDataValue, stringValue)
 import CESDS.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>))
 import Control.Arrow (second)
