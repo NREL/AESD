@@ -10,7 +10,10 @@ module CESDS.Types.Value (
 , onDataValue
 , VarType(..)
 , detectVarType
+, consistentVarType
+, consistentVarTypes
 , commonVarType
+, castVarType
 , sameVarTypes
 ) where
 
@@ -48,7 +51,6 @@ instance Read DataValue where
       , ""
       )
     ]
-      
 
 instance Default DataValue where
   def = DataValue (putField Nothing) (putField Nothing) (putField Nothing)
@@ -88,14 +90,20 @@ detectVarType x
   | otherwise                  = StringVar
 
 
+consistentVarType :: VarType -> VarType -> VarType
+consistentVarType IntegerVar IntegerVar = IntegerVar
+consistentVarType StringVar  _          = StringVar
+consistentVarType _          StringVar  = StringVar
+consistentVarType _          _          = RealVar
+
+
+consistentVarTypes :: [VarType] -> [DataValue] -> [VarType]
+consistentVarTypes = zipWith ((. detectVarType) . consistentVarType)
+
+
 commonVarType :: [DataValue] -> VarType
 commonVarType =
-  foldl f RealVar . fmap detectVarType
-    where
-      f IntegerVar IntegerVar = IntegerVar
-      f StringVar  _          = StringVar
-      f _          StringVar  = StringVar
-      f _          _          = RealVar
+  foldl consistentVarType IntegerVar . fmap detectVarType
 
 
 castVarType :: VarType -> DataValue -> DataValue
