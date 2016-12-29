@@ -7,7 +7,8 @@ module CESDS.Records.Server (
 
 import CESDS.Records (Cache)
 import CESDS.Types.Record (RecordContent)
-import CESDS.Types.Request (onLoadModelsMeta, onRequest)
+import CESDS.Types.Request (onLoadModelsMeta, onLoadRecordsData, onRequest)
+import CESDS.Types.Response (modelMetasResponse, recordsResponse)
 import CESDS.Types.Value (VarType(..), castVarType, consistentVarTypes)
 import CESDS.Types.Variable (identifier, name, varType)
 import Control.Arrow ((&&&))
@@ -16,14 +17,14 @@ import Control.Concurrent.STM.TVar (newTVarIO, readTVar)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))
+import Control.Monad (void)
 import Data.Default (def)
 import Data.Int (Int32)
 import Data.Maybe (maybeToList)
 import Network.WebSockets (Connection, acceptRequest, receiveData, runServer, sendBinaryData)
 
 import qualified CESDS.Types.Model as Model (ModelMeta, identifier, varMeta)
-import qualified CESDS.Types.Response as Response (identifier, modelMetas)
-import qualified Data.Map.Strict as M (elems, fromList, lookup)
+import qualified Data.Map.Strict as M ((!), elems, fromList, lookup)
 
 
 type State = (Cache, Connection)
@@ -32,8 +33,9 @@ type State = (Cache, Connection)
 serverMain :: String
            -> Int
            -> IO [Model.ModelMeta]
+           -> (Model.ModelMeta -> IO [RecordContent])
            -> IO ()
-serverMain host port listModels =
+serverMain host port listModels loadContent=
   do
     cache <-
       newTVarIO
@@ -48,25 +50,35 @@ serverMain host port listModels =
           loop =
             do
               request <- receiveData connection
-              onRequest
+              void $ onRequest
                 (
-                   \i r ->
-                     onLoadModelsMeta
-                       (
-                         \mi ->
-                           do
-                             c <- atomically $ readTVar cache
-                             let
-                               x = maybe (M.elems c) ((maybeToList .) . flip M.lookup $ c) mi
-                             sendBinaryData connection
-                               $ def
-                               & Response.identifier .~ i
-                               & Response.modelMetas .~ Just x
-                             return Nothing :: IO (Maybe ())
-                       )
-                       r
+                  \i ->
+                    onLoadModelsMeta
+                      (
+                        \mi ->
+                          do
+                            c <- atomically $ readTVar cache
+                            sendBinaryData connection
+                              . modelMetasResponse i
+                              $ maybe (M.elems c) ((maybeToList .) . flip M.lookup $ c) mi
+                            return Nothing :: IO (Maybe ())
+                      )
                 )
-                ignore
+                (
+                  \i ->
+                    onLoadRecordsData
+                      (
+                        \mi Nothing [] Nothing ->
+                          do
+                            c <- atomically $ readTVar cache
+                            let
+                              m = c M.! mi
+                            x <- loadContent m
+                            sendBinaryData connection
+                              $ recordsResponse i x
+                            return Nothing :: IO (Maybe ())
+                      )
+                )
                 ignore
                 ignore
                 request
@@ -83,8 +95,8 @@ buildModel (header : content) =
   let
     values = fmap read <$> content
     types = foldl consistentVarTypes (const IntegerVar <$> header) values
-    vids = [1..]
-    rids = [1..]
+    vids = [0..]
+    rids = [0..]
   in
     (
       def
@@ -93,3 +105,4 @@ buildModel (header : content) =
         $ zipWith castVarType types
         <$> values
     )
+buildModel [] = (def, [])

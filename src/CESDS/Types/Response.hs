@@ -8,9 +8,10 @@ module CESDS.Types.Response (
 , identifier
 , chunkIdentifier
 , nextChunkIdentifier
-, modelMetas
-, records
-, bookmarkMetas
+, errorResponse
+, modelMetasResponse
+, recordsResponse
+, bookmarkMetasResponse
 , onResponse
 ) where
 
@@ -22,7 +23,7 @@ import CESDS.Types.Model (ModelMeta, ModelMetas, models)
 import CESDS.Types.Record (RecordContent, RecordData, recordData)
 import Control.Applicative ((<|>))
 import Control.Lens.Getter ((^.))
-import Control.Lens.Lens (Lens', lens)
+import Control.Lens.Lens (Lens', (&), lens)
 import Control.Lens.Setter ((.~))
 import Control.Monad (join)
 import Data.Default (Default(..))
@@ -85,6 +86,13 @@ responseError :: Lens' Response (Maybe String)
 responseError = lens (getField . responseError') (\s x -> s {responseError' = putField x})
 
 
+errorResponse :: Maybe Int32 -> String -> Response
+errorResponse i e =
+  def
+    & identifier    .~ i
+    & responseError .~ Just e
+
+
 modelMetas :: Lens' Response (Maybe [ModelMeta])
 modelMetas =
   lens
@@ -92,8 +100,22 @@ modelMetas =
     (\s x -> s {modelMetas' = putField $ flip (models .~) def <$> x})
 
 
+modelMetasResponse :: Maybe Int32 -> [ModelMeta] -> Response
+modelMetasResponse i ms =
+  def
+    & identifier .~ i
+    & modelMetas .~ Just ms
+
+
 records :: Lens' Response (Maybe RecordData)
 records = lens (getField . records') (\s x -> s {records' = putField x})
+
+
+recordsResponse :: Maybe Int32 -> [RecordContent] -> Response
+recordsResponse i rs =
+  def
+    & identifier .~ i
+    & records    .~ Just (def & recordData .~ rs)
 
 
 bookmarkMetas :: Lens' Response (Maybe [BookmarkMeta])
@@ -101,6 +123,13 @@ bookmarkMetas =
   lens
     (fmap (^. bookmarks) . getField . bookmarkMetas')
     (\s x -> s {bookmarkMetas' = putField $ flip (bookmarks .~) def <$> x})
+
+
+bookmarkMetasResponse :: Maybe Int32 -> [BookmarkMeta] -> Response
+bookmarkMetasResponse i bs =
+  def
+    & identifier    .~ i
+    & bookmarkMetas .~ Just bs
 
 
 onResponse :: Monad m
@@ -116,7 +145,7 @@ onResponse f g h i x =
   in
     fmap join -- FIXME: Is there a simpler name for 'fmap join . sequence'?
        . sequence
-       $  f n              <$> x ^. responseError
-      <|> g n              <$> x ^. modelMetas   
-      <|> h n . recordData <$> x ^. records      
-      <|> i n              <$> x ^. bookmarkMetas
+       $  f n                   <$> x ^. responseError
+      <|> g n                   <$> x ^. modelMetas   
+      <|> h n . (^. recordData) <$> x ^. records      
+      <|> i n                   <$> x ^. bookmarkMetas

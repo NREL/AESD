@@ -25,7 +25,6 @@ import Control.Monad (join, when)
 import Control.Monad.Except (liftIO)
 import Data.Int (Int32)
 import Data.Maybe (fromJust, fromMaybe)
-import Debug.Trace (trace)
 import Network.WebSockets (Connection, receiveData, runClient, sendBinaryData)
 
 import qualified CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
@@ -96,7 +95,7 @@ makeModelCache connection =
       (loadModelsMeta Nothing)
       $ \response ->
       do
-        putMVar result =<< ((\x -> trace (show x) x) <$> onResponse ignore keep ignore ignore response)
+        putMVar result =<< onResponse ignore keep ignore ignore response
         return True
     models <- fromMaybe [] <$> takeMVar result
     fmap (thread, processor, )

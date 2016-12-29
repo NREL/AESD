@@ -4,13 +4,13 @@
 
 module CESDS.Types.Model (
   ModelIdentifier
-, ModelMetas
-, models
 , ModelMeta
 , identifier
 , name
 , uri
 , varMeta
+, ModelMetas
+, models
 ) where
 
 

@@ -9,33 +9,19 @@ module CESDS.Types.Record (
 , varValue
 , RecordIdentifier
 , RecordContent
-, Record
-, record
-, RecordList
-, recordList
-, RecordTable
-, variableIdentifiers
-, recordIdentifiers
-, realTable
-, integerTable
-, stringTable
-, onTable
-, recordTable
 , RecordData
-, list
-, table
 , recordData
 , onRecordContent
 ) where
 
 
 import CESDS.Types.Internal (Doubles, Integers, Strings, reals, integers, strings)
-import CESDS.Types.Value (DataValue, realValue, integerValue, onDataValue, stringValue)
+import CESDS.Types.Value (DataValue, realValue, integerValue, onDataValue, sameVarTypes, stringValue)
 import CESDS.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>))
 import Control.Arrow (second)
 import Control.Lens.Getter ((^.))
-import Control.Lens.Lens (Lens', lens)
+import Control.Lens.Lens (Lens', (&), lens)
 import Control.Lens.Setter ((.~))
 import Data.Default (Default(..))
 import Data.Int (Int64)
@@ -43,9 +29,6 @@ import Data.List.Split (chunksOf)
 import Data.Maybe (fromMaybe)
 import Data.ProtocolBuffers (Decode, Encode, Message, Optional, Packed, Repeated, Required, Value, getField, putField)
 import GHC.Generics (Generic)
-
-
-type RecordIdentifier = Int64
 
 
 data VarValue =
@@ -71,6 +54,12 @@ varValue =
     (\s (k, v)     -> s {varIdentifier' = putField k, varValue' = putField v})
 
 
+type RecordIdentifier = Int64
+
+
+type RecordContent = (RecordIdentifier, [(VariableIdentifier, DataValue)])
+
+
 data Record =
   Record
   {
@@ -85,9 +74,6 @@ instance Default Record where
 instance Decode Record
 
 instance Encode Record
-
-
-type RecordContent = (RecordIdentifier, [(VariableIdentifier, DataValue)])
 
 
 record :: Lens' Record RecordContent
@@ -167,28 +153,37 @@ stringTable =
     (\s x -> s {stringTable' = putField $ flip (strings .~) def <$> x})
 
 
-onTable :: ([Double] -> a) -> ([Int64] -> a) -> ([String] -> a) -> RecordTable -> Maybe a
-onTable f g h x =
-      f <$> x ^. realTable
-  <|> g <$> x ^. integerTable
-  <|> h <$> x ^. stringTable
-
-
-recordTable :: RecordTable -> [RecordContent]
-recordTable t =
-  let
-    relens :: Lens' RecordTable (Maybe [a]) -> Lens' DataValue (Maybe a) -> Maybe [DataValue]
-    relens tlens dlens = fmap (flip (dlens .~) def . Just) <$> t ^. tlens
-    vids = t ^. variableIdentifiers
-    vals =
-      fromMaybe []
-         $  relens realTable    realValue
-        <|> relens integerTable integerValue
-        <|> relens stringTable  stringValue
-  in
-    fmap (second $ zip vids)
-      . zip (t ^. recordIdentifiers)
-      $ chunksOf (length vids) vals
+recordTable :: Lens' RecordTable [RecordContent]
+recordTable =
+  lens
+    (
+      \s ->
+        let
+          relens :: Lens' RecordTable (Maybe [a]) -> Lens' DataValue (Maybe a) -> Maybe [DataValue]
+          relens tlens dlens = fmap (flip (dlens .~) def . Just) <$> s ^. tlens
+          vids = s ^. variableIdentifiers
+          vals =
+            fromMaybe []
+               $  relens realTable    realValue
+              <|> relens integerTable integerValue
+              <|> relens stringTable  stringValue
+        in
+          fmap (second $ zip vids)
+            . zip (s ^. recordIdentifiers)
+            $ chunksOf (length vids) vals
+    )
+    (
+      \s x ->
+        let
+          y = fmap snd . snd =<< x
+        in
+          s
+            & variableIdentifiers .~ (if null x then [] else fst <$> snd (head x))
+            & recordIdentifiers   .~ fmap fst x
+            & realTable           .~ mapM (^. realValue   ) y
+            & integerTable        .~ mapM (^. integerValue) y
+            & stringTable         .~ mapM (^. stringValue ) y
+    )
 
 
 data RecordData =
@@ -198,6 +193,9 @@ data RecordData =
   , table' :: Optional 2 (Message RecordTable)
   }
     deriving (Generic, Show)
+
+instance Default RecordData where
+  def = RecordData (putField Nothing) (putField Nothing)
 
 instance Decode RecordData
 
@@ -212,11 +210,21 @@ table :: Lens' RecordData(Maybe RecordTable)
 table = lens (getField . table') (\s x -> s {table' = putField x})
 
 
-recordData :: RecordData -> [RecordContent]
-recordData x =
-  fromMaybe []
-     $  (^. recordList) <$> x ^. list
-    <|> recordTable     <$> x ^. table
+recordData :: Lens' RecordData [RecordContent]
+recordData =
+  lens
+    (
+      \x ->
+        fromMaybe []
+           $  (^. recordList ) <$> x ^. list
+          <|> (^. recordTable) <$> x ^. table
+    )
+    (
+      \s x ->
+        if sameVarTypes $ fmap snd . snd =<< x -- FIXME: Make this more efficient.
+          then s & list .~ Nothing                      & table .~ Just (def & recordTable .~ x)
+          else s & list .~ Just (def & recordList .~ x) & table .~ Nothing
+    )
 
 
 onRecordContent :: (Double -> a)

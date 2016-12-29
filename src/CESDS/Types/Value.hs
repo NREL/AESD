@@ -9,12 +9,14 @@ module CESDS.Types.Value (
 , stringValue
 , onDataValue
 , VarType(..)
+, varType
+, varTypes
+, sameVarTypes
 , detectVarType
 , consistentVarType
 , consistentVarTypes
-, commonVarType
 , castVarType
-, sameVarTypes
+, castVarTypes
 ) where
 
 
@@ -25,7 +27,8 @@ import Control.Lens.Lens (Lens', (&), lens)
 import Control.Lens.Setter ((.~))
 import Data.Default (Default(..))
 import Data.Int (Int64)
-import Data.Maybe (isJust)
+import Data.List (union)
+import Data.Maybe (catMaybes, isJust)
 import Data.ProtocolBuffers (Decode, Encode, Optional, Value, getField, putField)
 import GHC.Generics (Generic)
 import Text.Read (readMaybe)
@@ -74,13 +77,31 @@ stringValue = lens (getField . stringValue') (\s x -> s {stringValue' = putField
 
 onDataValue :: (Double -> a) -> (Int64 -> a) -> (String -> a) -> DataValue -> Maybe a
 onDataValue f g h x =
-      f <$> x ^. realValue
-  <|> g <$> x ^. integerValue
+      g <$> x ^. integerValue
+  <|> f <$> x ^. realValue
   <|> h <$> x ^. stringValue
 
 
 data VarType = RealVar | IntegerVar | StringVar
   deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
+
+
+varType :: DataValue -> Maybe VarType
+varType = onDataValue (const RealVar) (const IntegerVar) (const StringVar)
+
+
+varTypes :: DataValue -> [VarType]
+varTypes x =
+  catMaybes
+    [
+      const RealVar    <$> x ^. realValue
+    , const IntegerVar <$> x ^. integerValue
+    , const StringVar  <$> x ^. stringValue
+    ]
+
+
+sameVarTypes :: [DataValue] -> Bool
+sameVarTypes xs = length (foldl ((. varTypes) . union) [] xs) == 1
 
 
 detectVarType :: DataValue -> VarType
@@ -101,19 +122,19 @@ consistentVarTypes :: [VarType] -> [DataValue] -> [VarType]
 consistentVarTypes = zipWith ((. detectVarType) . consistentVarType)
 
 
-commonVarType :: [DataValue] -> VarType
-commonVarType =
-  foldl consistentVarType IntegerVar . fmap detectVarType
-
-
 castVarType :: VarType -> DataValue -> DataValue
 castVarType IntegerVar =                             (realValue .~ Nothing) . (stringValue .~ Nothing)
 castVarType RealVar    = (integerValue .~ Nothing)                          . (stringValue .~ Nothing)
 castVarType StringVar  = (integerValue .~ Nothing) . (realValue .~ Nothing)
 
 
-sameVarTypes :: [DataValue] -> (VarType, [DataValue])
-sameVarTypes xs =
+commonVarType :: [DataValue] -> VarType
+commonVarType =
+  foldl consistentVarType IntegerVar . fmap detectVarType
+
+
+castVarTypes :: [DataValue] -> (VarType, [DataValue])
+castVarTypes xs =
   let
     t = commonVarType xs
   in
