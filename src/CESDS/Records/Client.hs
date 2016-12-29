@@ -53,7 +53,7 @@ fetchRecords (_, processor, modelCache) i =
       then do
              result <- newEmptyMVar
              processor
-               (loadRecordsData i (Just 1) [] Nothing)
+               (loadRecordsData i Nothing [] Nothing)
                $ \response ->
                do
                  let

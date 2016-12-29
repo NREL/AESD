@@ -74,13 +74,13 @@ serverMain host port listModels loadContent=
                             c <- atomically $ readTVar cache
                             let
                               m = c M.! mi
-                            x <- filterRecords vids <$> loadContent m
+                            x <- (if null vids then id else filterRecords vids) <$> loadContent m
                             sequence_
                              [
                                sendBinaryData connection
                                  $ recordsResponse i x'
                                  & chunkIdentifier .~ Just i'
-                                 & nextChunkIdentifier .~ (if fromIntegral i' <= n then Just (i' + 1) else Nothing)
+                                 & nextChunkIdentifier .~ (if fromIntegral i' < n then Just (i' + 1) else Nothing)
                              |
                                let xs = maybe (: []) chunksOf (fromIntegral <$> mx) $ x
                              , let n = length xs
