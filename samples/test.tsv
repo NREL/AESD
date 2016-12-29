@@ -1,0 +1,5 @@
+Integer	Real	String
+-20	42	11
+0	53.3	145.8
+20	NaN	hello
+32	-3e-5	goodbye
