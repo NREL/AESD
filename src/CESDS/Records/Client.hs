@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TupleSections #-}
 
 
@@ -11,6 +10,7 @@ module CESDS.Records.Client (
 ) where
 
 
+import CESDS.Records (Cache, ContentStatus(..), ModelCache(..))
 import CESDS.Types.Record (RecordContent)
 import CESDS.Types.Request (Request, loadModelsMeta, loadRecordsData, requestIdentifier)
 import CESDS.Types.Response (Response, identifier, nextChunkIdentifier, onResponse)
@@ -24,39 +24,19 @@ import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVar, writ
 import Control.Monad (join, when)
 import Control.Monad.Except (liftIO)
 import Data.Int (Int32)
-import Data.Map.Strict (Map)
 import Data.Maybe (fromJust, fromMaybe)
-import GHC.Generics (Generic)
+import Debug.Trace (trace)
 import Network.WebSockets (Connection, receiveData, runClient, sendBinaryData)
 
 import qualified CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
 import qualified Data.Map.Strict as M ((!), delete, empty, foldr, fromList, insert, lookup, member)
 
 
-type Cache = Map Model.ModelIdentifier ModelCache
-
-
-data ModelCache =
-  ModelCache
-  {
-    modelMeta     :: Model.ModelMeta
-  , recordContent :: [RecordContent]
-  , contentStatus :: ContentStatus
-  }
-    deriving (Generic, Show)
-
-
-data ContentStatus =
-    EmptyContent
-  | PendingContent
-  | CompleteContent
-    deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
-
-
 clientMain :: String -> Int -> String -> (State -> IO ()) -> IO ()
 clientMain host port path client =
   runClient host port path
-    $ (client =<<) . makeModelCache
+    $ (client =<<)
+    . makeModelCache
 
 
 type State = (ThreadId, Processor, TVar Cache)
@@ -116,7 +96,7 @@ makeModelCache connection =
       (loadModelsMeta Nothing)
       $ \response ->
       do
-        putMVar result =<< onResponse ignore keep ignore ignore response
+        putMVar result =<< ((\x -> trace (show x) x) <$> onResponse ignore keep ignore ignore response)
         return True
     models <- fromMaybe [] <$> takeMVar result
     fmap (thread, processor, )
@@ -150,7 +130,7 @@ makeProcessor :: Connection -> IO (ThreadId, Processor)
 makeProcessor connection =
   do
     handlers <- liftIO $ newTVarIO M.empty
-    nextIdentifier <- liftIO $ makeCounter (+ 1) (1 :: Int32)
+    nextIdentifier <- liftIO $ makeCounter (+ 1) (0 :: Int32)
     receiver <-
       forkIO
         $ let
@@ -159,7 +139,7 @@ makeProcessor connection =
               do
                 liftIO
                   $ do
-                    response <- receiveData connection :: IO Response
+                    response <- receiveData connection
                     let
                       i = response ^. identifier
                     f <- fmap join . sequence $ findHandler <$> i

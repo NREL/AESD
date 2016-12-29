@@ -1,5 +1,5 @@
 name:                cesds-records
-version:             0.3.3.3
+version:             0.3.3.4
 synopsis:            Implementation of CESDS record API
 description:         Implementation of CESDS record API.
 license:             AllRightsReserved
@@ -24,7 +24,8 @@ source-repository head
  
 library
   hs-source-dirs  : src
-  exposed-modules : CESDS.Records.Client
+  exposed-modules : CESDS.Records
+                    CESDS.Records.Client
                     CESDS.Records.Server
                     CESDS.Types
                     CESDS.Types.Bookmark

@@ -48,14 +48,14 @@ data Response =
 instance Default Response where
   def =
     Response
-      (putField 3                       )
-      (putField Nothing                 )
-      (putField Nothing                 )
-      (putField Nothing                 )
-      (putField $ Just "invalid request")
-      (putField Nothing                 )
-      (putField Nothing                 )
-      (putField Nothing                 )
+      (putField 3       )
+      (putField Nothing )
+      (putField Nothing )
+      (putField Nothing )
+      (putField Nothing )
+      (putField Nothing )
+      (putField Nothing )
+      (putField Nothing )
 
 instance Decode Response
 
