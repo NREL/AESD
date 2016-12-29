@@ -6,7 +6,7 @@ module CESDS.Records.Server (
 
 
 import CESDS.Records (Cache)
-import CESDS.Types.Record (RecordContent)
+import CESDS.Types.Record (RecordContent, filterRecords)
 import CESDS.Types.Request (onLoadModelsMeta, onLoadRecordsData, onRequest)
 import CESDS.Types.Response (modelMetasResponse, recordsResponse)
 import CESDS.Types.Value (VarType(..), castVarType, consistentVarTypes)
@@ -61,22 +61,23 @@ serverMain host port listModels loadContent=
                             sendBinaryData connection
                               . modelMetasResponse i
                               $ maybe (M.elems c) ((maybeToList .) . flip M.lookup $ c) mi
-                            return Nothing :: IO (Maybe ())
+                            return Nothing
                       )
                 )
                 (
                   \i ->
                     onLoadRecordsData
                       (
-                        \mi Nothing [] Nothing ->
+                        \mi _ vids Nothing ->
                           do
                             c <- atomically $ readTVar cache
                             let
                               m = c M.! mi
                             x <- loadContent m
                             sendBinaryData connection
-                              $ recordsResponse i x
-                            return Nothing :: IO (Maybe ())
+                              . recordsResponse i
+                              $ filterRecords vids x
+                            return Nothing
                       )
                 )
                 ignore

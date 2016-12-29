@@ -12,6 +12,7 @@ module CESDS.Types.Record (
 , RecordData
 , recordData
 , onRecordContent
+, filterRecords
 ) where
 
 
@@ -237,3 +238,10 @@ onRecordContent f g h d =
   fmap
     . second
     $ fmap (second $ fromMaybe d . onDataValue f g h)
+
+
+filterRecords :: [VariableIdentifier] -> [RecordContent] -> [RecordContent]
+filterRecords vids =
+  fmap
+    . second
+    $ filter ((`elem` vids) . fst)

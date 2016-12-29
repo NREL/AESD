@@ -21,7 +21,6 @@ main =
     [host, port, directory] <- getArgs
     directory' <- makeAbsolute directory
     files <- getDirectoryContents directory'
-    print =<< makeAbsolute directory
     serverMain host (read port)
       (
         sequence
