@@ -3,7 +3,9 @@ module Main (
 ) where
 
 
-import CESDS.Records.Server (buildModel, serverMain)
+import CESDS.Records.Server (serverMain)
+import CESDS.Records.Server.File (buildModelContent, buildModelMeta)
+import CESDS.Records.Server.Manager (makeInMemoryManager)
 import CESDS.Types.Model (identifier, name, uri)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Setter ((.~))
@@ -22,14 +24,14 @@ main =
     directory' <- makeAbsolute directory
     files <- getDirectoryContents directory'
     serverMain host (read port)
+      . makeInMemoryManager
       (
         sequence
         [
           (identifier .~ show (hash file))
             . (name .~ file)
             . (uri .~ "file://" ++ file)
-            . fst
-            . buildModel
+            . buildModelMeta
             . fmap (splitOn "\t")
             . lines
             <$> readFile file
@@ -39,8 +41,7 @@ main =
         ]
       )
       $ \m ->
-        snd
-          . buildModel
+        buildModelContent
           . fmap (splitOn "\t")
           . lines
           <$> readFile (m ^. name)

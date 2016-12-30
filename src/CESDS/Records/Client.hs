@@ -10,14 +10,15 @@ module CESDS.Records.Client (
 ) where
 
 
-import CESDS.Records (Cache, ContentStatus(..), ModelCache(..))
+import CESDS.Records.Server.Manager (Cache, ContentStatus(..), contentStatus, modelMeta, recordContent)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
 import CESDS.Types.Record (RecordContent)
 import CESDS.Types.Request as Request (Request, loadModelsMeta, loadRecordsData, identifier)
 import CESDS.Types.Response as Response (Response, identifier, nextChunkIdentifier, onResponse)
 import Control.Concurrent.Util (makeCounter)
 import Control.Lens.Getter ((^.))
-import Control.Lens.Setter ((.~))
+import Control.Lens.Lens ((&))
+import Control.Lens.Setter ((.~), over)
 import Control.Concurrent (ThreadId, forkIO, killThread)
 import Control.Concurrent.MVar (newEmptyMVar, putMVar, takeMVar)
 import Control.Concurrent.STM (atomically)
@@ -67,12 +68,10 @@ fetchRecords (_, processor, modelCache) i =
                        let
                          model = cache M.! i
                          model' = model
-                                   {
-                                     recordContent = recordContent model ++ recs
-                                   , contentStatus = if done then CompleteContent else PendingContent
-                                   }
+                                   & over recordContent (++ recs)
+                                   & contentStatus .~ (if done then CompleteContent else PendingContent)
                        writeTVar modelCache $ M.insert i model' cache
-                       return $ recordContent model'
+                       return $ model' ^. recordContent
                  when done
                    $ putMVar result recs'
                  return done
@@ -83,7 +82,7 @@ fetchRecords (_, processor, modelCache) i =
 
 fetchModels :: State -> IO [ModelMeta]
 fetchModels (_, _, modelCache) =
-  M.foldr (\m ms -> modelMeta m : ms) []
+  M.foldr ((:) . (^. modelMeta)) []
     <$> atomically (readTVar modelCache)
 
 
@@ -105,7 +104,7 @@ makeModelCache connection =
       [
         (
           model ^. Model.identifier
-        , ModelCache model [] def M.empty
+        , def & modelMeta .~ model
         )
       |
         model <- models

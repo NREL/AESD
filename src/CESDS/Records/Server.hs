@@ -1,47 +1,79 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
+
 module CESDS.Records.Server (
-  State
+  ServiceM
+, serviceM
+, fromService
+, modifyService
+, ModelManager(..)
+, State
 , serverMain
-, buildModel
 ) where
 
 
-import CESDS.Records (Cache, ModelCache, modelMeta)
-import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier, varMeta)
-import CESDS.Types.Record (RecordContent, filterVariables)
+import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta)
+import CESDS.Types.Record (RecordIdentifier, RecordContent)
 import CESDS.Types.Request as Request (onLoadModelsMeta, onLoadRecordsData, onRequest, identifier)
 import CESDS.Types.Response as Response (chunkIdentifier, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
-import CESDS.Types.Value (VarType(..), castVarType, consistentVarTypes)
-import CESDS.Types.Variable as Variable (identifier, name, varType)
-import Control.Arrow ((&&&))
+import CESDS.Types.Variable as Variable (VariableIdentifier)
 import Control.Concurrent.STM (atomically)
-import Control.Concurrent.STM.TVar (TVar, newTVarIO, readTVar)
+import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVarIO)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))
 import Control.Monad (forM_)
-import Data.Default (def)
+import Control.Monad.Except (ExceptT, MonadError, MonadIO, liftIO, runExceptT)
+import Control.Monad.Reader (MonadReader, ReaderT, ask, lift, runReaderT)
+import Control.Monad.Trans (MonadTrans)
 import Data.List.Split (chunksOf)
 import Data.Maybe (maybeToList)
 import Network.WebSockets (Connection, acceptRequest, receiveData, runServer, sendBinaryData)
 
-import qualified Data.Map.Strict as M (elems, fromList, lookup)
+
+newtype ServiceM s a = ServiceM {runServiceM :: ExceptT String (ReaderT (TVar s) IO) a}
+  deriving (Applicative, Functor, MonadError String, Monad, MonadIO, MonadReader (TVar s))
 
 
-type State = (TVar Cache, Connection)
+serviceM :: MonadTrans t => ServiceM s a -> t (ServiceM s) a
+serviceM = lift
 
 
-serverMain :: String
+fromService :: (s -> a) -> ServiceM s a
+fromService f = f <$> (ask >>= liftIO . readTVarIO)
+
+
+modifyService :: (s -> s) -> ServiceM s ()
+modifyService f = ask >>= liftIO . atomically . flip modifyTVar' f
+
+
+runServiceToIO :: TVar s -> ServiceM s a -> IO (Either String a)
+runServiceToIO state service = runReaderT (runExceptT (runServiceM service)) state
+
+
+class ModelManager a where
+  listModels :: ServiceM a [ModelMeta]
+  lookupModel :: ModelIdentifier -> ServiceM a (Maybe ModelMeta)
+  loadContent :: [RecordIdentifier] -> [VariableIdentifier] -> ModelMeta -> ServiceM a [RecordContent]
+
+
+lookupModels :: ModelManager a => Bool -> Maybe ModelIdentifier -> ServiceM a [ModelMeta]
+lookupModels True  Nothing      = return []
+lookupModels False Nothing      = listModels
+lookupModels _     (Just model) = maybeToList <$> lookupModel model
+
+
+type State a = (TVar a, Connection)
+
+
+serverMain :: ModelManager a
+           => String
            -> Int
-           -> IO [Model.ModelMeta]
-           -> (Model.ModelMeta -> IO [RecordContent])
+           -> a
            -> IO ()
-serverMain host port listModels loadContent=
+serverMain host port initialManager =
   do
-    cache <-
-      newTVarIO
-        . M.fromList
-        . fmap ((^. Model.identifier) &&& (\m -> def {modelMeta = m}))
-        =<< listModels
+    manager <- newTVarIO initialManager
     runServer host port
       $ \pending ->
       do
@@ -50,35 +82,34 @@ serverMain host port listModels loadContent=
           loop =
             do
               request <- receiveData connection
-              responses <- onRequest
-                (
-                  onLoadModelsMeta
-                    $ fmap (Just . (: []) . modelMetasResponse)
-                    . lookupModels cache False
-                )
-                (
-                  onLoadRecordsData
-                    $ \maybeModel count variables Nothing -> -- FIXME: Handle bookmarks.
-                    do
-                      models <- lookupModels cache True (Just maybeModel) :: IO [ModelMeta]
-                      recs <-
-                        (if null variables then id else filterVariables variables)
-                          . concat
-                          <$> mapM loadContent models
-                      return
-                        $ Just
-                        [
-                          recordsResponse recs''
-                            & chunkIdentifier .~ Just i'
-                            & nextChunkIdentifier .~ (if fromIntegral i' < n then Just (i' + 1) else Nothing)
-                        |
-                          let recs' = chunksOf (maybe maxBound fromIntegral count) recs
-                        , let n = length recs'
-                        , (i', recs'') <- zip [1..] recs'
-                        ]
-                )
-                undefined
-                undefined
+              Right responses <- -- FIXME
+                runServiceToIO manager
+                  $ onRequest
+                  (
+                    onLoadModelsMeta
+                      $ fmap (Just . (: []) . modelMetasResponse)
+                      . lookupModels False
+                  )
+                  (
+                    onLoadRecordsData
+                      $ \maybeModel count variables Nothing -> -- FIXME: Handle bookmarks.
+                      do
+                        models <- lookupModels True (Just maybeModel)
+                        recs <- concat <$> mapM (loadContent [] variables) models
+                        return
+                          $ Just
+                          [
+                            recordsResponse recs''
+                              & chunkIdentifier .~ Just i'
+                              & nextChunkIdentifier .~ (if fromIntegral i' < n then Just (i' + 1) else Nothing)
+                          |
+                            let recs' = chunksOf (maybe maxBound fromIntegral count) recs
+                          , let n = length recs'
+                          , (i', recs'') <- zip [1..] recs'
+                          ]
+                  )
+                  undefined
+                  undefined
                 request
               forM_ responses
                 . mapM_
@@ -86,40 +117,3 @@ serverMain host port listModels loadContent=
                 . (Response.identifier .~ request ^. Request.identifier)
               loop
         loop
-
-
-lookupModelCaches :: TVar Cache -> Bool -> Maybe ModelIdentifier -> IO [ModelCache]
-lookupModelCaches _     True   Nothing  = return []
-lookupModelCaches cache False  Nothing  = M.elems  <$> atomically (readTVar cache)
-lookupModelCaches cache _      (Just m) = maybeToList . M.lookup m <$> atomically (readTVar cache)
-
-
-lookupModels :: TVar Cache -> Bool -> Maybe ModelIdentifier -> IO [ModelMeta]
-lookupModels = (((fmap modelMeta <$>) .) .) . lookupModelCaches
-
-
---loadRecordsData :: TVar Cache -> Maybe ModelIdentifier -> [VariableIdentifier] -> Maybe BookmarkIdentifier -> [Response]
---loadRecordsData cache maybeMax maybeModel variables maybeBookmark =
---   undefined
---
---
---loadBookmarkMeta :: State -> ModelIdentifier -> Maybe BookmarkIdentifier -> [Response]
---loadBookmarkMeta = undefined
-
-
-buildModel :: [[String]] -> (Model.ModelMeta, [RecordContent])
-buildModel (header : content) =
-  let
-    values = fmap read <$> content
-    types = foldl consistentVarTypes (const IntegerVar <$> header) values
-    vids = [0..]
-    rids = [0..]
-  in
-    (
-      def
-        & Model.varMeta .~ zipWith3 (\vid n t -> def & Variable.identifier .~ vid & name .~ n & varType .~ t) vids header types
-    , zipWith (\rid vs -> (rid, zip vids vs)) rids
-        $ zipWith castVarType types
-        <$> values
-    )
-buildModel [] = (def, [])
