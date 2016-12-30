@@ -3,14 +3,14 @@ module Main (
 ) where
 
 
+import CESDS.Types.Model as Model (identifier, varMeta)
 import CESDS.Records.Client (clientMain, close, fetchModels, fetchRecords)
 import CESDS.Types.Record (onRecordContent)
+import CESDS.Types.Variable as Variable (identifier, name)
 import Control.Lens.Getter ((^.))
 import Data.List (intercalate)
 import System.Environment (getArgs)
 
-import qualified CESDS.Types.Model as Model (identifier, varMeta)
-import qualified CESDS.Types.Variable as Variable (identifier, name)
 
 main :: IO ()
 main =

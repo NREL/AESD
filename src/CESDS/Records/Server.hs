@@ -8,7 +8,7 @@ module CESDS.Records.Server (
 import CESDS.Records (Cache, ModelCache, modelMeta)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier, varMeta)
 import CESDS.Types.Record (RecordContent, filterVariables)
-import CESDS.Types.Request as Request (onLoadModelsMeta, onLoadRecordsData, onRequest, requestIdentifier)
+import CESDS.Types.Request as Request (onLoadModelsMeta, onLoadRecordsData, onRequest, identifier)
 import CESDS.Types.Response as Response (chunkIdentifier, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
 import CESDS.Types.Value (VarType(..), castVarType, consistentVarTypes)
 import CESDS.Types.Variable as Variable (identifier, name, varType)
@@ -83,7 +83,7 @@ serverMain host port listModels loadContent=
               forM_ responses
                 . mapM_
                 $ sendBinaryData connection
-                . (Response.identifier .~ request ^. requestIdentifier)
+                . (Response.identifier .~ request ^. Request.identifier)
               loop
         loop
 

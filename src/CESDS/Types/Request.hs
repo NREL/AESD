@@ -5,7 +5,7 @@
 
 module CESDS.Types.Request (
   Request
-, requestIdentifier
+, identifier
 , onRequest
 , LoadModelsMeta
 , loadModelsMeta
@@ -132,7 +132,7 @@ data Request =
   Request
   {
     requestVersion     :: Required 1 (Value   Word32          )
-  , requestIdentifier' :: Optional 2 (Message OptionalInt32   )
+  , identifier' :: Optional 2 (Message OptionalInt32   )
   , loadModelsMeta'    :: Optional 3 (Message LoadModelsMeta  )
   , loadRecordsData'   :: Optional 4 (Message LoadRecordsData )
   , loadBookmarkMeta'  :: Optional 5 (Message LoadBookmarkMeta)
@@ -155,11 +155,11 @@ instance Decode Request
 instance Encode Request
 
 
-requestIdentifier :: Lens' Request (Maybe Int32)
-requestIdentifier =
+identifier :: Lens' Request (Maybe Int32)
+identifier =
   lens
-    (fmap (^. int32) . getField . requestIdentifier')
-    (\s x -> s {requestIdentifier' = putField $ flip (int32 .~) def <$> x})
+    (fmap (^. int32) . getField . identifier')
+    (\s x -> s {identifier' = putField $ flip (int32 .~) def <$> x})
 
 
 onRequest :: Monad m

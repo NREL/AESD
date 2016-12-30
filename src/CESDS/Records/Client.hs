@@ -11,9 +11,10 @@ module CESDS.Records.Client (
 
 
 import CESDS.Records (Cache, ContentStatus(..), ModelCache(..))
+import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
 import CESDS.Types.Record (RecordContent)
-import CESDS.Types.Request (Request, loadModelsMeta, loadRecordsData, requestIdentifier)
-import CESDS.Types.Response (Response, identifier, nextChunkIdentifier, onResponse)
+import CESDS.Types.Request as Request (Request, loadModelsMeta, loadRecordsData, identifier)
+import CESDS.Types.Response as Response (Response, identifier, nextChunkIdentifier, onResponse)
 import Control.Concurrent.Util (makeCounter)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Setter ((.~))
@@ -28,7 +29,6 @@ import Data.Int (Int32)
 import Data.Maybe (fromJust, fromMaybe)
 import Network.WebSockets (Connection, receiveData, runClient, sendBinaryData)
 
-import qualified CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
 import qualified Data.Map.Strict as M ((!), delete, empty, foldr, fromList, insert, lookup, member)
 
 
@@ -46,7 +46,7 @@ close :: State -> IO ()
 close (thread, _, _) = killThread thread
 
 
-fetchRecords :: State -> Model.ModelIdentifier -> IO [RecordContent]
+fetchRecords :: State -> ModelIdentifier -> IO [RecordContent]
 fetchRecords (_, processor, modelCache) i =
   do
     found <- M.member i <$> atomically (readTVar modelCache)
@@ -81,7 +81,7 @@ fetchRecords (_, processor, modelCache) i =
         
 
 
-fetchModels :: State -> IO [Model.ModelMeta]
+fetchModels :: State -> IO [ModelMeta]
 fetchModels (_, _, modelCache) =
   M.foldr (\m ms -> modelMeta m : ms) []
     <$> atomically (readTVar modelCache)
@@ -141,7 +141,7 @@ makeProcessor connection =
                   $ do
                     response <- receiveData connection
                     let
-                      i = response ^. identifier
+                      i = response ^. Response.identifier
                     f <- fmap join . sequence $ findHandler <$> i
                     done <- fmap (fromMaybe False) . sequence $ ($ response) <$> f
                     when done
@@ -159,7 +159,7 @@ makeProcessor connection =
           do
             i <- liftIO nextIdentifier
             let
-              request' = (requestIdentifier .~ Just i) request
+              request' = (Request.identifier .~ Just i) request
             liftIO
               $ do
                 atomically
