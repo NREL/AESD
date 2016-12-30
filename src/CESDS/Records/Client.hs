@@ -23,6 +23,7 @@ import Control.Concurrent.STM (atomically)
 import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVar, writeTVar)
 import Control.Monad (join, when)
 import Control.Monad.Except (liftIO)
+import Data.Default (def)
 import Data.Int (Int32)
 import Data.Maybe (fromJust, fromMaybe)
 import Network.WebSockets (Connection, receiveData, runClient, sendBinaryData)
@@ -92,7 +93,7 @@ makeModelCache connection =
     (thread, processor) <- makeProcessor connection
     result <- newEmptyMVar
     processor
-      (loadModelsMeta Nothing)
+      (loadModelsMeta Nothing) -- FIMXE: Allow models to be in chunks.
       $ \response ->
       do
         putMVar result =<< onResponse ignore keep ignore ignore response
@@ -104,7 +105,7 @@ makeModelCache connection =
       [
         (
           model ^. Model.identifier
-        , ModelCache model [] EmptyContent
+        , ModelCache model [] def M.empty
         )
       |
         model <- models

@@ -163,19 +163,16 @@ requestIdentifier =
 
 
 onRequest :: Monad m
-            => (Maybe Int32 -> LoadModelsMeta   -> m (Maybe a))
-            -> (Maybe Int32 -> LoadRecordsData  -> m (Maybe a))
-            -> (Maybe Int32 -> LoadBookmarkMeta -> m (Maybe a))
-            -> (Maybe Int32 -> SaveBookmarkMeta -> m (Maybe a))
+            => (LoadModelsMeta   -> m (Maybe a))
+            -> (LoadRecordsData  -> m (Maybe a))
+            -> (LoadBookmarkMeta -> m (Maybe a))
+            -> (SaveBookmarkMeta -> m (Maybe a))
             -> Request
             -> m (Maybe a)
 onRequest f g h i Request{..} =
-  let
-    t = (^. int32) <$> getField requestIdentifier'
-  in
-    fmap join
-       . sequence
-       $  f t <$> getField loadModelsMeta'
-      <|> g t <$> getField loadRecordsData'
-      <|> h t <$> getField loadBookmarkMeta'
-      <|> i t <$> getField saveBookmarkMeta'
+  fmap join
+     . sequence
+     $  f <$> getField loadModelsMeta'
+    <|> g <$> getField loadRecordsData'
+    <|> h <$> getField loadBookmarkMeta'
+    <|> i <$> getField saveBookmarkMeta'

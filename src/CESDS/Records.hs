@@ -9,24 +9,29 @@ module CESDS.Records (
 ) where
 
 
+import CESDS.Types.Bookmark (BookmarkIdentifier, BookmarkMeta)
+import CESDS.Types.Model (ModelIdentifier, ModelMeta)
 import CESDS.Types.Record (RecordContent)
-import Data.Map.Strict (Map)
+import Data.Default (Default(..))
+import Data.Map.Strict (Map, empty)
 import GHC.Generics (Generic)
 
-import qualified CESDS.Types.Model as Model (ModelIdentifier, ModelMeta)
 
-
-type Cache = Map Model.ModelIdentifier ModelCache
+type Cache = Map ModelIdentifier ModelCache
 
 
 data ModelCache =
   ModelCache
   {
-    modelMeta     :: Model.ModelMeta
+    modelMeta     :: ModelMeta
   , recordContent :: [RecordContent]
   , contentStatus :: ContentStatus
+  , bookmarkMetas :: Map BookmarkIdentifier BookmarkMeta
   }
     deriving (Generic, Show)
+
+instance Default ModelCache where
+  def = ModelCache def [] def empty
 
 
 data ContentStatus =
@@ -34,3 +39,6 @@ data ContentStatus =
   | PendingContent
   | CompleteContent
     deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
+
+instance Default ContentStatus where
+  def = EmptyContent

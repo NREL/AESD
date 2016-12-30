@@ -5,30 +5,29 @@ module CESDS.Records.Server (
 ) where
 
 
-import CESDS.Records (Cache)
+import CESDS.Records (Cache, ModelCache, modelMeta)
+import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier, varMeta)
 import CESDS.Types.Record (RecordContent, filterRecords)
-import CESDS.Types.Request (onLoadModelsMeta, onLoadRecordsData, onRequest)
-import CESDS.Types.Response (chunkIdentifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
+import CESDS.Types.Request as Request (onLoadModelsMeta, onLoadRecordsData, onRequest, requestIdentifier)
+import CESDS.Types.Response as Response (chunkIdentifier, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
 import CESDS.Types.Value (VarType(..), castVarType, consistentVarTypes)
-import CESDS.Types.Variable (identifier, name, varType)
+import CESDS.Types.Variable as Variable (identifier, name, varType)
 import Control.Arrow ((&&&))
 import Control.Concurrent.STM (atomically)
-import Control.Concurrent.STM.TVar (newTVarIO, readTVar)
+import Control.Concurrent.STM.TVar (TVar, newTVarIO, readTVar)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))
-import Control.Monad (void)
+import Control.Monad (forM_)
 import Data.Default (def)
-import Data.Int (Int32)
 import Data.List.Split (chunksOf)
 import Data.Maybe (maybeToList)
 import Network.WebSockets (Connection, acceptRequest, receiveData, runServer, sendBinaryData)
 
-import qualified CESDS.Types.Model as Model (ModelMeta, identifier, varMeta)
-import qualified Data.Map.Strict as M ((!), elems, fromList, lookup)
+import qualified Data.Map.Strict as M (elems, fromList, lookup)
 
 
-type State = (Cache, Connection)
+type State = (TVar Cache, Connection)
 
 
 serverMain :: String
@@ -41,7 +40,7 @@ serverMain host port listModels loadContent=
     cache <-
       newTVarIO
         . M.fromList
-        . fmap ((^. Model.identifier) &&& id)
+        . fmap ((^. Model.identifier) &&& (\m -> def {modelMeta = m}))
         =<< listModels
     runServer host port
       $ \pending ->
@@ -51,53 +50,61 @@ serverMain host port listModels loadContent=
           loop =
             do
               request <- receiveData connection
-              void $ onRequest
+              responses <- onRequest
                 (
-                  \i ->
-                    onLoadModelsMeta
-                      (
-                        \mi ->
-                          do
-                            c <- atomically $ readTVar cache
-                            sendBinaryData connection
-                              . modelMetasResponse i
-                              $ maybe (M.elems c) ((maybeToList .) . flip M.lookup $ c) mi
-                            return Nothing
-                      )
+                  onLoadModelsMeta
+                    $ fmap (Just . (: []) . modelMetasResponse)
+                    . lookupModels cache False
                 )
                 (
-                  \i ->
-                    onLoadRecordsData
-                      (
-                        \mi mx vids Nothing ->
-                          do
-                            c <- atomically $ readTVar cache
-                            let
-                              m = c M.! mi
-                            x <- (if null vids then id else filterRecords vids) <$> loadContent m
-                            sequence_
-                             [
-                               sendBinaryData connection
-                                 $ recordsResponse i x'
-                                 & chunkIdentifier .~ Just i'
-                                 & nextChunkIdentifier .~ (if fromIntegral i' < n then Just (i' + 1) else Nothing)
-                             |
-                               let xs = maybe (: []) chunksOf (fromIntegral <$> mx) $ x
-                             , let n = length xs
-                             , (i', x') <- zip [1..] xs
-                             ]
-                            return Nothing
-                      )
+                  onLoadRecordsData
+                    $ \maybeModel count variables Nothing -> -- FIXME: Handle bookmarks.
+                    do
+                      models <- lookupModels cache True (Just maybeModel) :: IO [ModelMeta]
+                      recs <-
+                        (if null variables then id else filterRecords variables)
+                          . concat
+                          <$> mapM loadContent models
+                      return
+                        $ Just
+                        [
+                          recordsResponse recs''
+                            & chunkIdentifier .~ Just i'
+                            & nextChunkIdentifier .~ (if fromIntegral i' < n then Just (i' + 1) else Nothing)
+                        |
+                          let recs' = chunksOf (maybe maxBound fromIntegral count) recs
+                        , let n = length recs'
+                        , (i', recs'') <- zip [1..] recs'
+                        ]
                 )
-                ignore
-                ignore
+                undefined
+                undefined
                 request
+              forM_ responses
+                . mapM_
+                $ sendBinaryData connection
+                . (Response.identifier .~ request ^. requestIdentifier)
               loop
         loop
 
 
-ignore :: Monad m => Maybe Int32 -> a -> m (Maybe b)
-ignore = const . const $ return Nothing
+lookupModelCaches :: TVar Cache -> Bool -> Maybe ModelIdentifier -> IO [ModelCache]
+lookupModelCaches _     True   Nothing  = return []
+lookupModelCaches cache False  Nothing  = M.elems  <$> atomically (readTVar cache)
+lookupModelCaches cache _      (Just m) = maybeToList . M.lookup m <$> atomically (readTVar cache)
+
+
+lookupModels :: TVar Cache -> Bool -> Maybe ModelIdentifier -> IO [ModelMeta]
+lookupModels = (((fmap modelMeta <$>) .) .) . lookupModelCaches
+
+
+--loadRecordsData :: TVar Cache -> Maybe ModelIdentifier -> [VariableIdentifier] -> Maybe BookmarkIdentifier -> [Response]
+--loadRecordsData cache maybeMax maybeModel variables maybeBookmark =
+--   undefined
+--
+--
+--loadBookmarkMeta :: State -> ModelIdentifier -> Maybe BookmarkIdentifier -> [Response]
+--loadBookmarkMeta = undefined
 
 
 buildModel :: [[String]] -> (Model.ModelMeta, [RecordContent])
@@ -110,7 +117,7 @@ buildModel (header : content) =
   in
     (
       def
-        & Model.varMeta .~ zipWith3 (\vid n t -> def & identifier .~ vid & name .~ n & varType .~ t) vids header types
+        & Model.varMeta .~ zipWith3 (\vid n t -> def & Variable.identifier .~ vid & name .~ n & varType .~ t) vids header types
     , zipWith (\rid vs -> (rid, zip vids vs)) rids
         $ zipWith castVarType types
         <$> values

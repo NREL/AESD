@@ -100,22 +100,16 @@ modelMetas =
     (\s x -> s {modelMetas' = putField $ flip (models .~) def <$> x})
 
 
-modelMetasResponse :: Maybe Int32 -> [ModelMeta] -> Response
-modelMetasResponse i ms =
-  def
-    & identifier .~ i
-    & modelMetas .~ Just ms
+modelMetasResponse :: [ModelMeta] -> Response
+modelMetasResponse ms = def & modelMetas .~ Just ms
 
 
 records :: Lens' Response (Maybe RecordData)
 records = lens (getField . records') (\s x -> s {records' = putField x})
 
 
-recordsResponse :: Maybe Int32 -> [RecordContent] -> Response
-recordsResponse i rs =
-  def
-    & identifier .~ i
-    & records    .~ Just (def & recordData .~ rs)
+recordsResponse :: [RecordContent] -> Response
+recordsResponse rs = def & records .~ Just (def & recordData .~ rs)
 
 
 bookmarkMetas :: Lens' Response (Maybe [BookmarkMeta])
