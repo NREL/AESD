@@ -1,5 +1,5 @@
 name:                cesds-records
-version:             0.3.4.0
+version:             0.3.4.1
 synopsis:            Implementation of CESDS record API
 description:         Implementation of CESDS record API.
 license:             AllRightsReserved
@@ -80,7 +80,6 @@ executable cesds-client-example
                   , cereal
                   , containers
                   , data-default
-                  , eprocess
                   , lens
                   , mtl
                   , protobuf

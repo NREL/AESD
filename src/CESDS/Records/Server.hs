@@ -7,7 +7,7 @@ module CESDS.Records.Server (
 
 import CESDS.Records (Cache, ModelCache, modelMeta)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier, varMeta)
-import CESDS.Types.Record (RecordContent, filterRecords)
+import CESDS.Types.Record (RecordContent, filterVariables)
 import CESDS.Types.Request as Request (onLoadModelsMeta, onLoadRecordsData, onRequest, requestIdentifier)
 import CESDS.Types.Response as Response (chunkIdentifier, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
 import CESDS.Types.Value (VarType(..), castVarType, consistentVarTypes)
@@ -62,7 +62,7 @@ serverMain host port listModels loadContent=
                     do
                       models <- lookupModels cache True (Just maybeModel) :: IO [ModelMeta]
                       recs <-
-                        (if null variables then id else filterRecords variables)
+                        (if null variables then id else filterVariables variables)
                           . concat
                           <$> mapM loadContent models
                       return
