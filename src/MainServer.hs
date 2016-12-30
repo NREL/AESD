@@ -24,7 +24,7 @@ main =
     directory' <- makeAbsolute directory
     files <- getDirectoryContents directory'
     serverMain host (read port)
-      . makeInMemoryManager
+      =<< makeInMemoryManager
       (
         sequence
         [
@@ -40,8 +40,9 @@ main =
         , ".tsv" `isSuffixOf` file
         ]
       )
-      $ \m ->
+      ( \m ->
         buildModelContent
           . fmap (splitOn "\t")
           . lines
           <$> readFile (m ^. name)
+      )

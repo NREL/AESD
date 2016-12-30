@@ -119,11 +119,8 @@ bookmarkMetas =
     (\s x -> s {bookmarkMetas' = putField $ flip (bookmarks .~) def <$> x})
 
 
-bookmarkMetasResponse :: Maybe Int32 -> [BookmarkMeta] -> Response
-bookmarkMetasResponse i bs =
-  def
-    & identifier    .~ i
-    & bookmarkMetas .~ Just bs
+bookmarkMetasResponse :: [BookmarkMeta] -> Response
+bookmarkMetasResponse bs = def & bookmarkMetas .~ Just bs
 
 
 onResponse :: Monad m

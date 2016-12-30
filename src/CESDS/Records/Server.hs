@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 
@@ -6,28 +7,30 @@ module CESDS.Records.Server (
 , serviceM
 , fromService
 , modifyService
+, modifyService'
+, modifyServiceIO'
 , ModelManager(..)
 , State
 , serverMain
 ) where
 
 
+import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta)
 import CESDS.Types.Record (RecordIdentifier, RecordContent)
-import CESDS.Types.Request as Request (onLoadModelsMeta, onLoadRecordsData, onRequest, identifier)
-import CESDS.Types.Response as Response (chunkIdentifier, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
+import CESDS.Types.Request as Request (identifier, onLoadBookmarkMeta, onLoadModelsMeta, onLoadRecordsData, onRequest, onSaveBookmarkMeta)
+import CESDS.Types.Response as Response (bookmarkMetasResponse, chunkIdentifier, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
 import CESDS.Types.Variable as Variable (VariableIdentifier)
 import Control.Concurrent.STM (atomically)
-import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVarIO)
+import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVarIO, writeTVar)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))
 import Control.Monad (forM_)
-import Control.Monad.Except (ExceptT, MonadError, MonadIO, liftIO, runExceptT)
+import Control.Monad.Except (ExceptT, MonadError, MonadIO, liftIO, runExceptT, throwError)
 import Control.Monad.Reader (MonadReader, ReaderT, ask, lift, runReaderT)
 import Control.Monad.Trans (MonadTrans)
 import Data.List.Split (chunksOf)
-import Data.Maybe (maybeToList)
 import Network.WebSockets (Connection, acceptRequest, receiveData, runServer, sendBinaryData)
 
 
@@ -47,20 +50,53 @@ modifyService :: (s -> s) -> ServiceM s ()
 modifyService f = ask >>= liftIO . atomically . flip modifyTVar' f
 
 
+modifyService' :: (s -> Either String (s, a)) -> ServiceM s a
+modifyService' f =
+  do -- FIXME: Make this atomic.
+    sTVar <- ask
+    s <- liftIO $ readTVarIO sTVar
+    case f s of
+      Left message  -> throwError message
+      Right (s', x) -> do
+                         liftIO . atomically $ writeTVar sTVar s'
+                         return x
+
+
+modifyServiceIO' :: (s -> IO (Either String (s, a))) -> ServiceM s a
+modifyServiceIO' f =
+  do
+    sTVar <- ask
+    s <- liftIO $ readTVarIO sTVar
+    sx <- liftIO $ f s
+    case sx of
+      Left message  -> throwError message
+      Right (s', x) -> do
+                         liftIO . atomically $ writeTVar sTVar s'
+                         return x
+
+
 runServiceToIO :: TVar s -> ServiceM s a -> IO (Either String a)
 runServiceToIO state service = runReaderT (runExceptT (runServiceM service)) state
 
 
 class ModelManager a where
   listModels :: ServiceM a [ModelMeta]
-  lookupModel :: ModelIdentifier -> ServiceM a (Maybe ModelMeta)
+  lookupModel :: ModelIdentifier -> ServiceM a ModelMeta
   loadContent :: [RecordIdentifier] -> [VariableIdentifier] -> ModelMeta -> ServiceM a [RecordContent]
+  listBookmarks :: ModelIdentifier -> ServiceM a [BookmarkMeta]
+  lookupBookmark :: ModelIdentifier -> BookmarkIdentifier -> ServiceM a BookmarkMeta
+  saveBookmark :: ModelIdentifier -> BookmarkMeta -> ServiceM a BookmarkMeta
 
 
 lookupModels :: ModelManager a => Bool -> Maybe ModelIdentifier -> ServiceM a [ModelMeta]
 lookupModels True  Nothing      = return []
 lookupModels False Nothing      = listModels
-lookupModels _     (Just model) = maybeToList <$> lookupModel model
+lookupModels _     (Just model) = (: []) <$> lookupModel model
+
+
+lookupBookmarks :: ModelManager a => ModelIdentifier -> Maybe BookmarkIdentifier -> ServiceM  a [BookmarkMeta]
+lookupBookmarks model Nothing         = listBookmarks model
+lookupBookmarks model (Just bookmark) = (: []) <$> lookupBookmark model bookmark
 
 
 type State a = (TVar a, Connection)
@@ -108,8 +144,16 @@ serverMain host port initialManager =
                           , (i', recs'') <- zip [1..] recs'
                           ]
                   )
-                  undefined
-                  undefined
+                  (
+                    onLoadBookmarkMeta
+                      $ (fmap (Just . (: []) . bookmarkMetasResponse) .)
+                      . lookupBookmarks
+                  )
+                  (
+                    onSaveBookmarkMeta
+                     $ (fmap (Just . (: []) . bookmarkMetasResponse . (: [])) . )
+                     . saveBookmark
+                  )
                 request
               forM_ responses
                 . mapM_

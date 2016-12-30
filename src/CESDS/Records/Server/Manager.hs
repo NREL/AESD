@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric   #-}
+{-# LANGUAGE RecordWildCards #-}
 
 
 module CESDS.Records.Server.Manager ( -- FIXME: Should we export less?
@@ -14,20 +15,22 @@ module CESDS.Records.Server.Manager ( -- FIXME: Should we export less?
 ) where
 
 
-import CESDS.Records.Server (ModelManager(..), fromService, modifyService)
-import CESDS.Types.Bookmark (BookmarkIdentifier, BookmarkMeta)
+import CESDS.Records.Server (ModelManager(..), ServiceM, fromService, modifyService, modifyService')
+import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta, identifier)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
 import CESDS.Types.Record (RecordContent, filterRecords, filterVariables)
 import Control.Arrow ((&&&))
+import Control.Concurrent.Util (makeCounter)
 import Control.Lens.Getter ((^.))
-import Control.Lens.Lens (Lens', lens)
+import Control.Lens.Lens (Lens', (&), lens)
 import Control.Lens.Setter ((.~), over)
-import Control.Monad.Except (liftIO)
+import Control.Monad.Except (liftIO, throwError)
 import Data.Default (Default(..))
-import Data.Map.Strict (Map, empty)
+import Data.Map.Strict (Map)
+import Data.Maybe (fromJust)
 import GHC.Generics (Generic)
 
-import qualified Data.Map.Strict as M (empty, fromList, lookup, union)
+import qualified Data.Map.Strict as M (elems, empty, fromList, insert, lookup, member, union, update)
 
 
 type Cache = Map ModelIdentifier ModelCache
@@ -36,9 +39,10 @@ type Cache = Map ModelIdentifier ModelCache
 data InMemoryManager =
   InMemoryManager
   {
-    cache' :: Cache
-  , lister :: IO [ModelMeta]
-  , loader :: ModelMeta -> IO [RecordContent]
+    cache'       :: Cache
+  , nextBookmark :: IO BookmarkIdentifier
+  , lister       :: IO [ModelMeta]
+  , loader       :: ModelMeta -> IO [RecordContent]
   }
 
 instance ModelManager InMemoryManager where
@@ -56,10 +60,8 @@ instance ModelManager InMemoryManager where
         $ over cache (`M.union` additions)
       return models
   lookupModel model =
-    fromService
-      $ fmap (^. modelMeta)
-      . M.lookup model
-      . (^. cache)
+    (^. modelMeta)
+      <$> checkModel model
   loadContent records variables model =
     do -- FIXME: Should we also cache the records?
       loader' <- fromService loader
@@ -67,14 +69,62 @@ instance ModelManager InMemoryManager where
         $ (if null variables then id else filterVariables variables)
         . (if null records   then id else filterRecords   records  )
         <$> loader' model
+  listBookmarks model =
+    M.elems . (^. bookmarkMetas)
+      <$> checkModel model
+  lookupBookmark model bookmark =
+    maybe (throwError "Bookmark not found.") return
+      =<< M.lookup bookmark . (^. bookmarkMetas)
+      <$> checkModel model
+  saveBookmark model bookmark =
+    do
+      i <- liftIO =<< fromService nextBookmark
+      modifyService'
+        $ \manager ->
+        do
+          m <-
+            maybe (throwError "Model not found.") Right
+              . M.lookup model
+              $ manager ^. cache
+          b <-
+            case bookmark ^. Bookmark.identifier of
+              Nothing -> return $ bookmark & Bookmark.identifier .~ Just i
+              Just i' -> if i' `M.member` (m ^. bookmarkMetas) then return bookmark else throwError "Bookmark not found."
+          return
+            (
+              manager
+                & over cache
+                (
+                  M.update
+                    (
+                      Just . over bookmarkMetas
+                      (
+                        M.insert (fromJust $ b ^. Bookmark.identifier) b
+                      )
+                    )
+                    model
+                )
+            , b
+            )
+
+
+checkModel :: ModelIdentifier -> ServiceM InMemoryManager ModelCache
+checkModel model =
+  maybe (throwError "Model not found.") return
+    =<< fromService (M.lookup model . (^. cache))
 
 
 cache :: Lens' InMemoryManager Cache
 cache = lens cache' (\s x -> s {cache' = x})
 
 
-makeInMemoryManager :: IO [ModelMeta] -> (ModelMeta -> IO [RecordContent]) -> InMemoryManager
-makeInMemoryManager = InMemoryManager M.empty
+makeInMemoryManager :: IO [ModelMeta] -> (ModelMeta -> IO [RecordContent]) -> IO InMemoryManager
+makeInMemoryManager lister loader =
+  do
+    let
+      cache' = M.empty 
+    nextBookmark <- makeCounter (show . ((+ 1) :: Integer -> Integer) . read) "0"
+    return InMemoryManager{..}
 
 
 data ModelCache =
@@ -88,7 +138,7 @@ data ModelCache =
     deriving (Generic, Show)
 
 instance Default ModelCache where
-  def = ModelCache def [] def empty
+  def = ModelCache def [] def M.empty
 
 
 modelMeta :: Lens' ModelCache ModelMeta
