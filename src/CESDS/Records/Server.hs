@@ -17,7 +17,7 @@ module CESDS.Records.Server (
 
 import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta)
-import CESDS.Types.Record (RecordIdentifier, RecordContent)
+import CESDS.Types.Record (RecordContent)
 import CESDS.Types.Request as Request (identifier, onLoadBookmarkMeta, onLoadModelsMeta, onLoadRecordsData, onRequest, onSaveBookmarkMeta)
 import CESDS.Types.Response as Response (bookmarkMetasResponse, chunkIdentifier, errorResponse, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
 import CESDS.Types.Variable as Variable (VariableIdentifier)
@@ -85,7 +85,7 @@ runServiceToIO state service = runReaderT (runExceptT (runServiceM service)) sta
 class ModelManager a where
   listModels :: ServiceM a [ModelMeta]
   lookupModel :: ModelIdentifier -> ServiceM a ModelMeta
-  loadContent :: [RecordIdentifier] -> [VariableIdentifier] -> ModelMeta -> ServiceM a [RecordContent]
+  loadContent :: ModelMeta -> Maybe BookmarkIdentifier -> [VariableIdentifier] -> ServiceM a [RecordContent]
   listBookmarks :: ModelIdentifier -> ServiceM a [BookmarkMeta]
   lookupBookmark :: ModelIdentifier -> BookmarkIdentifier -> ServiceM a BookmarkMeta
   saveBookmark :: ModelIdentifier -> BookmarkMeta -> ServiceM a BookmarkMeta
@@ -131,10 +131,10 @@ serverMain host port initialManager =
                   )
                   (
                     onLoadRecordsData
-                      $ \maybeModel count variables Nothing -> -- FIXME: Handle bookmarks.
+                      $ \model count variables maybeBookmark ->
                       do
-                        models <- lookupModels True (Just maybeModel)
-                        recs <- concat <$> mapM (loadContent [] variables) models
+                        [model'] <- lookupModels True $ Just model
+                        recs <- loadContent model' maybeBookmark variables
                         return
                           [
                             recordsResponse recs''
@@ -158,7 +158,7 @@ serverMain host port initialManager =
                   )
                   [errorResponse "Unsupported request."]
                 request
-              forM_ (either ((: []) . errorResponse) id $ result)
+              forM_ (either ((: []) . errorResponse) id result)
                 $ sendBinaryData connection
                 . (Response.identifier .~ request ^. Request.identifier)
               loop

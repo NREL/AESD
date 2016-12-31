@@ -16,9 +16,9 @@ module CESDS.Records.Server.Manager ( -- FIXME: Should we export less?
 
 
 import CESDS.Records.Server (ModelManager(..), ServiceM, fromService, modifyService, modifyService')
-import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta, identifier)
+import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta, filterBookmark, identifier)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
-import CESDS.Types.Record (RecordContent, filterRecords, filterVariables)
+import CESDS.Types.Record (RecordContent, filterVariables)
 import Control.Arrow ((&&&))
 import Control.Concurrent.Util (makeCounter)
 import Control.Lens.Getter ((^.))
@@ -62,12 +62,13 @@ instance ModelManager InMemoryManager where
   lookupModel model =
     (^. modelMeta)
       <$> checkModel model
-  loadContent records variables model =
+  loadContent model maybeBookmark variables =
     do -- FIXME: Should we also cache the records?
+      records <- maybe (return id) (fmap filterBookmark . lookupBookmark (model ^. Model.identifier)) maybeBookmark
       loader' <- fromService loader
       liftIO
         $ (if null variables then id else filterVariables variables)
-        . (if null records   then id else filterRecords   records  )
+        . records
         <$> loader' model
   listBookmarks model =
     M.elems . (^. bookmarkMetas)

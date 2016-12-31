@@ -18,15 +18,18 @@ module CESDS.Types.Bookmark (
 , setIdentifiers
 , BookmarkMetas
 , bookmarks
+, filterBookmark
 ) where
 
 
 import CESDS.Types.Internal ()
-import CESDS.Types.Record (RecordIdentifier)
+import CESDS.Types.Record (RecordContent, RecordIdentifier)
 import Control.Applicative ((<|>))
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens (Lens', lens)
+import Control.Monad (liftM2)
 import Data.Default (Default(..))
+import Data.Maybe (fromMaybe)
 import Data.ProtocolBuffers (Decode, Encode, Message, Optional, Packed, Repeated, Required, Value, getField, putField)
 import Data.Word (Word64)
 import GHC.Generics (Generic)
@@ -59,6 +62,15 @@ lastRecord :: Lens' IntervalContent (Maybe RecordIdentifier)
 lastRecord = lens (getField . lastRecord') (\s x -> s {lastRecord' = putField x})
 
 
+filterInterval :: IntervalContent -> [RecordContent] -> [RecordContent]
+filterInterval interval =
+  let
+    r0 = fromMaybe minBound $ interval ^. firstRecord
+    r1 = fromMaybe maxBound $ interval ^. lastRecord
+  in
+    filter (liftM2 (&&) (>= r0) (<= r1) . fst)
+
+
 data SetContent =
   SetContent
   {
@@ -76,6 +88,10 @@ instance Encode SetContent
 
 setIdentifiers :: Lens' SetContent [RecordIdentifier]
 setIdentifiers = lens (getField . setIdentifiers') (\s x -> s {setIdentifiers' = putField x})
+
+
+filterSet :: SetContent -> [RecordContent] -> [RecordContent]
+filterSet set = filter ((`elem` (set ^. setIdentifiers)) . fst)
 
 
 data BookmarkMeta =
@@ -125,11 +141,12 @@ setContent :: Lens' BookmarkMeta (Maybe SetContent)
 setContent = lens (getField . setContent') (\s x -> s {setContent' = putField x})
 
 
-onBookmarkMeta :: (Word64 -> a) -> (IntervalContent -> a) -> (SetContent -> a) -> BookmarkMeta -> Maybe a
-onBookmarkMeta f g h x =
-      f <$> x ^. numberOfRecords
-  <|> g <$> x ^. intervalContent
-  <|> h <$> x ^. setContent
+onBookmarkMeta :: (Word64 -> a) -> (IntervalContent -> a) -> (SetContent -> a) -> a -> BookmarkMeta -> a
+onBookmarkMeta f g h d x =
+  fromMaybe d
+     $  f <$> x ^. numberOfRecords
+    <|> g <$> x ^. intervalContent
+    <|> h <$> x ^. setContent
 
 
 data BookmarkMetas =
@@ -149,3 +166,12 @@ instance Encode BookmarkMetas
 
 bookmarks :: Lens' BookmarkMetas [BookmarkMeta]
 bookmarks = lens (getField . bookmarks') (\s x -> s {bookmarks' = putField x})
+
+
+filterBookmark :: BookmarkMeta -> [RecordContent] -> [RecordContent]
+filterBookmark =
+  onBookmarkMeta
+    (const id)
+    filterInterval
+    filterSet
+    id
