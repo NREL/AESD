@@ -86,11 +86,8 @@ responseError :: Lens' Response (Maybe String)
 responseError = lens (getField . responseError') (\s x -> s {responseError' = putField x})
 
 
-errorResponse :: Maybe Int32 -> String -> Response
-errorResponse i e =
-  def
-    & identifier    .~ i
-    & responseError .~ Just e
+errorResponse :: String -> Response
+errorResponse e = def & responseError .~ Just e
 
 
 modelMetas :: Lens' Response (Maybe [ModelMeta])

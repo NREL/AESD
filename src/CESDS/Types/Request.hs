@@ -30,9 +30,9 @@ import Control.Applicative ((<|>))
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens (Lens', lens)
 import Control.Lens.Setter ((.~))
-import Control.Monad (join)
 import Data.Default (Default(..))
 import Data.Int (Int32)
+import Data.Maybe (fromMaybe)
 import Data.ProtocolBuffers (Decode, Encode, Message, Optional, Repeated, Required, Value, getField, putField)
 import Data.Word (Word32, Word64)
 import GHC.Generics (Generic)
@@ -163,14 +163,15 @@ identifier =
 
 
 onRequest :: Monad m
-            => (LoadModelsMeta   -> m (Maybe a))
-            -> (LoadRecordsData  -> m (Maybe a))
-            -> (LoadBookmarkMeta -> m (Maybe a))
-            -> (SaveBookmarkMeta -> m (Maybe a))
+            => (LoadModelsMeta   -> m a)
+            -> (LoadRecordsData  -> m a)
+            -> (LoadBookmarkMeta -> m a)
+            -> (SaveBookmarkMeta -> m a)
+            -> a
             -> Request
-            -> m (Maybe a)
-onRequest f g h i Request{..} =
-  fmap join
+            -> m a
+onRequest f g h i d Request{..} =
+  fmap (fromMaybe d)
      . sequence
      $  f <$> getField loadModelsMeta'
     <|> g <$> getField loadRecordsData'

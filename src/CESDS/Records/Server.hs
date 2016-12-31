@@ -19,7 +19,7 @@ import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta)
 import CESDS.Types.Record (RecordIdentifier, RecordContent)
 import CESDS.Types.Request as Request (identifier, onLoadBookmarkMeta, onLoadModelsMeta, onLoadRecordsData, onRequest, onSaveBookmarkMeta)
-import CESDS.Types.Response as Response (bookmarkMetasResponse, chunkIdentifier, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
+import CESDS.Types.Response as Response (bookmarkMetasResponse, chunkIdentifier, errorResponse, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
 import CESDS.Types.Variable as Variable (VariableIdentifier)
 import Control.Concurrent.STM (atomically)
 import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVar, readTVarIO, writeTVar)
@@ -121,12 +121,12 @@ serverMain host port initialManager =
           loop =
             do
               request <- receiveData connection
-              Right responses <- -- FIXME
+              result <-
                 runServiceToIO manager
                   $ onRequest
                   (
                     onLoadModelsMeta
-                      $ fmap (Just . (: []) . modelMetasResponse)
+                      $ fmap ((: []) . modelMetasResponse)
                       . lookupModels False
                   )
                   (
@@ -136,7 +136,6 @@ serverMain host port initialManager =
                         models <- lookupModels True (Just maybeModel)
                         recs <- concat <$> mapM (loadContent [] variables) models
                         return
-                          $ Just
                           [
                             recordsResponse recs''
                               & chunkIdentifier .~ Just i'
@@ -149,17 +148,17 @@ serverMain host port initialManager =
                   )
                   (
                     onLoadBookmarkMeta
-                      $ (fmap (Just . (: []) . bookmarkMetasResponse) .)
+                      $ (fmap ((: []) . bookmarkMetasResponse) .)
                       . lookupBookmarks
                   )
                   (
                     onSaveBookmarkMeta
-                     $ (fmap (Just . (: []) . bookmarkMetasResponse . (: [])) . )
+                     $ (fmap ((: []) . bookmarkMetasResponse . (: [])) . )
                      . saveBookmark
                   )
+                  [errorResponse "Unsupported request."]
                 request
-              forM_ responses
-                . mapM_
+              forM_ (either ((: []) . errorResponse) id $ result)
                 $ sendBinaryData connection
                 . (Response.identifier .~ request ^. Request.identifier)
               loop
