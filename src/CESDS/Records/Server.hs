@@ -22,7 +22,7 @@ import CESDS.Types.Request as Request (identifier, onLoadBookmarkMeta, onLoadMod
 import CESDS.Types.Response as Response (bookmarkMetasResponse, chunkIdentifier, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
 import CESDS.Types.Variable as Variable (VariableIdentifier)
 import Control.Concurrent.STM (atomically)
-import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVarIO, writeTVar)
+import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVar, readTVarIO, writeTVar)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))
@@ -52,14 +52,17 @@ modifyService f = ask >>= liftIO . atomically . flip modifyTVar' f
 
 modifyService' :: (s -> Either String (s, a)) -> ServiceM s a
 modifyService' f =
-  do -- FIXME: Make this atomic.
+  do
     sTVar <- ask
-    s <- liftIO $ readTVarIO sTVar
-    case f s of
-      Left message  -> throwError message
-      Right (s', x) -> do
-                         liftIO . atomically $ writeTVar sTVar s'
-                         return x
+    result <-
+      liftIO
+        . atomically
+        $ do
+          s <- readTVar sTVar
+          case f s of
+            Left message  -> return $ Left message
+            Right (s', x) -> writeTVar sTVar s' >> return (Right x)
+    either throwError return result
 
 
 modifyServiceIO' :: (s -> IO (Either String (s, a))) -> ServiceM s a
