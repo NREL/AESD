@@ -42,7 +42,7 @@ data VarValue =
     deriving (Generic, Show)
 
 instance Default VarValue where
-  def = VarValue (putField 0) (putField def) -- FIXME
+  def = VarValue (putField 0) (putField def)
 
 instance Decode VarValue
 

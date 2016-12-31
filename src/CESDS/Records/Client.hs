@@ -60,7 +60,7 @@ fetchRecords (_, processor, modelCache) i =
                do
                  let
                     done = response ^. nextChunkIdentifier <= Just 0
-                 Just recs <- onResponse ignore ignore keep ignore response
+                 Just recs <- onResponse ignore ignore keep ignore Nothing response
                  recs' <-
                    atomically
                      $ do
@@ -92,10 +92,10 @@ makeModelCache connection =
     (thread, processor) <- makeProcessor connection
     result <- newEmptyMVar
     processor
-      (loadModelsMeta Nothing) -- FIMXE: Allow models to be in chunks.
+      (loadModelsMeta Nothing)
       $ \response ->
       do
-        putMVar result =<< onResponse ignore keep ignore ignore response
+        putMVar result =<< onResponse ignore keep ignore ignore Nothing response
         return True
     models <- fromMaybe [] <$> takeMVar result
     fmap (thread, processor, )

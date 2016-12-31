@@ -31,7 +31,7 @@ data VarMeta =
   {
     identifier' :: Optional 1 (Value       VariableIdentifier)
   , name'       :: Required 2 (Value       String            )
-  , isInput'    :: Optional 3 (Value       Bool              ) -- FIXME: Delete this.
+  , isInput'    :: Optional 3 (Value       Bool              ) -- FIXME: Delete this in next version of API.
   , units'      :: Optional 4 (Value       String            )
   , si'         :: Packed   5 (Value       Int32             )
   , scale'      :: Required 6 (Value       Double            )

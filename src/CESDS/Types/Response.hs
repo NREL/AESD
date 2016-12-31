@@ -25,9 +25,9 @@ import Control.Applicative ((<|>))
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens (Lens', (&), lens)
 import Control.Lens.Setter ((.~))
-import Control.Monad (join)
 import Data.Default (Default(..))
 import Data.Int (Int32)
+import Data.Maybe (fromMaybe)
 import Data.ProtocolBuffers (Decode, Encode, Message, Optional, Required, Value, getField, putField)
 import GHC.Generics (Generic)
 
@@ -121,17 +121,18 @@ bookmarkMetasResponse bs = def & bookmarkMetas .~ Just bs
 
 
 onResponse :: Monad m
-           => (Maybe Int32 -> String -> m (Maybe a))
-           -> (Maybe Int32 -> [ModelMeta] -> m (Maybe a))
-           -> (Maybe Int32 -> [RecordContent] -> m (Maybe a))
-           -> (Maybe Int32 -> [BookmarkMeta] -> m (Maybe a))
+           => (Maybe Int32 -> String -> m a)
+           -> (Maybe Int32 -> [ModelMeta] -> m a)
+           -> (Maybe Int32 -> [RecordContent] -> m a)
+           -> (Maybe Int32 -> [BookmarkMeta] -> m a)
+           -> a
            -> Response
-           -> m (Maybe a)
-onResponse f g h i x =
+           -> m a
+onResponse f g h i d x =
   let
     n = x ^. identifier
   in
-    fmap join -- FIXME: Is there a simpler name for 'fmap join . sequence'?
+    fmap (fromMaybe d)
        . sequence
        $  f n                   <$> x ^. responseError
       <|> g n                   <$> x ^. modelMetas   
