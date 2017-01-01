@@ -9,6 +9,7 @@ module CESDS.Records.Server (
 , modifyService
 , modifyService'
 , modifyServiceIO'
+, guardIO
 , ModelManager(..)
 , State
 , serverMain
@@ -32,6 +33,7 @@ import Control.Monad.Reader (MonadReader, ReaderT, ask, lift, runReaderT)
 import Control.Monad.Trans (MonadTrans)
 import Data.List.Split (chunksOf)
 import Network.WebSockets (Connection, acceptRequest, receiveData, runServer, sendBinaryData)
+import System.IO.Error (tryIOError)
 
 
 newtype ServiceM s a = ServiceM {runServiceM :: ExceptT String (ReaderT (TVar s) IO) a}
@@ -70,12 +72,19 @@ modifyServiceIO' f =
   do -- FIXME: Make this atomic.
     sTVar <- ask
     s <- liftIO $ readTVarIO sTVar
-    sx <- liftIO $ f s
+    sx <- guardIO $ f s
     case sx of
       Left message  -> throwError message
       Right (s', x) -> do
                          liftIO . atomically $ writeTVar sTVar s'
                          return x
+
+-- See <http://chromaticleaves.com/posts/guard-io-with-errort.html>.
+guardIO :: (MonadIO m, MonadError String m) => IO a -> m a
+guardIO =
+  (either (throwError . show) return =<<)
+    . liftIO
+    . tryIOError
 
 
 runServiceToIO :: TVar s -> ServiceM s a -> IO (Either String a)
@@ -122,7 +131,7 @@ serverMain host port initialManager =
             do
               request <- receiveData connection
               result <-
-                runServiceToIO manager -- FIXME: Report IO errors as error responses.
+                runServiceToIO manager -- FIXME: If the ModelManager uses guardIO, then no IOExceptions ever show up here?
                   $ onRequest
                   (
                     onLoadModelsMeta

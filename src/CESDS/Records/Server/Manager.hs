@@ -15,7 +15,7 @@ module CESDS.Records.Server.Manager ( -- FIXME: Should we export less?
 ) where
 
 
-import CESDS.Records.Server (ModelManager(..), ServiceM, fromService, modifyService, modifyService')
+import CESDS.Records.Server (ModelManager(..), ServiceM, fromService, guardIO, modifyService, modifyService')
 import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta, filterBookmark, identifier)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
 import CESDS.Types.Record (RecordContent, filterVariables)
@@ -50,7 +50,7 @@ instance ModelManager (InMemoryManager a) where
   listModels =
     do
       InMemoryManager{..} <- fromService id
-      (models, state') <- liftIO $ lister state
+      (models, state') <- guardIO $ lister state
       let
         additions =
           M.fromList
@@ -68,7 +68,7 @@ instance ModelManager (InMemoryManager a) where
     do -- FIXME: Should we also cache the records?
       f <- maybe (return id) (fmap filterBookmark . lookupBookmark (model ^. Model.identifier)) maybeBookmark
       InMemoryManager{..} <- fromService id
-      (records, state') <- liftIO $ loader state model
+      (records, state') <- guardIO $ loader state model
       modifyService
         $ \c -> c {state = state'}
       return
