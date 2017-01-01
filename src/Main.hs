@@ -26,7 +26,7 @@ main =
     let
       access = siteAccess site
     serverMain host (read port)
-      =<< makeInMemoryManager -- FIXME: Add an HTTP session manager, maybe inside ResourceT.
+      =<< makeInMemoryManager -- FIXME: Add an HTTP session manager, maybe inside ResourceT; see <http://www.yesodweb.com/blog/2012/01/http-conduit>.
         (makeCache $ meters site)
         (
           return
