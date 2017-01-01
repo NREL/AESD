@@ -67,7 +67,7 @@ modifyService' f =
 
 modifyServiceIO' :: (s -> IO (Either String (s, a))) -> ServiceM s a
 modifyServiceIO' f =
-  do
+  do -- FIXME: Make this atomic.
     sTVar <- ask
     s <- liftIO $ readTVarIO sTVar
     sx <- liftIO $ f s
@@ -122,7 +122,7 @@ serverMain host port initialManager =
             do
               request <- receiveData connection
               result <-
-                runServiceToIO manager
+                runServiceToIO manager -- FIXME: Report IO errors as error responses.
                   $ onRequest
                   (
                     onLoadModelsMeta

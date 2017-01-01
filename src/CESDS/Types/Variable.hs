@@ -10,6 +10,7 @@ module CESDS.Types.Variable (
 , name
 , units
 , varType
+, VarUnits(..)
 ) where
 
 

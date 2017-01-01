@@ -36,20 +36,21 @@ import qualified Data.Map.Strict as M (elems, empty, fromList, insert, lookup, m
 type Cache = Map ModelIdentifier ModelCache
 
 
-data InMemoryManager =
+data InMemoryManager a =
   InMemoryManager
   {
     cache'       :: Cache
   , nextBookmark :: IO BookmarkIdentifier
-  , lister       :: IO [ModelMeta]
-  , loader       :: ModelMeta -> IO [RecordContent]
+  , state        :: a
+  , lister       :: a -> IO ([ModelMeta], a)                  -- FIXME: Run this in ServerM instead of IO, and supply a function to modify state.
+  , loader       :: a -> ModelMeta -> IO ([RecordContent], a) -- FIXME: Run this in ServerM instead of IO, and supply a function to modify state.
   }
 
-instance ModelManager InMemoryManager where
+instance ModelManager (InMemoryManager a) where
   listModels =
     do
-      manager <- fromService id
-      models <- liftIO $ lister manager
+      InMemoryManager{..} <- fromService id
+      (models, state') <- liftIO $ lister state
       let
         additions =
           M.fromList
@@ -57,19 +58,22 @@ instance ModelManager InMemoryManager where
             <$> models
         -- FIXME: Should we also delete models not longer present?
       modifyService
-        $ over cache (`M.union` additions)
+        $ (\c -> c {state = state'}) -- FIXME: Create a lens for state.
+        . over cache (`M.union` additions)
       return models
   lookupModel model =
     (^. modelMeta)
       <$> checkModel model
   loadContent model maybeBookmark variables =
     do -- FIXME: Should we also cache the records?
-      records <- maybe (return id) (fmap filterBookmark . lookupBookmark (model ^. Model.identifier)) maybeBookmark
-      loader' <- fromService loader
-      liftIO
-        $ (if null variables then id else filterVariables variables)
-        . records
-        <$> loader' model
+      f <- maybe (return id) (fmap filterBookmark . lookupBookmark (model ^. Model.identifier)) maybeBookmark
+      InMemoryManager{..} <- fromService id
+      (records, state') <- liftIO $ loader state model
+      modifyService
+        $ \c -> c {state = state'}
+      return
+        . (if null variables then id else filterVariables variables)
+        $ f records
   listBookmarks model =
     M.elems . (^. bookmarkMetas)
       <$> checkModel model
@@ -109,18 +113,18 @@ instance ModelManager InMemoryManager where
             )
 
 
-checkModel :: ModelIdentifier -> ServiceM InMemoryManager ModelCache
+checkModel :: ModelIdentifier -> ServiceM (InMemoryManager a) ModelCache
 checkModel model =
   maybe (throwError "Model not found.") return
     =<< fromService (M.lookup model . (^. cache))
 
 
-cache :: Lens' InMemoryManager Cache
+cache :: Lens' (InMemoryManager a) Cache
 cache = lens cache' (\s x -> s {cache' = x})
 
 
-makeInMemoryManager :: IO [ModelMeta] -> (ModelMeta -> IO [RecordContent]) -> IO InMemoryManager
-makeInMemoryManager lister loader =
+makeInMemoryManager :: a -> (a -> IO ([ModelMeta], a)) -> (a -> ModelMeta -> IO ([RecordContent], a)) -> IO (InMemoryManager a)
+makeInMemoryManager state lister loader =
   do
     let
       cache' = M.empty 
