@@ -1,28 +1,46 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE DeriveGeneric        #-}
+{-# LANGUAGE RecordWildCards      #-}
+
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
 module NREL.Meters (
   Site(..)
 , meters
-, siteModel
 , siteModels
 ) where
 
 
 import CESDS.Haystack (HaystackAccess)
-import CESDS.Types (Tags(..))
-import CESDS.Types.Model as M (Model(..))
-import CESDS.Types.Variable as V (Display(..), Domain(..), Units(..), Variable(..), VariableIdentifier)
+import CESDS.Types.Model as Model (ModelMeta, identifier, name, uri, varMeta)
+import CESDS.Types.Value as Value (VarType(..))
+import CESDS.Types.Variable as Variable (VarUnits(VarUnits), identifier, name, units, varType)
 import Control.Arrow ((***))
-import Data.Aeson.Types (FromJSON, ToJSON)
+import Control.Lens.Lens ((&))
+import Control.Lens.Setter ((.~))
+import Data.Aeson.Types (FromJSON(parseJSON), ToJSON(toJSON), Pair, Value(String), object, withObject, withText)
+import Data.Default (def)
+import Data.HashMap.Strict (toList)
 import Data.Text (Text)
 import Data.Tuple (swap)
 import GHC.Generics (Generic)
-import Network.URI (URI)
+import Network.URI (URI, parseURI)
 
-import qualified Data.Text as T (cons, splitAt, tail)
+import qualified Data.Text as T (cons, pack, splitAt, tail, unpack)
+
+
+newtype Tags = Tags {unTags :: [Pair]}
+  deriving (Generic, Read, Show)
+
+instance Eq Tags where
+  Tags x == Tags y = object x == object y
+
+instance FromJSON Tags where
+  parseJSON =
+    withObject "tags" $ return . Tags . toList
+
+instance ToJSON Tags where
+  toJSON = object . unTags
 
 
 data Site  =
@@ -38,103 +56,49 @@ data Site  =
   }
     deriving (Eq, Generic, Read, Show)
 
-instance FromJSON Site where
+instance FromJSON Site
 
-instance ToJSON Site where
+instance ToJSON Site
 
 
-meters :: Site -> [(Text, VariableIdentifier)]
+instance Read URI where
+  readsPrec _ s = case parseURI s of
+                    Nothing -> []
+                    Just u  -> [(u, "")]
+
+instance FromJSON URI where
+  parseJSON = withText "URI" $ return . read . T.unpack
+
+instance ToJSON URI where
+  toJSON = String . T.pack . show
+
+
+meters :: Site -> [(Text, Text)]
 meters Site{..} = map (swap . (T.cons '@' *** T.tail) . T.splitAt 17) siteMeters
 
 
-siteModel :: Site -> Model
-siteModel site@Site{..} =
-  let
-    identifier  = siteIdentifier
-    uri         = Just siteURI
-    name        = siteName
-    description = Just siteDescription
-    tags        = Just siteTags
-    generation  = 0
-    recordCount = 0
-    variables   = [
-                    Variable
-                    {
-                      V.identifier = "time"
-                    , display      = Display
-                                     {
-                                       label      = "Time Stamp"
-                                     , shortLabel = Just "Time"
-                                     , color      = Nothing
-                                     }
-                    , domain       = Set []
-                    , units        = Nothing
-                    , isInput      = False
-                    }
-                  , Variable
-                    {
-                      V.identifier = "epoch"
-                    , display      = Display
-                                     {
-                                       label      = "POSIX Seconds"
-                                     , shortLabel = Just "Seconds"
-                                     , color      = Nothing
-                                     }
-                    , domain       = Interval (Just 315558000) Nothing
-                    , units        = Just $ Units 0 0 1 0 0 0 0 0 1
-                    , isInput      = False
-                    }
-                  ] ++ [
-                    Variable
-                    {
-                      V.identifier = identifier'
-                    , display      = Display
-                                     {
-                                       label      = label'
-                                     , shortLabel = Just identifier'
-                                     , color      = Nothing
-                                     }
-                    , domain       = Interval Nothing Nothing
-                    , units        = Nothing -- FIXME Just $ Units 2 1 (-3) 0 0 0 0 0 1000
-                    , isInput      = False
-                    }
-                  |
-                    (label', identifier') <- meters site
-                  ]
-    primaryKey  = "time"
-    timeKey     = Just "epoch"
-  in
-    Model{..}
-
-
-siteModels :: Site -> [Model]
+siteModels :: Site -> [ModelMeta]
 siteModels site@Site{..} =
-  let
-    prototype = siteModel site { siteMeters = [] }
-  in
-    [
-      prototype
-      {
-        M.identifier = identifier'
-      , uri          = Nothing -- FIXME
-      , name         = label'
-      , description  = Just "ADDITIONAL METADATA WILL BE ADDED SOON" -- FIXME
-      , tags         = Just $ Tags [("units", "TO BE ADDED SOON")] -- FIXME
-      , variables    = Variable
-                       {
-                         V.identifier = "measurement"
-                       , display      = Display
-                                        {
-                                          label      = label'
-                                        , shortLabel = Just identifier'
-                                        , color      = Nothing
-                                        }
-                       , domain       = Interval Nothing Nothing
-                       , units        = Nothing -- FIXME Just $ Units 2 1 (-3) 0 0 0 0 0 1000
-                       , isInput      = False
-                       }
-                       : variables prototype
-      }
-    |
-      (label', identifier') <- meters site
-    ]
+  [
+    def
+      & Model.identifier .~ identifier'
+      & Model.name       .~ label'
+      & Model.uri        .~ show siteURI ++ "#" ++ identifier'
+      & Model.varMeta    .~ [
+                              def
+                                & Variable.identifier .~ 0
+                                & Variable.name       .~ "Time"
+                                & Variable.varType    .~ StringVar
+                            , def
+                                & Variable.identifier .~ 1
+                                & Variable.name       .~ "Epoch"
+                                & Variable.units      .~ VarUnits (Just "POSIX Seconds") 0 0 1 0 0 0 0 0 1
+                                & Variable.varType    .~ IntegerVar
+                            , def
+                                & Variable.identifier .~ 2
+                                & Variable.name       .~ "Measurement"
+                                & Variable.varType    .~ RealVar
+                            ]
+  |
+    (label', identifier') <- (T.unpack *** T.unpack) <$> meters site
+  ]

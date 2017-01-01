@@ -1,5 +1,5 @@
 name:                cesds-records-haystack
-version:             0.3.1.2
+version:             0.3.3.0
 synopsis:            Haystack support for CESDS records API.
 description:         Haystack support for CESDS records API.
 license:             AllRightsReserved
@@ -25,26 +25,22 @@ source-repository head
 library
   hs-source-dirs  : src
   exposed-modules : CESDS.Haystack
-                    CESDS.Haystack.Cache.Interleaving
                     CESDS.Haystack.Cache.Memory
-                    CESDS.Haystack.Cache.Singular
                     NREL.Meters
   build-depends   : base >=4.8 && <4.9
                   , aeson
-                  , aeson-pretty
                   , bytestring
                   , cesds-records
-                  , containers
                   , daft
+                  , data-default
                   , http-conduit
+                  , lens
                   , mtl
                   , network-uri
                   , raft
-                  , scientific
                   , text
                   , time
                   , unordered-containers
-                  , uuid
                   , vinyl
                   , yaml
   default-language: Haskell2010
@@ -53,23 +49,20 @@ library
 executable cesds-haystack-server
   hs-source-dirs  : src
   main-is         : Main.hs
-  other-modules   : CESDS.Haystack
   build-depends   : base
                   , aeson
-                  , aeson-pretty
                   , bytestring
                   , cesds-records
-                  , containers
                   , daft
+                  , data-default
                   , http-conduit
+                  , lens
                   , mtl
                   , network-uri
                   , raft
-                  , scientific
                   , text
                   , time
                   , unordered-containers
-                  , uuid
                   , vinyl
                   , yaml
   buildable       : True               

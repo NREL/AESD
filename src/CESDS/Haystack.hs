@@ -15,6 +15,7 @@ module CESDS.Haystack (
 , getNavId
 , getId
 , History
+, MeasurementIdentifier
 , EpochSeconds
 , sEpochSeconds
 , TimeStamp
@@ -24,20 +25,23 @@ module CESDS.Haystack (
 ) where
 
 
-import CESDS.Types (Identifier, Val(..))
 import Control.Arrow ((***))
 import Control.Monad.Except (MonadIO)
 import Data.Aeson.Types (FromJSON(..), ToJSON(..), Value, (.=), object)
 import Data.Aeson.Util (extract)
 import Data.Maybe (fromMaybe)
+import Data.Text (Text)
 import Data.Time.Util (toSecondsPOSIX)
-import Data.Vinyl ((<+>))
-import Data.Vinyl.Derived (FieldRec, SField(..), (=:))
+import Data.Daft.Vinyl.FieldRec ((=:), (<+>))
+import Data.Vinyl.Derived (FieldRec, SField(..))
 import GHC.Generics (Generic)
 import Network.HTTP.Simple (Request, addRequestHeader, defaultRequest, getResponseBody, httpJSON, setRequestBasicAuth, setRequestHost, setRequestPath, setRequestPort, setRequestQueryString, setRequestSecure)
 
 import qualified Data.ByteString.Char8 as BS (pack)
 import qualified Data.Text as T (drop, pack, unpack)
+
+
+type MeasurementIdentifier = Text
 
 
 data HaystackAccess =
@@ -69,16 +73,16 @@ haystackRequest HaystackAccess{..} path =
       secure' = fromMaybe True secure
 
 
-setNavId :: Maybe Identifier -> Request -> Request
+setNavId :: Maybe MeasurementIdentifier -> Request -> Request
 setNavId Nothing           = id
 setNavId (Just identifier) = setRequestQueryString [("navId", Just . BS.pack $ T.unpack identifier)]
 
 
-setId :: Identifier -> Request -> Request
+setId :: MeasurementIdentifier -> Request -> Request
 setId identifier = setRequestQueryString [("id", Just . BS.pack $ T.unpack identifier)]
 
 
-haystackNav :: MonadIO m => HaystackAccess -> Maybe Identifier -> m [Value]
+haystackNav :: MonadIO m => HaystackAccess -> Maybe MeasurementIdentifier -> m [Value]
 haystackNav access identifier =
   let
     request =
@@ -91,7 +95,7 @@ haystackNav access identifier =
       <$> httpJSON request
 
 
-haystackNavTree :: MonadIO m => HaystackAccess -> Maybe Identifier -> m Value
+haystackNavTree :: MonadIO m => HaystackAccess -> Maybe MeasurementIdentifier -> m Value
 haystackNavTree access identifier =
   let
     visit parent =
@@ -105,7 +109,7 @@ haystackNavTree access identifier =
       =<< haystackNav access identifier
 
 
-haystackRead :: MonadIO m => HaystackAccess -> Identifier -> m Value
+haystackRead :: MonadIO m => HaystackAccess -> MeasurementIdentifier -> m Value
 haystackRead access identifier =
   let
     request =
@@ -160,10 +164,10 @@ type History = FieldRec '[EpochSeconds, TimeStamp, Measurement]
 type EpochSeconds = '("Epoch Seconds", Int)
 
 
-type TimeStamp    = '("Time Stamp"   , Val)
+type TimeStamp    = '("Time Stamp"   , String)
 
 
-type Measurement  = '("Measurement"  , Val)
+type Measurement  = '("Measurement"  , Double)
 
 
 sEpochSeconds :: SField EpochSeconds
@@ -178,7 +182,7 @@ sMeasurement :: SField Measurement
 sMeasurement = SField
 
 
-haystackHisRead :: MonadIO m => HaystackAccess -> Identifier -> HaystackTimes String -> m [History]
+haystackHisRead :: MonadIO m => HaystackAccess -> MeasurementIdentifier -> HaystackTimes String -> m [History]
 haystackHisRead access identifier times =
   let
     request =
@@ -191,7 +195,7 @@ haystackHisRead access identifier times =
       <$> httpJSON request
 
 
-setTimes :: Identifier -> HaystackTimes String -> Request -> Request
+setTimes :: MeasurementIdentifier -> HaystackTimes String -> Request -> Request
 setTimes identifier times =
   setRequestQueryString
     [
@@ -203,9 +207,9 @@ setTimes identifier times =
 extractHistory :: Value -> [History]
 extractHistory o =
   [
-        sEpochSeconds =: toSecondsPOSIX (T.unpack ts)
-    <+> sTimeStamp    =: Discrete ts
-    <+> sMeasurement  =: Continuous val
+        sEpochSeconds =: fromIntegral (toSecondsPOSIX $ T.unpack ts)
+    <+> sTimeStamp    =: T.unpack ts
+    <+> sMeasurement  =: val
   |
     o' <- extract "rows" o
   , let ts  =                           T.drop 2 $ extract "ts" o'
@@ -213,11 +217,11 @@ extractHistory o =
   ]
    
  
-getNavId :: Value -> Identifier
+getNavId :: Value -> MeasurementIdentifier
 getNavId = T.pack . getIdField "navId"
 
 
-getId :: Value -> Identifier
+getId :: Value -> MeasurementIdentifier
 getId = T.pack . getIdField "id"
 
 

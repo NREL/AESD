@@ -8,8 +8,6 @@
 module CESDS.Haystack.Cache.Memory (
   Cached
 , CacheM
-, evalCacheT
-, execCacheT
 , runCacheT
 , clearCache
 , makeCache
@@ -19,16 +17,19 @@ module CESDS.Haystack.Cache.Memory (
 ) where
 
 
-import CESDS.Haystack (EpochSeconds, HaystackAccess(..), HaystackTimes(..), Measurement, TimeStamp, haystackHisRead, sEpochSeconds, sMeasurement, sTimeStamp)
-import CESDS.Types (Val(..))
-import CESDS.Types.Variable (VariableIdentifier)
+import CESDS.Haystack (EpochSeconds, HaystackAccess(..), HaystackTimes(..), Measurement, MeasurementIdentifier, TimeStamp, haystackHisRead, sEpochSeconds, sMeasurement, sTimeStamp)
+import CESDS.Types.Record (RecordContent)
+import CESDS.Types.Value (integerValue, realValue, stringValue)
 import Control.Applicative ((<|>))
 import Control.Arrow ((&&&))
+import Control.Lens.Lens ((&))
+import Control.Lens.Setter ((.~))
 import Control.Monad.Except (MonadError)
 import Control.Monad.Trans (MonadIO)
 import Data.Daft.Cache (Cache(..))
-import Data.Daft.Cache.Memory (Container, MemoryCacheT, emptyContainer, evalCacheT, execCacheT, runCacheT)
+import Data.Daft.Cache.Memory (Container, MemoryCacheT, emptyContainer, runCacheT)
 import Data.Daft.Vinyl.FieldRec ((=:), (<:))
+import Data.Default (def)
 import Data.Maybe (isNothing)
 import Data.Text (Text, unpack)
 import Data.Time.LocalTime (TimeZone(..))
@@ -37,24 +38,22 @@ import Data.Vinyl.Derived (FieldRec)
 import Data.Vinyl.Lens (rcast)
 import Debug.Trace (trace)
 
-import qualified Data.HashMap.Strict as H
+
+type Cached = Container MeasurementIdentifier (FieldRec '[EpochSeconds]) (FieldRec '[TimeStamp, Measurement])
 
 
-type Cached = Container VariableIdentifier (FieldRec '[EpochSeconds]) (FieldRec '[TimeStamp, Measurement])
+type CacheM = MemoryCacheT MeasurementIdentifier (FieldRec '[EpochSeconds]) (FieldRec '[TimeStamp, Measurement])
 
 
-type CacheM = MemoryCacheT VariableIdentifier (FieldRec '[EpochSeconds]) (FieldRec '[TimeStamp, Measurement])
-
-
-makeCache :: [(Text, VariableIdentifier)] -> Cached
+makeCache :: [(Text, MeasurementIdentifier)] -> Cached
 makeCache = emptyContainer . fmap snd
 
 
-timeKeys :: MonadError String m => VariableIdentifier -> CacheM m [SecondsPOSIX]
+timeKeys :: MonadError String m => MeasurementIdentifier -> CacheM m [SecondsPOSIX]
 timeKeys = fmap (map (sEpochSeconds <:)) . keysList
 
 
-cacheSize :: MonadError String m => VariableIdentifier -> CacheM m Int
+cacheSize :: MonadError String m => MeasurementIdentifier -> CacheM m Int
 cacheSize = keysCount
 
 
@@ -66,7 +65,7 @@ fromSecondsPOSIX' HaystackAccess{..} =
     fromSecondsPOSIX TimeZone{..}
 
 
-refreshExtractCacheManager :: (MonadIO m, MonadError String m) => HaystackAccess -> VariableIdentifier -> Maybe SecondsPOSIX -> Maybe SecondsPOSIX -> CacheM m [(SecondsPOSIX, Object')]
+refreshExtractCacheManager :: (MonadIO m, MonadError String m) => HaystackAccess -> MeasurementIdentifier -> Maybe SecondsPOSIX -> Maybe SecondsPOSIX -> CacheM m [RecordContent]
 refreshExtractCacheManager access variable startRequest finishRequest =
   do
     startCache <- fmap (sEpochSeconds <:) <$> keysMinimum variable
@@ -82,7 +81,7 @@ refreshExtractCacheManager access variable startRequest finishRequest =
                  ((sEpochSeconds =:) <$> finishRequest)
 
 
-fetchHistory :: MonadIO m => HaystackAccess -> VariableIdentifier -> Maybe (FieldRec '[EpochSeconds]) -> Maybe (FieldRec '[EpochSeconds]) -> CacheM m [(FieldRec '[EpochSeconds], FieldRec '[TimeStamp, Measurement])]
+fetchHistory :: MonadIO m => HaystackAccess -> MeasurementIdentifier -> Maybe (FieldRec '[EpochSeconds]) -> Maybe (FieldRec '[EpochSeconds]) -> CacheM m [(FieldRec '[EpochSeconds], FieldRec '[TimeStamp, Measurement])]
 fetchHistory access variable startRequest finishRequest =
   do
     let 
@@ -94,17 +93,13 @@ fetchHistory access variable startRequest finishRequest =
       $ map (rcast &&& rcast) x
 
 
-type Object' = H.HashMap VariableIdentifier Val
-
-
-asObject :: (FieldRec '[EpochSeconds], FieldRec '[TimeStamp, Measurement]) -> (Int, Object')
+asObject :: (FieldRec '[EpochSeconds], FieldRec '[TimeStamp, Measurement]) -> RecordContent
 asObject (key, row) =
   (
-    sEpochSeconds <: key
-  , H.fromList 
-    [
-      ("time"       ,                            sTimeStamp    <: row)
-    , ("epoch"      , Continuous .fromIntegral $ sEpochSeconds <: key)
-    , ("measurement",                            sMeasurement  <: row)
+    fromIntegral $ sEpochSeconds <: key
+  , [
+      (0, def & stringValue  .~ Just (               sTimeStamp    <: row))
+    , (1, def & integerValue .~ Just (fromIntegral $ sEpochSeconds <: key))
+    , (2, def & realValue    .~ Just (               sMeasurement  <: row))
     ]
   )
