@@ -20,7 +20,6 @@ import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta, filte
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
 import CESDS.Types.Record (RecordContent, filterVariables)
 import Control.Arrow ((&&&))
-import Control.Concurrent.Util (makeCounter)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens (Lens', (&), lens)
 import Control.Lens.Setter ((.~), over)
@@ -28,6 +27,8 @@ import Control.Monad.Except (liftIO, throwError)
 import Data.Default (Default(..))
 import Data.Map.Strict (Map)
 import Data.Maybe (fromJust)
+import Data.UUID (toString)
+import Data.UUID.V4 (nextRandom)
 import GHC.Generics (Generic)
 
 import qualified Data.Map.Strict as M (elems, empty, fromList, insert, lookup, member, union, update)
@@ -128,7 +129,7 @@ makeInMemoryManager state lister loader =
   do
     let
       cache' = M.empty 
-    nextBookmark <- makeCounter (show . ((+ 1) :: Integer -> Integer) . read) "0"
+      nextBookmark = toString <$> nextRandom
     return InMemoryManager{..}
 
 
