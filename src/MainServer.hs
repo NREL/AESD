@@ -23,11 +23,11 @@ import System.FilePath.Posix ((</>))
 main :: IO ()
 main =
   do
-    [host, port, directory] <- getArgs
+    [host, port, directory, persistence] <- getArgs -- FIXME
     directory' <- makeAbsolute directory
     files <- getDirectoryContents directory'
     serverMain host (read port)
-      =<< makeInMemoryManager ()
+      =<< makeInMemoryManager (read persistence) ()
       (
         const
           . fmap (, ())

@@ -15,7 +15,7 @@ import System.Environment (getArgs)
 main :: IO ()
 main =
   do
-    [host, port] <- getArgs
+    [host, port] <- getArgs -- FIXME
     clientMain host (read port) "/"
       $ \state ->
         do

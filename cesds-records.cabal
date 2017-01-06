@@ -1,5 +1,5 @@
 name:                cesds-records
-version:             0.3.6.0
+version:             0.3.7.0
 synopsis:            Implementation of CESDS record API
 description:         Implementation of CESDS record API.
 license:             AllRightsReserved
@@ -39,6 +39,7 @@ library
   other-modules   : Control.Concurrent.Util
                     CESDS.Types.Internal
   build-depends   : base >=4.8 && <4.9
+                  , atomic-write
                   , bytestring
                   , cereal
                   , containers
@@ -57,6 +58,7 @@ executable cesds-server
   main-is         : MainServer.hs
   hs-source-dirs  : src
   build-depends   : base               
+                  , atomic-write
                   , bytestring
                   , cereal
                   , containers
@@ -79,6 +81,7 @@ executable cesds-client-example
   main-is         : MainClientExample.hs
   hs-source-dirs  : src
   build-depends   : base               
+                  , atomic-write
                   , bytestring
                   , cereal
                   , containers
