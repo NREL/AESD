@@ -12,9 +12,10 @@ import CESDS.Records.Server.Manager (makeInMemoryManager)
 import CESDS.Types.Model (identifier, name, uri)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Setter ((.~))
-import Data.Hashable (hash)
 import Data.List.Split (splitOn)
 import Data.List (isSuffixOf)
+import Data.UUID (toString)
+import Data.UUID.V5 (generateNamed, namespaceURL)
 import System.Directory (getDirectoryContents, makeAbsolute)
 import System.Environment (getArgs)
 import System.FilePath.Posix ((</>))
@@ -33,7 +34,7 @@ main =
           . fmap (, ())
           $ sequence
           [
-            (identifier .~ show (hash file))
+            (identifier .~ toString (generateNamed namespaceURL $ toEnum . fromEnum <$> "file://" ++ file))
               . (name .~ file)
               . (uri .~ "file://" ++ file)
               . buildModelMeta
