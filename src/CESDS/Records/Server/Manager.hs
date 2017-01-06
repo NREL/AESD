@@ -15,7 +15,7 @@ module CESDS.Records.Server.Manager ( -- FIXME: Should we export less?
 ) where
 
 
-import CESDS.Records.Server (ModelManager(..), ServiceM, fromService, guardIO, modifyService, modifyService')
+import CESDS.Records.Server (ModelManager(..), ServiceM, fromService, modifyService, modifyService')
 import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta, filterBookmark, identifier)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
 import CESDS.Types.Record (RecordContent, filterVariables)
@@ -34,6 +34,7 @@ import Data.UUID (toString)
 import Data.UUID.V4 (nextRandom)
 import GHC.Generics (Generic)
 import System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
+import System.IO.Util (guardIO)
 
 import qualified Data.ByteString.Lazy as BS (readFile)
 import qualified Data.Map.Strict as M (elems, empty, fromList, insert, lookup, member, size, toList, union, update)
