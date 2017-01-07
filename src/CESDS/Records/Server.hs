@@ -28,11 +28,11 @@ import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))
 import Control.Monad (forM_)
 import Control.Monad.Except (ExceptT, MonadError, MonadIO, liftIO, runExceptT, throwError)
+import Control.Monad.Except.Util (guardIO)
 import Control.Monad.Reader (MonadReader, ReaderT, ask, lift, runReaderT)
 import Control.Monad.Trans (MonadTrans)
 import Data.List.Split (chunksOf)
 import Network.WebSockets (Connection, acceptRequest, receiveData, runServer, sendBinaryData)
-import System.IO.Util (guardIO)
 
 
 newtype ServiceM s a = ServiceM {runServiceM :: ExceptT String (ReaderT (TVar s) IO) a}
