@@ -81,8 +81,8 @@ instance Encode Record
 record :: Lens' Record RecordContent
 record =
   lens
-    (\Record{..} -> (getField recordIdentifier'      , (^. varValue) <$> getField varValues'                ))
-    (\s (k, v)   -> s {recordIdentifier' = putField k, varValues' = putField $ flip (varValue .~) def <$>  v})
+    (\Record{..} -> (getField recordIdentifier'      , (^. varValue) <$> getField varValues'               ))
+    (\s (k, v)   -> s {recordIdentifier' = putField k, varValues' = putField $ flip (varValue .~) def <$> v})
 
 
 data RecordList =

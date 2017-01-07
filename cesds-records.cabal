@@ -1,5 +1,5 @@
 name:                cesds-records
-version:             0.3.7.2
+version:             0.3.7.3
 synopsis:            Implementation of CESDS record API
 description:         Implementation of CESDS record API.
 license:             AllRightsReserved
@@ -36,18 +36,19 @@ library
                     CESDS.Types.Response
                     CESDS.Types.Value
                     CESDS.Types.Variable
+  other-modules   : CESDS.Types.Internal
+                    Control.Concurrent.Util
                     System.IO.Util
-  other-modules   : Control.Concurrent.Util
-                    CESDS.Types.Internal
-  build-depends   : base >=4.8 && <4.9
-                  , atomic-write
+  build-depends   : base >= 4.8 && < 4.9
                   , bytestring
                   , cereal
                   , containers
                   , data-default
+                  , jaft
                   , lens
                   , mtl
                   , protobuf
+                  , raft
                   , split
                   , stm
                   , uuid
@@ -59,16 +60,17 @@ executable cesds-server
   main-is         : MainServer.hs
   hs-source-dirs  : src
   build-depends   : base               
-                  , atomic-write
                   , bytestring
                   , cereal
                   , containers
                   , data-default
                   , directory
                   , filepath
+                  , jaft
                   , lens
                   , mtl
                   , protobuf
+                  , raft
                   , split
                   , stm
                   , uuid
@@ -81,14 +83,15 @@ executable cesds-client-example
   main-is         : MainClientExample.hs
   hs-source-dirs  : src
   build-depends   : base               
-                  , atomic-write
                   , bytestring
                   , cereal
                   , containers
                   , data-default
+                  , jaft
                   , lens
                   , mtl
                   , protobuf
+                  , raft
                   , split
                   , stm
                   , uuid

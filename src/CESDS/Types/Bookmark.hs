@@ -11,22 +11,19 @@ module CESDS.Types.Bookmark (
 , intervalContent
 , setContent
 , onBookmarkMeta
-, IntervalContent
-, firstRecord
-, lastRecord
-, SetContent
-, setIdentifiers
+, filterBookmark
 , BookmarkMetas
 , bookmarks
-, filterBookmark
 ) where
 
 
 import CESDS.Types.Internal ()
 import CESDS.Types.Record (RecordContent, RecordIdentifier)
 import Control.Applicative ((<|>))
+import Control.Arrow ((&&&))
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens (Lens', lens)
+import Control.Lens.Setter ((.~))
 import Control.Monad (liftM2)
 import Data.Default (Default(..))
 import Data.Maybe (fromMaybe)
@@ -54,19 +51,18 @@ instance Decode IntervalContent
 instance Encode IntervalContent
 
 
-firstRecord :: Lens' IntervalContent (Maybe RecordIdentifier)
-firstRecord = lens (getField . firstRecord') (\s x -> s {firstRecord' = putField x})
+intervalIdentifiers :: Lens' IntervalContent (Maybe RecordIdentifier, Maybe RecordIdentifier)
+intervalIdentifiers =
+  lens
+    (getField . firstRecord' &&& getField . lastRecord')
+    (\s (x, y) -> s {firstRecord' = putField x, lastRecord' = putField y})
 
 
-lastRecord :: Lens' IntervalContent (Maybe RecordIdentifier)
-lastRecord = lens (getField . lastRecord') (\s x -> s {lastRecord' = putField x})
-
-
-filterInterval :: IntervalContent -> [RecordContent] -> [RecordContent]
-filterInterval interval =
+filterInterval :: (Maybe RecordIdentifier, Maybe RecordIdentifier) -> [RecordContent] -> [RecordContent]
+filterInterval (firstRecord, lastRecord) =
   let
-    r0 = fromMaybe minBound $ interval ^. firstRecord
-    r1 = fromMaybe maxBound $ interval ^. lastRecord
+    r0 = fromMaybe minBound firstRecord
+    r1 = fromMaybe maxBound lastRecord
   in
     filter (liftM2 (&&) (>= r0) (<= r1) . fst)
 
@@ -90,8 +86,8 @@ setIdentifiers :: Lens' SetContent [RecordIdentifier]
 setIdentifiers = lens (getField . setIdentifiers') (\s x -> s {setIdentifiers' = putField x})
 
 
-filterSet :: SetContent -> [RecordContent] -> [RecordContent]
-filterSet set = filter ((`elem` (set ^. setIdentifiers)) . fst)
+filterSet :: [RecordIdentifier] -> [RecordContent] -> [RecordContent]
+filterSet set = filter ((`elem` set) . fst)
 
 
 data BookmarkMeta =
@@ -133,15 +129,21 @@ numberOfRecords :: Lens' BookmarkMeta (Maybe Word64)
 numberOfRecords = lens (getField . numberOfRecords') (\s x -> s {numberOfRecords' = putField x})
 
 
-intervalContent :: Lens' BookmarkMeta (Maybe IntervalContent)
-intervalContent = lens (getField . intervalContent') (\s x -> s {intervalContent' = putField x})
+intervalContent :: Lens' BookmarkMeta (Maybe (Maybe RecordIdentifier, Maybe RecordIdentifier))
+intervalContent =
+  lens
+    (fmap (^. intervalIdentifiers) . getField . intervalContent')
+    (\s x -> s {intervalContent' = putField $ flip (intervalIdentifiers .~) def <$> x})
 
 
-setContent :: Lens' BookmarkMeta (Maybe SetContent)
-setContent = lens (getField . setContent') (\s x -> s {setContent' = putField x})
+setContent :: Lens' BookmarkMeta (Maybe [RecordIdentifier])
+setContent =
+  lens
+    (fmap (^. setIdentifiers) . getField . setContent')
+    (\s x -> s {setContent' = putField $ flip (setIdentifiers .~) def <$> x})
 
 
-onBookmarkMeta :: (Word64 -> a) -> (IntervalContent -> a) -> (SetContent -> a) -> a -> BookmarkMeta -> a
+onBookmarkMeta :: (Word64 -> a) -> ((Maybe RecordIdentifier, Maybe RecordIdentifier) -> a) -> ([RecordIdentifier] -> a) -> a -> BookmarkMeta -> a
 onBookmarkMeta f g h d x =
   fromMaybe d
      $  f <$> x ^. numberOfRecords
