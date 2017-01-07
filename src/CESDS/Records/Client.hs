@@ -6,14 +6,17 @@ module CESDS.Records.Client (
 , clientMain
 , fetchModels
 , fetchRecords
+, fetchBookmarks
+, storeBookmark
 , close
 ) where
 
 
 import CESDS.Records.Server.Manager (Cache, ContentStatus(..), contentStatus, modelMeta, recordContent)
+import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
 import CESDS.Types.Record (RecordContent)
-import CESDS.Types.Request as Request (Request, loadModelsMeta, loadRecordsData, identifier)
+import CESDS.Types.Request as Request (Request, identifier, loadBookmarkMeta, loadModelsMeta, loadRecordsData, saveBookmarkMeta)
 import CESDS.Types.Response as Response (Response, identifier, nextChunkIdentifier, onResponse)
 import Control.Concurrent.Util (makeCounter)
 import Control.Lens.Getter ((^.))
@@ -84,6 +87,34 @@ fetchModels :: State -> IO [ModelMeta]
 fetchModels (_, _, modelCache) =
   M.foldr ((:) . (^. modelMeta)) []
     <$> atomically (readTVar modelCache)
+
+
+fetchBookmarks :: State -> ModelIdentifier -> Maybe BookmarkIdentifier -> IO [BookmarkMeta]
+fetchBookmarks (_, processor, _) model bookmark =
+  do
+    result <- newEmptyMVar
+    processor
+      (loadBookmarkMeta model bookmark)
+      $ \response ->
+      do
+        Just bookmarks <- onResponse ignore ignore ignore keep Nothing response
+        putMVar result bookmarks
+        return True
+    takeMVar result
+
+
+storeBookmark :: State -> ModelIdentifier -> BookmarkMeta -> IO BookmarkMeta
+storeBookmark (_, processor, _) model bookmark =
+  do
+    result <- newEmptyMVar
+    processor
+      (saveBookmarkMeta model bookmark)
+      $ \response ->
+      do
+        Just [bookmark'] <- onResponse ignore ignore ignore keep Nothing response
+        putMVar result bookmark'
+        return True
+    takeMVar result
 
 
 makeModelCache :: Connection -> IO State

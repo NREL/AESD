@@ -3,12 +3,17 @@ module Main (
 ) where
 
 
+import CESDS.Types.Bookmark as Bookmark (identifier, name, setContent)
 import CESDS.Types.Model as Model (identifier, varMeta)
-import CESDS.Records.Client (clientMain, close, fetchModels, fetchRecords)
+import CESDS.Records.Client (clientMain, close, fetchBookmarks, fetchModels, fetchRecords, storeBookmark)
 import CESDS.Types.Record (onRecordContent)
 import CESDS.Types.Variable as Variable (identifier, name)
 import Control.Lens.Getter ((^.))
+import Control.Lens.Lens ((&))
+import Control.Lens.Setter ((.~))
+import Data.Default (def)
 import Data.List (intercalate)
+import Data.Maybe (fromJust)
 import System.Environment (getArgs)
 
 
@@ -41,6 +46,23 @@ main =
               putStrLn . intercalate "\t" $ show r : fmap snd vs 
             |
               (r, vs) <- onRecordContent show show show "?" rs
+            ]
+          putStrLn ""
+          let
+          b <-
+            storeBookmark state i
+              $ def
+                & Bookmark.name .~ "sample"
+                & Bookmark.setContent .~ Just (fst <$> take 2 rs)
+          putStrLn $ "Stored bookmark \"" ++ (b ^. Bookmark.name) ++ "\" identified by " ++ fromJust (b ^. Bookmark.identifier) ++ "."
+          putStrLn ""
+          putStrLn "Boomarks:"
+          bs <- fetchBookmarks state i Nothing
+          sequence_
+            [
+              putStrLn $ "\t" ++ fromJust (b' ^. Bookmark.identifier) ++ "\t" ++ (b' ^. Bookmark.name)
+            |
+              b' <- bs
             ]
           putStrLn ""
           close state
