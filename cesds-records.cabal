@@ -1,5 +1,5 @@
 name:                cesds-records
-version:             0.3.7.6
+version:             0.3.7.7
 synopsis:            Implementation of CESDS record API
 description:         Implementation of CESDS record API.
 license:             AllRightsReserved
@@ -42,7 +42,6 @@ library
                   , cereal
                   , containers
                   , data-default
-                  , jaft
                   , lens
                   , mtl
                   , protobuf
@@ -64,7 +63,6 @@ executable cesds-server
                   , data-default
                   , directory
                   , filepath
-                  , jaft
                   , lens
                   , mtl
                   , protobuf
@@ -85,7 +83,6 @@ executable cesds-client-example
                   , cereal
                   , containers
                   , data-default
-                  , jaft
                   , lens
                   , mtl
                   , protobuf
