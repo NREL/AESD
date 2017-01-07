@@ -19,25 +19,26 @@ import CESDS.Records.Server (ModelManager(..), ServiceM, fromService, modifyServ
 import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta, filterBookmark, identifier)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
 import CESDS.Types.Record (RecordContent, filterVariables)
-import Control.Arrow ((&&&))
+import Control.Arrow ((&&&), second)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens (Lens', (&), lens)
 import Control.Lens.Setter ((.~), over)
-import Control.Monad (forM_, void)
+import Control.Monad (forM_, when)
 import Control.Monad.Except (liftIO, throwError)
-import Data.ProtocolBuffers (decodeMessage, encodeMessage)
 import Data.Default (Default(..))
+import Data.Function.MapReduce (mapReduce)
+import Data.Journal (Journal(..))
+import Data.Journal.File (FileJournal, openJournalIO)
 import Data.Map.Strict (Map)
 import Data.Maybe (fromJust)
-import Data.Serialize (Serialize(..), decodeLazy, encodeLazy)
+import Data.ProtocolBuffers (decodeMessage, encodeMessage)
+import Data.Serialize (Serialize(..), decode, encode, runGet, runPut)
 import Data.UUID (toString)
 import Data.UUID.V4 (nextRandom)
 import GHC.Generics (Generic)
-import System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
 import System.IO.Util (guardIO)
 
-import qualified Data.ByteString.Lazy as BS (readFile)
-import qualified Data.Map.Strict as M (elems, empty, fromList, insert, lookup, member, size, toList, union, update)
+import qualified Data.Map.Strict as M (elems, empty, findWithDefault, fromList, insert, lookup, mapWithKey, member, null, size, toList, union, update)
 
 
 type Cache = Map ModelIdentifier ModelCache
@@ -49,6 +50,7 @@ data InMemoryManager a =
     cache'       :: Cache
   , nextBookmark :: IO BookmarkIdentifier
   , persistence  :: Maybe FilePath
+  , journal      :: Maybe FileJournal
   , state        :: a
   , lister       :: a -> IO ([ModelMeta], a)                  -- FIXME: Run this in ServerM instead of IO, and supply a function to modify state.
   , loader       :: a -> ModelMeta -> IO ([RecordContent], a) -- FIXME: Run this in ServerM instead of IO, and supply a function to modify state.
@@ -60,6 +62,7 @@ instance ModelManager (InMemoryManager a) where
       InMemoryManager{..} <- fromService id
       (models, state') <- guardIO $ lister state
       let
+        first = M.null cache'
         additions =
           M.fromList
             $ ((^. Model.identifier) &&& flip (modelMeta .~) def)
@@ -68,6 +71,7 @@ instance ModelManager (InMemoryManager a) where
       modifyService
         $ (\c -> c {state = state'}) -- FIXME: Create a lens for state.
         . over cache (`M.union` additions)
+      when first loadBookmarks
       return models
   lookupModel model =
     (^. modelMeta)
@@ -120,7 +124,7 @@ instance ModelManager (InMemoryManager a) where
                   )
               , b
               )
-      void $ fromService saveManager -- FIXME: This would perform poorly if there are a lot of models or bookmarks.
+      journalBookmark (model, bookmark')
       return bookmark'
 
 
@@ -140,27 +144,62 @@ makeInMemoryManager persistence state lister loader =
     let
       cache' = M.empty 
       nextBookmark = toString <$> nextRandom
-    restoreManager InMemoryManager{..}
+    journal <- sequence $ openJournalIO <$> persistence
+    return InMemoryManager{..}
 
 
-restoreManager :: InMemoryManager a -> IO (InMemoryManager a)
-restoreManager m@InMemoryManager{..} =
- maybe
-   (return m)
-   (
-     \file ->
-       do
-         Right x <- decodeLazy <$> BS.readFile file -- FIXME
-         return m {cache' = x}
-   )
-   persistence
+loadBookmarks :: ServiceM (InMemoryManager a) ()
+loadBookmarks =
+  do
+    mbs <- unjournalBookmarks
+    let
+      z =
+        M.fromList
+          $ mapReduce
+            (second ((,) =<< fromJust . (^. Bookmark.identifier)))
+            ((. M.fromList) . (,))
+            mbs :: Map ModelIdentifier (Map BookmarkIdentifier BookmarkMeta)
+    modifyService
+      $ \m@InMemoryManager{..} ->
+        m
+        {
+          cache' =
+            M.mapWithKey
+              (
+                (bookmarkMetas .~ ) . flip (M.findWithDefault M.empty) z
+              )
+              cache'
+        }
 
 
-saveManager :: InMemoryManager a -> IO ()
-saveManager InMemoryManager{..} =
-  forM_ persistence
-    . flip atomicWriteFile
-    $ encodeLazy cache'
+unjournalBookmarks :: ServiceM (InMemoryManager a) [(ModelIdentifier, BookmarkMeta)]
+unjournalBookmarks =
+  do
+    journal' <- fromService journal
+    case journal' of
+      Nothing           -> return []
+      Just    journal'' -> either throwError return
+                             . mapM
+                             (
+                               \(k, e) ->
+                                 do
+                                   (model, _) <- decode k :: Either String (ModelIdentifier, BookmarkIdentifier)
+                                   bookmark <- runGet decodeMessage e
+                                   return (model, bookmark)
+                             )
+                             =<< replay False journal''
+
+
+journalBookmark :: (ModelIdentifier, BookmarkMeta) -> ServiceM (InMemoryManager a) ()
+journalBookmark (model, bookmark) =
+  do
+    journal' <- fromService journal
+    forM_ journal'
+      $ flip append
+      (
+        encode (model, fromJust $ bookmark ^. Bookmark.identifier)
+      , runPut $ encodeMessage bookmark
+      )
 
 
 data ModelCache =
