@@ -1,5 +1,5 @@
 name:                cesds-records-haystack
-version:             0.3.4.0
+version:             0.3.4.1
 synopsis:            Haystack support for CESDS records API.
 description:         Haystack support for CESDS records API.
 license:             AllRightsReserved
@@ -13,14 +13,14 @@ cabal-version:       >= 1.10
 
 stability:           Stable
 homepage:            https://github.nrel.gov/haskell/cesds-records-haystack
-bug-reports:         https://github.nrel.gov/haskell/cesds-records/-haystackissues/
+bug-reports:         https://github.nrel.gov/haskell/cesds-records-haystack/issues/
 
 extra-source-files:  ReadMe.md
                      ChangeLog.md
 
 source-repository head
   type: git
-  location: https://github.nrel.gov/haskell/cesds-records.-haystackgit
+  location: https://github.nrel.gov/haskell/cesds-records-haystack.git
  
 library
   hs-source-dirs  : src
