@@ -11,10 +11,13 @@ import CESDS.Records.Server (serverMain)
 import CESDS.Records.Server.Manager (makeInMemoryManager)
 import CESDS.Types.Model as Model (identifier)
 import Control.Lens.Getter ((^.))
-import Control.Monad.Except (runExceptT, throwError)
+import Control.Monad.Except (liftIO)
+import Control.Monad.Except.Util (runToIO)
+import Control.Monad.Trans.Resource (runResourceT)
 import Data.Text (pack)
 import Data.Yaml (decodeFile)
 import NREL.Meters (Site(..), meters, siteModels)
+import Network.HTTP.Conduit (newManager, tlsManagerSettings)
 import System.Environment (getArgs)
 
 
@@ -25,17 +28,20 @@ main =
     Just site <- decodeFile configuration
     let
       access = siteAccess site
-    serverMain host (read port)
-      =<< makeInMemoryManager (read persistence) -- FIXME: Add an HTTP session manager, maybe inside ResourceT; see <http://www.yesodweb.com/blog/2012/01/http-conduit>.
-        (makeCache $ meters site)
-        (
-          return
-            . (siteModels site, )
-        )
-        (
-          \cache model ->
-             (either (throwError . userError) return =<<)
-               . runExceptT
-               . flip runCacheT cache
-               $ refreshExtractCacheManager access (pack $ model ^. Model.identifier) (Just $ read start) Nothing
-        )
+    runResourceT
+      $ do
+        httpManager <- liftIO $ newManager tlsManagerSettings
+        liftIO
+          $ serverMain host (read port)
+          =<< makeInMemoryManager (read persistence)
+            (makeCache $ meters site)
+            (
+              return
+                . (siteModels site, )
+            )
+            (
+              \cache model ->
+                 runToIO
+                   . flip runCacheT cache
+                   $ refreshExtractCacheManager httpManager access (pack $ model ^. Model.identifier) (Just $ read start) Nothing
+            )

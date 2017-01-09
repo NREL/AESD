@@ -37,6 +37,7 @@ import Data.Time.Util (SecondsPOSIX, fromSecondsPOSIX)
 import Data.Vinyl.Derived (FieldRec)
 import Data.Vinyl.Lens (rcast)
 import Debug.Trace (trace)
+import Network.HTTP.Conduit (Manager)
 
 
 type Cached = Container MeasurementIdentifier (FieldRec '[EpochSeconds]) (FieldRec '[TimeStamp, Measurement])
@@ -65,8 +66,8 @@ fromSecondsPOSIX' HaystackAccess{..} =
     fromSecondsPOSIX TimeZone{..}
 
 
-refreshExtractCacheManager :: (MonadIO m, MonadError String m) => HaystackAccess -> MeasurementIdentifier -> Maybe SecondsPOSIX -> Maybe SecondsPOSIX -> CacheM m [RecordContent]
-refreshExtractCacheManager access variable startRequest finishRequest =
+refreshExtractCacheManager :: (MonadIO m, MonadError String m) => Manager -> HaystackAccess -> MeasurementIdentifier -> Maybe SecondsPOSIX -> Maybe SecondsPOSIX -> CacheM m [RecordContent]
+refreshExtractCacheManager manager access variable startRequest finishRequest =
   do
     startCache <- fmap (sEpochSeconds <:) <$> keysMinimum variable
     let
@@ -75,19 +76,19 @@ refreshExtractCacheManager access variable startRequest finishRequest =
       then return []
       else map asObject
              <$> lookupRange
-                 (fetchHistory access)
+                 (fetchHistory manager access)
                  variable
                  ((sEpochSeconds =:) <$> startRequest')
                  ((sEpochSeconds =:) <$> finishRequest)
 
 
-fetchHistory :: MonadIO m => HaystackAccess -> MeasurementIdentifier -> Maybe (FieldRec '[EpochSeconds]) -> Maybe (FieldRec '[EpochSeconds]) -> CacheM m [(FieldRec '[EpochSeconds], FieldRec '[TimeStamp, Measurement])]
-fetchHistory access variable startRequest finishRequest =
+fetchHistory :: MonadIO m => Manager -> HaystackAccess -> MeasurementIdentifier -> Maybe (FieldRec '[EpochSeconds]) -> Maybe (FieldRec '[EpochSeconds]) -> CacheM m [(FieldRec '[EpochSeconds], FieldRec '[TimeStamp, Measurement])]
+fetchHistory manager access variable startRequest finishRequest =
   do
     let 
       Just startRequest' = fromSecondsPOSIX' access . (sEpochSeconds <:) <$> startRequest
       finishRequest' = fromSecondsPOSIX' access . (sEpochSeconds <:) <$> finishRequest
-    x <- haystackHisRead access variable $ maybe AfterTime (flip TimeRange) finishRequest' startRequest'
+    x <- haystackHisRead manager access variable $ maybe AfterTime (flip TimeRange) finishRequest' startRequest'
     return
       . trace ("Reading sensor " ++ unpack variable ++ " from " ++ show startRequest ++ " to " ++ show finishRequest ++ ".")
       $ map (rcast &&& rcast) x

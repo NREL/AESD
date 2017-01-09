@@ -26,7 +26,9 @@ module CESDS.Haystack (
 
 
 import Control.Arrow ((***))
-import Control.Monad.Except (MonadIO)
+import Control.Exception (throwIO)
+import Control.Monad.Except (MonadIO, liftIO)
+import Data.Aeson (eitherDecode)
 import Data.Aeson.Types (FromJSON(..), ToJSON(..), Value, (.=), object)
 import Data.Aeson.Util (extract)
 import Data.Maybe (fromMaybe)
@@ -35,7 +37,8 @@ import Data.Time.Util (toSecondsPOSIX)
 import Data.Daft.Vinyl.FieldRec ((=:), (<+>))
 import Data.Vinyl.Derived (FieldRec, SField(..))
 import GHC.Generics (Generic)
-import Network.HTTP.Simple (Request, addRequestHeader, defaultRequest, getResponseBody, httpJSON, setRequestBasicAuth, setRequestHost, setRequestPath, setRequestPort, setRequestQueryString, setRequestSecure)
+import Network.HTTP.Conduit (Manager, Response, httpLbs)
+import Network.HTTP.Simple (Request, addRequestHeader, defaultRequest, getResponseBody, setRequestBasicAuth, setRequestHost, setRequestPath, setRequestPort, setRequestQueryString, setRequestSecure)
 
 import qualified Data.ByteString.Char8 as BS (pack)
 import qualified Data.Text as T (drop, pack, unpack)
@@ -82,8 +85,8 @@ setId :: MeasurementIdentifier -> Request -> Request
 setId identifier = setRequestQueryString [("id", Just . BS.pack $ T.unpack identifier)]
 
 
-haystackNav :: MonadIO m => HaystackAccess -> Maybe MeasurementIdentifier -> m [Value]
-haystackNav access identifier =
+haystackNav :: MonadIO m => Manager -> HaystackAccess -> Maybe MeasurementIdentifier -> m [Value]
+haystackNav manager access identifier =
   let
     request =
         addRequestHeader "Accept" "application/json"
@@ -92,25 +95,25 @@ haystackNav access identifier =
   in
     extract "rows"
       . getResponseBody
-      <$> httpJSON request
+      <$> httpJSON manager request
 
 
-haystackNavTree :: MonadIO m => HaystackAccess -> Maybe MeasurementIdentifier -> m Value
-haystackNavTree access identifier =
+haystackNavTree :: MonadIO m => Manager -> HaystackAccess -> Maybe MeasurementIdentifier -> m Value
+haystackNavTree manager access identifier =
   let
     visit parent =
       do
         let navId = getNavId parent
-        children <- haystackNavTree access $ Just navId
+        children <- haystackNavTree manager access $ Just navId
         return $ object ["entity" .= parent, "children" .= children]
   in
     fmap toJSON
       . mapM visit
-      =<< haystackNav access identifier
+      =<< haystackNav manager access identifier
 
 
-haystackRead :: MonadIO m => HaystackAccess -> MeasurementIdentifier -> m Value
-haystackRead access identifier =
+haystackRead :: MonadIO m => Manager -> HaystackAccess -> MeasurementIdentifier -> m Value
+haystackRead manager access identifier =
   let
     request =
         addRequestHeader "Accept" "application/json"
@@ -118,7 +121,16 @@ haystackRead access identifier =
       $ haystackRequest access "/read"
   in
     getResponseBody
-      <$> httpJSON request
+      <$> httpJSON manager request
+
+
+httpJSON :: (MonadIO m, FromJSON a) => Manager -> Request -> m (Response a)
+httpJSON manager request =
+  do
+    response <- httpLbs request manager
+    case sequence $ eitherDecode <$> response of
+      Left  message -> liftIO . throwIO $ userError message
+      Right result  -> return result
 
 
 data HaystackTimes a =
@@ -182,8 +194,8 @@ sMeasurement :: SField Measurement
 sMeasurement = SField
 
 
-haystackHisRead :: MonadIO m => HaystackAccess -> MeasurementIdentifier -> HaystackTimes String -> m [History]
-haystackHisRead access identifier times =
+haystackHisRead :: MonadIO m => Manager -> HaystackAccess -> MeasurementIdentifier -> HaystackTimes String -> m [History]
+haystackHisRead manager access identifier times =
   let
     request =
         addRequestHeader "Accept" "application/json"
@@ -192,7 +204,7 @@ haystackHisRead access identifier times =
   in
     extractHistory
       . getResponseBody
-      <$> httpJSON request
+      <$> httpJSON manager request
 
 
 setTimes :: MeasurementIdentifier -> HaystackTimes String -> Request -> Request
