@@ -1,0 +1,5 @@
+host       : 127.0.0.1
+port       : 50374
+directory  : samples
+persistence: bookmarks.bin
+database   : postgresql://bsmclient:dogsled@1lp11dnpdb1.nrel.gov:5432/bsm
