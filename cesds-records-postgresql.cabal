@@ -1,0 +1,70 @@
+name:                cesds-records-postgresql
+version:             0.3.4.0
+synopsis:            PostgreSQL support for CESDS records API.
+description:         PostgreSQL support for CESDS records API.
+license:             AllRightsReserved
+license-file:        LICENSE
+author:              Brian W Bush <brian.bush@nrel.gov>
+maintainer:          Brian W Bush <brian.bush@nrel.gov>
+copyright:           (c) 2017 National Renewable Energy Laboratory
+category:            Network
+build-type:          Simple
+cabal-version:       >= 1.10
+
+stability:           Stable
+homepage:            https://github.nrel.gov/haskell/cesds-records-postgresql
+bug-reports:         https://github.nrel.gov/haskell/cesds-records-postgresql/issues/
+
+extra-source-files:  ReadMe.md
+                     ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.nrel.gov/haskell/cesds-records-postgresql.git
+ 
+library
+  hs-source-dirs  : src
+  exposed-modules : CESDS.PostgreSQL
+  build-depends   : base >=4.8 && <4.9
+                  , bytestring
+                  , cesds-records
+                  , daft
+                  , data-default
+                  , HDBC
+                  , HDBC-postgresql
+                  , lens
+                  , mtl
+                  , network-uri
+                  , raft
+                  , resourcet
+                  , text
+                  , time
+                  , unordered-containers
+                  , vinyl
+                  , yaml
+  default-language: Haskell2010
+  ghc-options     : -Wall -O2
+
+executable cesds-postgresql-server
+  hs-source-dirs  : src
+  main-is         : Main.hs
+  build-depends   : base
+                  , bytestring
+                  , cesds-records
+                  , daft
+                  , data-default
+                  , HDBC
+                  , HDBC-postgresql
+                  , http-conduit
+                  , lens
+                  , mtl
+                  , network-uri
+                  , raft
+                  , resourcet
+                  , text
+                  , time
+                  , vinyl
+                  , yaml
+  buildable       : True               
+  default-language: Haskell2010        
+  ghc-options     : -Wall -O2 -threaded -rtsopts
