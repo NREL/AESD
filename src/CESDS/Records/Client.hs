@@ -50,7 +50,7 @@ close :: State -> IO ()
 close (thread, _, _) = killThread thread
 
 
-fetchRecords :: State -> ModelIdentifier -> IO [RecordContent]
+fetchRecords :: State -> ModelIdentifier -> IO (Either String [RecordContent])
 fetchRecords (_, processor, modelCache) i =
   do
     found <- M.member i <$> atomically (readTVar modelCache)
@@ -63,33 +63,36 @@ fetchRecords (_, processor, modelCache) i =
                do
                  let
                     done = response ^. nextChunkIdentifier <= Just 0
-                 Just recs <- onResponse ignore ignore keep ignore Nothing response
+                 recs <- onResponse handleError ignore keep ignore unexpected response
                  recs' <-
-                   atomically
-                     $ do
-                       cache <- readTVar modelCache
-                       let
-                         model = cache M.! i
-                         model' = model
-                                   & over recordContent (++ recs)
-                                   & contentStatus .~ (if done then CompleteContent else PendingContent)
-                       writeTVar modelCache $ M.insert i model' cache
-                       return $ model' ^. recordContent
+                   case recs of
+                     Left message -> return $ Left message
+                     Right recs'' -> fmap Right
+                                     . atomically
+                                     $ do
+                                       cache <- readTVar modelCache
+                                       let
+                                         model = cache M.! i
+                                         model' = model
+                                                   & over recordContent (++ recs'')
+                                                   & contentStatus .~ (if done then CompleteContent else PendingContent)
+                                       writeTVar modelCache $ M.insert i model' cache
+                                       return $ model' ^. recordContent
                  when done
                    $ putMVar result recs'
                  return done
              takeMVar result
-      else return []
+      else return $ Right []
         
 
 
-fetchModels :: State -> IO [ModelMeta]
+fetchModels :: State -> IO (Either String [ModelMeta])
 fetchModels (_, _, modelCache) =
-  M.foldr ((:) . (^. modelMeta)) []
+  Right . M.foldr ((:) . (^. modelMeta)) []
     <$> atomically (readTVar modelCache)
 
 
-fetchBookmarks :: State -> ModelIdentifier -> Maybe BookmarkIdentifier -> IO [BookmarkMeta]
+fetchBookmarks :: State -> ModelIdentifier -> Maybe BookmarkIdentifier -> IO (Either String [BookmarkMeta])
 fetchBookmarks (_, processor, _) model bookmark =
   do
     result <- newEmptyMVar
@@ -97,13 +100,13 @@ fetchBookmarks (_, processor, _) model bookmark =
       (loadBookmarkMeta model bookmark)
       $ \response ->
       do
-        Just bookmarks <- onResponse ignore ignore ignore keep Nothing response
+        bookmarks <- onResponse handleError ignore ignore keep unexpected response
         putMVar result bookmarks
         return True
     takeMVar result
 
 
-storeBookmark :: State -> ModelIdentifier -> BookmarkMeta -> IO BookmarkMeta
+storeBookmark :: State -> ModelIdentifier -> BookmarkMeta -> IO (Either String BookmarkMeta)
 storeBookmark (_, processor, _) model bookmark =
   do
     result <- newEmptyMVar
@@ -111,7 +114,7 @@ storeBookmark (_, processor, _) model bookmark =
       (saveBookmarkMeta model bookmark)
       $ \response ->
       do
-        Just [bookmark'] <- onResponse ignore ignore ignore keep Nothing response
+        bookmark' <- fmap head <$> onResponse handleError ignore ignore keep unexpected response
         putMVar result bookmark'
         return True
     takeMVar result
@@ -126,9 +129,9 @@ makeModelCache connection =
       (loadModelsMeta Nothing)
       $ \response ->
       do
-        putMVar result =<< onResponse ignore keep ignore ignore Nothing response
+        putMVar result =<< onResponse handleError keep ignore ignore unexpected response
         return True
-    models <- fromMaybe [] <$> takeMVar result
+    models <- either error id <$> takeMVar result
     fmap (thread, processor, )
       . newTVarIO
       $ M.fromList
@@ -142,12 +145,20 @@ makeModelCache connection =
       ]
 
 
-ignore :: Maybe Int32 -> a -> IO (Maybe b)
-ignore = const . const $ return Nothing
+handleError :: Maybe Int32 -> String -> IO (Either String a)
+handleError = const $ return . Left
 
 
-keep :: Maybe Int32 -> a -> IO (Maybe a)
-keep = const $ return . Just
+unexpected :: Either String a
+unexpected = Left "Unexpected result."
+
+
+ignore :: Maybe Int32 -> a -> IO (Either String b)
+ignore = const . const $ return unexpected
+
+
+keep :: Maybe Int32 -> a -> IO (Either String a)
+keep = const $ return . Right
 
 
 type Processor = Request -> Handler -> IO ()

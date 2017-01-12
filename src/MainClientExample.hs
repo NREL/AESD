@@ -24,12 +24,12 @@ main =
     clientMain host (read port) "/"
       $ \state ->
         do
-          m <- head <$> fetchModels state
+          m <- head . either error id <$> fetchModels state
           let
             i = m ^. Model.identifier
           putStrLn ""
           putStrLn $ "Identifier for first model: " ++ i
-          rs <- fetchRecords state i
+          rs <- either error id <$> fetchRecords state i
           putStrLn ""
           putStrLn $ "Number of records: " ++ show (length rs)
           putStrLn ""
@@ -50,14 +50,15 @@ main =
           putStrLn ""
           let
           b <-
-            storeBookmark state i
+            fmap (either error id)
+              . storeBookmark state i
               $ def
                 & Bookmark.name .~ "sample"
                 & Bookmark.setContent .~ Just (fst <$> take 2 rs)
           putStrLn $ "Stored bookmark \"" ++ (b ^. Bookmark.name) ++ "\" identified by " ++ fromJust (b ^. Bookmark.identifier) ++ "."
           putStrLn ""
           putStrLn "Boomarks:"
-          bs <- fetchBookmarks state i Nothing
+          bs <- either error id <$> fetchBookmarks state i Nothing
           sequence_
             [
               putStrLn $ "\t" ++ fromJust (b' ^. Bookmark.identifier) ++ "\t" ++ (b' ^. Bookmark.name)

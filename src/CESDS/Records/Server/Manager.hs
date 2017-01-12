@@ -25,7 +25,7 @@ import Control.Lens.Lens (Lens', (&), lens)
 import Control.Lens.Setter ((.~), over)
 import Control.Monad (forM_, when)
 import Control.Monad.Except (liftIO, throwError)
-import Control.Monad.Except.Util (guardIO)
+import Control.Monad.Except.Util (guardSomeException)
 import Data.Default (Default(..))
 import Data.Function.MapReduce (mapReduce)
 import Data.Journal (Journal(..))
@@ -60,7 +60,7 @@ instance ModelManager (InMemoryManager a) where
   listModels =
     do
       InMemoryManager{..} <- fromService id
-      (models, state') <- guardIO $ lister state
+      (models, state') <- guardSomeException $ lister state
       let
         first = M.null cache'
         additions =
@@ -80,7 +80,7 @@ instance ModelManager (InMemoryManager a) where
     do -- FIXME: Should we also cache the records?
       f <- maybe (return id) (fmap filterBookmark . lookupBookmark (model ^. Model.identifier)) maybeBookmark
       InMemoryManager{..} <- fromService id
-      (records, state') <- guardIO $ loader state model
+      (records, state') <- guardSomeException $ loader state model
       modifyService
         $ \c -> c {state = state'}
       return

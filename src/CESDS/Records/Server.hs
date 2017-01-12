@@ -28,7 +28,7 @@ import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))
 import Control.Monad (forM_)
 import Control.Monad.Except (ExceptT, MonadError, MonadIO, liftIO, runExceptT, throwError)
-import Control.Monad.Except.Util (guardIO)
+import Control.Monad.Except.Util (guardSomeException)
 import Control.Monad.Reader (MonadReader, ReaderT, ask, lift, runReaderT)
 import Control.Monad.Trans (MonadTrans)
 import Data.List.Split (chunksOf)
@@ -71,7 +71,7 @@ modifyServiceIO' f =
   do -- FIXME: Make this atomic.
     sTVar <- ask
     s <- liftIO $ readTVarIO sTVar
-    sx <- guardIO $ f s
+    sx <- guardSomeException $ f s
     case sx of
       Left message  -> throwError message
       Right (s', x) -> do
@@ -123,7 +123,7 @@ serverMain host port initialManager =
             do
               request <- receiveData connection
               result <-
-                runServiceToIO manager -- FIXME: If the ModelManager uses guardIO, then no IOExceptions ever show up here?
+                runServiceToIO manager -- FIXME: If the ModelManager uses guardSomeException, then no IOExceptions ever show up here?
                   $ onRequest
                   (
                     onLoadModelsMeta
@@ -164,7 +164,8 @@ serverMain host port initialManager =
                   )
                   [errorResponse "Unsupported request."]
                 request
-              forM_ (either ((: []) . errorResponse) id result)
+              forM_
+                (either ((: []) . errorResponse) id result)
                 $ sendBinaryData connection
                 . (Response.identifier .~ request ^. Request.identifier)
               loop
