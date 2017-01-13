@@ -130,7 +130,7 @@ instance ModelManager (InMemoryManager a) where
 
 checkModel :: ModelIdentifier -> ServiceM (InMemoryManager a) ModelCache
 checkModel model =
-  maybe (throwError "Model not found.") return
+  maybe (throwError $ "Model \"" ++ model ++ "\" not found.") return
     =<< fromService (M.lookup model . (^. cache))
 
 

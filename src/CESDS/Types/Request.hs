@@ -23,7 +23,7 @@ module CESDS.Types.Request (
 
 
 import CESDS.Types.Bookmark (BookmarkIdentifier, BookmarkMeta)
-import CESDS.Types.Internal (OptionalInt32, int32)
+import CESDS.Types.Internal (OptionalInt32, OptionalString, int32, string)
 import CESDS.Types.Model (ModelIdentifier)
 import CESDS.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>))
@@ -41,8 +41,8 @@ import GHC.Generics (Generic)
 data LoadBookmarkMeta =
   LoadBookmarkMeta
   {
-    loadBookmarkModelIdentifier :: Required 1 (Value ModelIdentifier   )
-  , loadBookmarkIdentifier      :: Optional 2 (Value BookmarkIdentifier)
+    loadBookmarkModelIdentifier :: Required 1 (Value ModelIdentifier )
+  , loadBookmarkIdentifier      :: Optional 2 (Message OptionalString)
   }
     deriving (Generic, Show)
 
@@ -52,11 +52,11 @@ instance Encode LoadBookmarkMeta
 
 
 loadBookmarkMeta :: ModelIdentifier -> Maybe BookmarkIdentifier -> Request
-loadBookmarkMeta m b = def {loadBookmarkMeta' = putField . Just $ LoadBookmarkMeta (putField m) (putField b)}
+loadBookmarkMeta m b = def {loadBookmarkMeta' = putField . Just $ LoadBookmarkMeta (putField m) (putField $ flip (string .~) def <$> b)}
 
 
 onLoadBookmarkMeta :: Monad m => (ModelIdentifier -> Maybe BookmarkIdentifier -> m a) -> LoadBookmarkMeta -> m a
-onLoadBookmarkMeta f LoadBookmarkMeta{..} = f (getField loadBookmarkModelIdentifier) (getField loadBookmarkIdentifier)
+onLoadBookmarkMeta f LoadBookmarkMeta{..} = f (getField loadBookmarkModelIdentifier) ((^. string) <$> getField loadBookmarkIdentifier)
 
 
 data SaveBookmarkMeta =
@@ -83,7 +83,7 @@ onSaveBookmarkMeta f SaveBookmarkMeta{..} = f (getField saveBookmarkModelIdentif
 data LoadModelsMeta =
   LoadModelsMeta
   {
-    modelIdentifier :: Optional 1 (Value ModelIdentifier)
+    modelIdentifier :: Optional 1 (Message OptionalString)
   }
     deriving (Generic, Show)
 
@@ -93,11 +93,11 @@ instance Encode LoadModelsMeta
 
 
 loadModelsMeta :: Maybe ModelIdentifier -> Request
-loadModelsMeta m = def {loadModelsMeta' = putField . Just . LoadModelsMeta $ putField m}
+loadModelsMeta m = def {loadModelsMeta' = putField . Just . LoadModelsMeta . putField $ flip (string .~) def <$> m}
 
 
 onLoadModelsMeta :: Monad m => (Maybe ModelIdentifier -> m a) -> LoadModelsMeta -> m a
-onLoadModelsMeta f LoadModelsMeta{..} = f (getField modelIdentifier)
+onLoadModelsMeta f LoadModelsMeta{..} = f ((^. string) <$> getField modelIdentifier)
 
 
 data LoadRecordsData =
@@ -132,7 +132,7 @@ data Request =
   Request
   {
     requestVersion     :: Required 1 (Value   Word32          )
-  , identifier' :: Optional 2 (Message OptionalInt32   )
+  , identifier'        :: Optional 2 (Message OptionalInt32   )
   , loadModelsMeta'    :: Optional 3 (Message LoadModelsMeta  )
   , loadRecordsData'   :: Optional 4 (Message LoadRecordsData )
   , loadBookmarkMeta'  :: Optional 5 (Message LoadBookmarkMeta)
