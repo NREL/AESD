@@ -20,7 +20,6 @@ import CESDS.Types.Record (RecordContent)
 import CESDS.Types.Request as Request (identifier, onLoadBookmarkMeta, onLoadModelsMeta, onLoadRecordsData, onRequest, onSaveBookmarkMeta)
 import CESDS.Types.Response as Response (bookmarkMetasResponse, chunkIdentifier, errorResponse, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
 import CESDS.Types.Variable as Variable (VariableIdentifier)
-import Control.Applicative ((<|>))
 import Control.Concurrent.STM (atomically)
 import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVar, readTVarIO, writeTVar)
 import Control.Lens.Getter ((^.))
@@ -143,13 +142,9 @@ serverMain host port initialManager =
                               & chunkIdentifier .~ Just i'
                               & nextChunkIdentifier .~ (if fromIntegral i' < n then Just (i' + 1) else Nothing)
                           |
-                            let recs' = chunksOf (maybe maxBound fromIntegral count) recs
+                            let recs' = if null recs then [[]] else chunksOf (maybe maxBound fromIntegral count) recs
                           , let n = length recs'
                           , (i', recs'') <- zip [1..] recs'
-                          ]
-                          <|>
-                          [
-                            recordsResponse []
                           ]
                   )
                   (
