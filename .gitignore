@@ -1,0 +1,4 @@
+*.sw?
+*.tmp
+tmp/
+node_modules/
