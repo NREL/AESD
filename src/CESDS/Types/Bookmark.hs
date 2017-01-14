@@ -38,8 +38,8 @@ type BookmarkIdentifier = String
 data IntervalContent =
   IntervalContent
   {
-    firstRecord' :: Required 1 (Value RecordIdentifier)
-  , lastRecord'  :: Required 2 (Value RecordIdentifier)
+    firstRecord' :: Optional 1 (Value RecordIdentifier)
+  , lastRecord'  :: Optional 2 (Value RecordIdentifier)
   }
     deriving (Generic, Show)
 
@@ -54,8 +54,8 @@ instance Encode IntervalContent
 intervalIdentifiers :: Lens' IntervalContent (RecordIdentifier, RecordIdentifier)
 intervalIdentifiers =
   lens
-    (getField . firstRecord' &&& getField . lastRecord')
-    (\s (x, y) -> s {firstRecord' = putField x, lastRecord' = putField y})
+    (fromMaybe minBound . getField . firstRecord' &&& fromMaybe maxBound . getField . lastRecord')
+    (\s (x, y) -> s {firstRecord' = putField $ Just x, lastRecord' = putField $ Just y})
 
 
 filterInterval :: (RecordIdentifier, RecordIdentifier) -> [RecordContent] -> [RecordContent]
