@@ -55,7 +55,7 @@ fetchRecords (_, processor, modelCache) i =
   do
     found <- M.member i <$> atomically (readTVar modelCache)
     if found
-      then do
+      then do -- FIXME: Generalize 'accumulate' to this case, too?
              result <- newEmptyMVar
              processor
                (loadRecordsData i Nothing [] Nothing)
@@ -92,27 +92,33 @@ fetchModels (_, _, modelCache) =
     <$> atomically (readTVar modelCache)
 
 
-fetchBookmarks :: State -> ModelIdentifier -> Maybe BookmarkIdentifier -> IO (Either String [BookmarkMeta])
-fetchBookmarks (_, processor, _) model bookmark =
+accumulate :: Monad m => ((Response -> IO Bool) -> IO ()) -> (Response -> IO (m [t])) -> IO (m [t])
+accumulate responder processor =
   do
     result <- newEmptyMVar
-    bs <- newTVarIO $ Right []
-    processor
-      (loadBookmarkMeta model bookmark)
+    xs <- newTVarIO $ return []
+    responder
       $ \response ->
       do
         let
           done = response ^. nextChunkIdentifier <= Just 0
-        bookmarks <- onResponse handleError ignore ignore keep unexpected response
-        bookmarks' <-
+        x <- processor response
+        xs' <-
           atomically
             $ do
-              modifyTVar' bs $ liftM2 (++) bookmarks
-              readTVar bs
+              modifyTVar' xs $ liftM2 (++) x
+              readTVar xs
         when done
-          $ putMVar result bookmarks'
+          $ putMVar result xs'
         return done
     takeMVar result
+
+
+fetchBookmarks :: State -> ModelIdentifier -> Maybe BookmarkIdentifier -> IO (Either String [BookmarkMeta])
+fetchBookmarks (_, processor, _) model bookmark =
+  accumulate
+    (processor $ loadBookmarkMeta model bookmark)
+    $ onResponse handleError ignore ignore keep unexpected
 
 
 storeBookmark :: State -> ModelIdentifier -> BookmarkMeta -> IO (Either String BookmarkMeta)
@@ -133,24 +139,11 @@ makeModelCache :: Connection -> IO State
 makeModelCache connection =
   do
     (thread, processor) <- makeProcessor connection
-    result <- newEmptyMVar
-    ms <- newTVarIO $ Right []
-    processor
-      (loadModelsMeta Nothing)
-      $ \response ->
-      do
-        let
-          done = response ^. nextChunkIdentifier <= Just 0
-        models <- onResponse handleError keep ignore ignore unexpected response
-        models' <-
-          atomically
-            $ do
-              modifyTVar' ms $ liftM2 (++) models
-              readTVar ms
-        when done
-          $ putMVar result models'
-        return True
-    models <- either error id <$> takeMVar result
+    models <-
+      either error id
+      <$> accumulate
+        (processor $ loadModelsMeta Nothing)
+        (onResponse handleError keep ignore ignore unexpected)
     fmap (thread, processor, )
       . newTVarIO
       $ M.fromList
