@@ -6240,7 +6240,7 @@ function connect(wsURL) {
 
 
 function disconnect(connection) {
-  connection.close();
+  connection.close(1000, "normal termination");
 }
 
 

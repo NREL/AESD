@@ -34,7 +34,7 @@ function connect(wsURL) {
 
 
 function disconnect(connection) {
-  connection.close(0, "normal);
+  connection.close(1000, "normal termination");
 }
 
 
