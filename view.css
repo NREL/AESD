@@ -36,17 +36,20 @@
 ; font-size  : smaller
 }
 
+
 #model {
   width: 100%
 ; overflow-y: scroll
 }
 
+
 #dataPanel {
   position: absolute
-; left    :  40%
+; left    :  38%
 ; top     :  40px
-; width   :  60%
+; width   :  59%
 }
+
 
 #data {
   top        :  10%
@@ -67,6 +70,7 @@
   padding: 5px
 ; border : 1px solid black
 }
+
 
 body {
   font-family: sans-serif
