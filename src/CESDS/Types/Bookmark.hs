@@ -38,33 +38,29 @@ type BookmarkIdentifier = String
 data IntervalContent =
   IntervalContent
   {
-    firstRecord' :: Optional 1 (Value RecordIdentifier)
-  , lastRecord'  :: Optional 2 (Value RecordIdentifier)
+    firstRecord' :: Required 1 (Value RecordIdentifier)
+  , lastRecord'  :: Required 2 (Value RecordIdentifier)
   }
     deriving (Generic, Show)
 
 instance Default IntervalContent where
-  def = IntervalContent (putField Nothing) (putField Nothing)
+  def = IntervalContent (putField def) (putField def)
 
 instance Decode IntervalContent
 
 instance Encode IntervalContent
 
 
-intervalIdentifiers :: Lens' IntervalContent (Maybe RecordIdentifier, Maybe RecordIdentifier)
+intervalIdentifiers :: Lens' IntervalContent (RecordIdentifier, RecordIdentifier)
 intervalIdentifiers =
   lens
     (getField . firstRecord' &&& getField . lastRecord')
     (\s (x, y) -> s {firstRecord' = putField x, lastRecord' = putField y})
 
 
-filterInterval :: (Maybe RecordIdentifier, Maybe RecordIdentifier) -> [RecordContent] -> [RecordContent]
+filterInterval :: (RecordIdentifier, RecordIdentifier) -> [RecordContent] -> [RecordContent]
 filterInterval (firstRecord, lastRecord) =
-  let
-    r0 = fromMaybe minBound firstRecord
-    r1 = fromMaybe maxBound lastRecord
-  in
-    filter (liftM2 (&&) (>= r0) (<= r1) . fst)
+  filter (liftM2 (&&) (>= firstRecord) (<= lastRecord) . fst)
 
 
 data SetContent =
@@ -129,7 +125,7 @@ numberOfRecords :: Lens' BookmarkMeta (Maybe Word64)
 numberOfRecords = lens (getField . numberOfRecords') (\s x -> s {numberOfRecords' = putField x})
 
 
-intervalContent :: Lens' BookmarkMeta (Maybe (Maybe RecordIdentifier, Maybe RecordIdentifier))
+intervalContent :: Lens' BookmarkMeta (Maybe (RecordIdentifier, RecordIdentifier))
 intervalContent =
   lens
     (fmap (^. intervalIdentifiers) . getField . intervalContent')
@@ -143,7 +139,7 @@ setContent =
     (\s x -> s {setContent' = putField $ flip (setIdentifiers .~) def <$> x})
 
 
-onBookmarkMeta :: (Word64 -> a) -> ((Maybe RecordIdentifier, Maybe RecordIdentifier) -> a) -> ([RecordIdentifier] -> a) -> a -> BookmarkMeta -> a
+onBookmarkMeta :: (Word64 -> a) -> ((RecordIdentifier, RecordIdentifier) -> a) -> ([RecordIdentifier] -> a) -> a -> BookmarkMeta -> a
 onBookmarkMeta f g h d x =
   fromMaybe d
      $  f <$> x ^. numberOfRecords
