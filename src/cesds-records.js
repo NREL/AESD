@@ -338,7 +338,6 @@ function requestSaveBookmark(connection, modelId, name, f, notify, notifyError) 
 
 module.exports = {
                    connect                    : connect
-                 , addHandler                 : addHandler
                  , disconnect                 : disconnect
                  , requestModelsMetadata      : requestModelsMetadata
                  , requestRecordsData         : requestRecordsData
