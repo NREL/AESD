@@ -1,8 +1,53 @@
-table {
-  width  : 100%
-; display: none
+#metadataPanel {
+  width: 35%
 }
 
-caption {
-  text-align: left
+#metadataPanel dl {
+  margin-top   : 10px
+; margin-bottom: 10px
+; font-size    : smaller
+}
+
+#metadataPanel dt {
+  display    : inline
+; font-weight: bold
+}
+
+#metadataPanel dt::after {
+  content: ": "
+}
+
+#metadataPanel dd {
+  display             : inline
+; -webkit-margin-start: 0px
+}
+
+#metadataPanel dd::after {
+  content      : " "
+; display      : block
+; margin-top   : 5px
+; margin-bottom: 5px
+}
+
+#model {
+  width: 100%
+; overflow-y: scroll
+}
+
+#dataPanel {
+  position: absolute
+; left    :  35%
+; top     :   0px
+; width   :  65%
+; height  : 100%
+}
+
+body {
+  height     : 100%
+; font-family: sans-serif
+}
+
+html {
+  height: 100%
+; f
 }

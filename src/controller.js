@@ -1,12 +1,16 @@
 var ws = null;
 
 
-var models = null;
+function updateConnectButtons() {
+  connectButton.disabled = ws != null;
+  disconnectButton.disabled = ws == null;
+}
 
 
 function reconnect() {
   disconnect();
   ws = cesds.connect(connection.value);
+  updateConnectButtons();
   ws.onopen = function() {cesds.requestModelsMetadata(ws, null, loadModels, reportError);};
 }
 
@@ -18,10 +22,16 @@ function disconnect() {
   var root = document.getElementById("models");
   while (root.firstChild)
     root.removeChild(root.firstChild);
+  updateConnectButtons();
 }
 
 
 var varTypes = {0 : "real", 1 : "integer", 2 : "string"};
+
+
+function toggleDisplay(e) {
+  return function () {e.style.display = e.style.display == "none" ? "block" : "none";}
+}
 
 
 function loadModels(result) {
@@ -31,52 +41,46 @@ function loadModels(result) {
       var node = document.createElement("LI");
       var text = document.createTextNode(m.name);
       node.appendChild(text);
-      var table = document.createElement("TABLE");
-      var caption = document.createElement("CAPTION");
-      text = document.createTextNode(m.uri);
-      caption.appendChild(text);
-      table.appendChild(caption);
-      row = document.createElement("TR");
-      cell = document.createElement("TH");
+      node.style.cursor = "pointer"
+      var subnode = document.createElement("DL");
+      subnode.style.display = "none";
+      node.addEventListener("click", toggleDisplay(subnode));
+      text.addEventListener("click", toggleDisplay(subnode));
+      var detail = document.createElement("DT");
       text = document.createTextNode("ID");
-      cell.appendChild(text);
-      row.appendChild(cell);
-      cell = document.createElement("TH");
-      text = document.createTextNode("Name");
-      cell.appendChild(text);
-      row.appendChild(cell);
-      cell = document.createElement("TH");
-      text = document.createTextNode("Units");
-      cell.appendChild(text);
-      row.appendChild(cell);
-      cell = document.createElement("TH");
-      text = document.createTextNode("Type");
-      cell.appendChild(text);
-      row.appendChild(cell);
-      table.appendChild(row);
+      detail.appendChild(text);
+      subnode.appendChild(detail);
+      var detail = document.createElement("DD");
+      text = document.createTextNode(m.id);
+      detail.appendChild(text);
+      subnode.appendChild(detail);
+      detail = document.createElement("DT");
+      text = document.createTextNode("URI");
+      detail.appendChild(text);
+      subnode.appendChild(detail);
+      detail = document.createElement("DD");
+      text = document.createTextNode(m.uri);
+      detail.appendChild(text);
+      subnode.appendChild(detail);
+      detail = document.createElement("DT");
+      text = document.createTextNode("Variables");
+      detail.appendChild(text);
+      subnode.appendChild(detail);
+      detail = document.createElement("DD");
+      var subdetail = document.createElement("OL");
       m.variables.forEach(
         function(v) {
-          row = document.createElement("TR");
-          cell = document.createElement("TD");
-          text = document.createTextNode(v.id);
-          cell.appendChild(text);
-          row.appendChild(cell);
-          cell = document.createElement("TD");
-          text = document.createTextNode(v.name);
-          cell.appendChild(text);
-          row.appendChild(cell);
-          cell = document.createElement("TD");
-          text = document.createTextNode(v.units);
-          cell.appendChild(text);
-          row.appendChild(cell);
-          cell = document.createElement("TD");
-          text = document.createTextNode(varTypes[v.type]);
-          cell.appendChild(text);
-          row.appendChild(cell);
-          table.appendChild(row);
+          var item = document.createElement("LI");
+          item.value = v.id
+          u = v.units == "" ? "unitless" : v.units;
+          text = document.createTextNode(v.name + " [" + u + "]: " + varTypes[v.type]);
+          item.appendChild(text);
+          subdetail.appendChild(item);
         }
       );
-      node.appendChild(table);
+      detail.appendChild(subdetail);
+      subnode.appendChild(detail);
+      node.appendChild(subnode);
       root.appendChild(node);
     }
   );
