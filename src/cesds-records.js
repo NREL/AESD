@@ -45,9 +45,6 @@ function addHandler(id, f) {
 }
 
 
-var ws = connect("ws://127.0.0.1:50374");
-
-
 var version = 3;
 
 
@@ -337,3 +334,15 @@ function requestSaveBookmark(connection, modelId, name, f, notify, notifyError) 
   connection.send(request.serializeBinary());
   return result;
 }
+
+
+module.exports = {
+                   connect                    : connect
+                 , addHandler                 : addHandler
+                 , disconnect                 : disconnect
+                 , requestModelsMetadata      : requestModelsMetadata
+                 , requestRecordsData         : requestRecordsData
+                 , requestBookmarkMeta        : requestBookmarkMeta
+                 , requestSaveBookmarkInterval: requestSaveBookmarkInterval
+                 , requestSaveBookmarkSet     : requestSaveBookmarkSet
+                 };
