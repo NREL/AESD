@@ -5,7 +5,9 @@
 #metadataPanel dl {
   margin-top   : 10px
 ; margin-bottom: 10px
+; font-family  : monospace
 ; font-size    : smaller
+; cursor       : auto
 }
 
 #metadataPanel dt {
@@ -29,6 +31,11 @@
 ; margin-bottom: 5px
 }
 
+#metadataPanel button {
+  font-family: monospace
+; font-size  : smaller
+}
+
 #model {
   width: 100%
 ; overflow-y: scroll
@@ -36,18 +43,31 @@
 
 #dataPanel {
   position: absolute
-; left    :  35%
-; top     :   0px
-; width   :  65%
-; height  : 100%
+; left    :  40%
+; top     :  40px
+; width   :  60%
+}
+
+#data {
+  top        :  10%
+; width      : 100%
+; font-family: monospace
+}
+
+#data {
+  border-collapse: collapse
+}
+
+#data caption {
+  padding   : 20px
+; text-align: left
+}
+
+#data, #data th, #data td {
+  padding: 5px
+; border : 1px solid black
 }
 
 body {
-  height     : 100%
-; font-family: sans-serif
-}
-
-html {
-  height: 100%
-; f
+  font-family: sans-serif
 }
