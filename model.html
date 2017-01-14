@@ -1,7 +1,9 @@
 <!DOCTYPE html>
+<html>
   <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <link rel="stylesheet" href="view.css" type="text/css">
-    <script src="bundle.js" type="application/javascript"></script>
+    <script src="cesds-bundle.js" type="application/javascript"></script>
     <script src="src/controller.js" type="application/javascript"></script>
     <title>CESDS Records Browser</title>
   </head>
@@ -11,7 +13,7 @@
       Server:
       <input id="connection" type="text" value="ws://127.0.0.1:50374"/>
       <button id="connectButton" type="button" onclick="reconnect()">connect</button>
-      <button id="disconnectButton" type="button" onclick="disconnect()" disabled="true">disconnect</button>
+      <button id="disconnectButton" type="button" onclick="disconnect()" disabled>disconnect</button>
     </span>
     <div id="metadataPanel">
       <ul id="models"></ul>
