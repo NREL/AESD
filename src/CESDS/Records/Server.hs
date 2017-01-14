@@ -136,7 +136,6 @@ serverMain host port initialManager =
                         [model'] <- lookupModels True $ Just model
                         recs <- loadContent model' maybeBookmark variables
                         return
-                          $ 
                           [
                             recordsResponse recs''
                               & chunkIdentifier .~ Just i'

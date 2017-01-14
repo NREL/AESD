@@ -26,7 +26,7 @@ import Control.Concurrent (ThreadId, forkIO, killThread)
 import Control.Concurrent.MVar (newEmptyMVar, putMVar, takeMVar)
 import Control.Concurrent.STM (atomically)
 import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVar, writeTVar)
-import Control.Monad (join, when)
+import Control.Monad (join, liftM2, when)
 import Control.Monad.Except (liftIO)
 import Data.Default (def)
 import Data.Int (Int32)
@@ -96,13 +96,22 @@ fetchBookmarks :: State -> ModelIdentifier -> Maybe BookmarkIdentifier -> IO (Ei
 fetchBookmarks (_, processor, _) model bookmark =
   do
     result <- newEmptyMVar
+    bs <- newTVarIO $ Right []
     processor
       (loadBookmarkMeta model bookmark)
       $ \response ->
       do
+        let
+          done = response ^. nextChunkIdentifier <= Just 0
         bookmarks <- onResponse handleError ignore ignore keep unexpected response
-        putMVar result bookmarks
-        return True
+        bookmarks' <-
+          atomically
+            $ do
+              modifyTVar' bs $ liftM2 (++) bookmarks
+              readTVar bs
+        when done
+          $ putMVar result bookmarks'
+        return done
     takeMVar result
 
 
@@ -125,11 +134,21 @@ makeModelCache connection =
   do
     (thread, processor) <- makeProcessor connection
     result <- newEmptyMVar
+    ms <- newTVarIO $ Right []
     processor
       (loadModelsMeta Nothing)
       $ \response ->
       do
-        putMVar result =<< onResponse handleError keep ignore ignore unexpected response
+        let
+          done = response ^. nextChunkIdentifier <= Just 0
+        models <- onResponse handleError keep ignore ignore unexpected response
+        models' <-
+          atomically
+            $ do
+              modifyTVar' ms $ liftM2 (++) models
+              readTVar ms
+        when done
+          $ putMVar result models'
         return True
     models <- either error id <$> takeMVar result
     fmap (thread, processor, )
