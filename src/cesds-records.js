@@ -1,4 +1,4 @@
-var debug = true;
+var debug = false;
 
 
 var handlers = null;
@@ -39,6 +39,8 @@ function disconnect(connection) {
 
 
 function addHandler(id, f) {
+  if (debug)
+    console.log("Request ID: ", id.getValue());
   handlers[id] = f;
 }
 
@@ -231,9 +233,107 @@ function requestRecordsData(connection, modelId, maxRecords, variableIds, bookma
       result.complete = nc < 1;
       return {done : result.complete, notify : notify, value : result};
     };
-  if (debug)
-    console.log("Request ID: ", request.getId().getValue());
   addHandler(request.getId(), response => onResponse(response, notifyError != null ? handleError : null, null, handleData, null));
+  connection.send(request.serializeBinary());
+  return result;
+}
+
+
+function fromInterval(i) {
+  var result = new Object();
+  result.first = i.getFirstRecord();
+  result.last = i.getLastRecord();
+  return result;
+}
+
+
+function fromBookmark(b) {
+  var result =  {
+                  id   : b.getBookmarkId()
+                , name : b.getBookmarkName()
+                };
+  if (b.hasNumRecords())
+    result.size = b.getNumRecords();
+  else if (b.hasInterval())
+    result.interval = fromInterval(b.getInterval());
+  else if (b.hasSet())
+    result.set = b.getSet().getRecordIdsList();
+  return result;
+}
+
+
+function fromBookmarks(bs) {
+  return bs.getBookmarkMetasList().map(fromBookmark);
+}
+
+
+function requestBookmarkMeta(connection, modelId, bookmarkId, notify, notifyError) {
+  var request = new proto.cesds.Request();
+  request.setVersion(version);
+  request.setId(nextId());
+  var b = new proto.cesds.RequestBookmarkMeta();
+  b.setModelId(modelId);
+  if (bookmarkId != null)
+    b.setBookmarkId(string(bookmarkId));
+  request.setBookmarkMeta(b);
+  var result = {complete : false, bookmarks : []};
+  var handleError =
+    function(e) {
+      console.warn("Error response: ", e);
+      result.complete = false;
+      return {done : true, notify : notifyError, value : e};
+    };
+  var handleBookmarks =
+    function (c, nc, bs) {
+      result.bookmarks.push.apply(result.bookmarks, fromBookmarks(bs));
+      result.complete = nc < 1;
+      return {done : result.complete, notify : notify, value : result};
+    };
+  addHandler(request.getId(), response => onResponse(response, notifyError != null ? handleError : null, null, null, handleBookmarks));
+  connection.send(request.serializeBinary());
+  return result;
+}
+
+
+function requestSaveBookmarkInterval(connection, modelId, name, firstRecord, lastRecord, notify, notifyError) {
+  var i = new proto.cesds.BookmarkIntervalContent();
+  i.setFirstRecord(firstRecord);
+  i.setLastRecord(lastRecord);
+  return requestSaveBookmark(connection, modelId, name, b => {b.setInterval(i); return b;}, notify, notifyError);
+}
+
+
+function requestSaveBookmarkSet(connection, modelId, name, records, notify, notifyError) {
+  var s = new proto.cesds.BookmarkSetContent();
+  s.setRecordIdsList(records != null ? records : []);
+  return requestSaveBookmark(connection, modelId, name, b => {b.setSet(s); return b}, notify, notifyError);
+}
+
+
+function requestSaveBookmark(connection, modelId, name, f, notify, notifyError) {
+  var request = new proto.cesds.Request();
+  request.setVersion(version);
+  request.setId(nextId());
+  var s = new proto.cesds.RequestSaveBookmark();
+  s.setModelId(modelId);
+  var b = new proto.cesds.BookmarkMeta();
+  b.setBookmarkName(name);
+  s.setNewBookmark(f(b));
+  request.setSaveBookmark(s);
+  var result = {complete : false, bookmark : null};
+  var handleError =
+    function(e) {
+      console.warn("Error response: ", e);
+      result.complete = false;
+      return {done : true, notify : notifyError, value : e};
+    };
+  var handleBookmark =
+    function(c, nc, bs) {
+      result.bookmark = fromBookmark(bs.getBookmarkMetasList()[0]);
+      result.complete = nc < 1;
+      return {done : true, notify : notify, value : result};
+    };
+  addHandler(request.getId(), response => onResponse(response, notifyError != null ? handleError : null, null, null, handleBookmark));
   connection.send(request.serializeBinary());
   return result;
 }
