@@ -38,6 +38,7 @@ function toggleDisplay(e) {
 
 
 function loadModels(result) {
+  var first = true;
   var root = document.getElementById("models");
   result.models.forEach(
     function(m) {
@@ -46,7 +47,10 @@ function loadModels(result) {
       node.appendChild(text);
       node.style.cursor = "pointer"
       var subnode = document.createElement("DL");
-      subnode.style.display = "none";
+      if (first)
+        first = false;
+      else
+        subnode.style.display = "none";
       node.addEventListener("click", toggleDisplay(subnode));
       text.addEventListener("click", toggleDisplay(subnode));
       subnode.addEventListener("click", function(e) {e.stopPropagation();});
