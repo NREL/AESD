@@ -38,6 +38,8 @@ function toggleDisplay(e) {
 
 
 function loadModels(result) {
+  if (!result.complete)
+    return;
   var first = true;
   var root = document.getElementById("models");
   result.models.forEach(
@@ -102,6 +104,8 @@ function loadModels(result) {
 
       var showRecords =
         function(answer) {
+          if (!answer.complete)
+            return;
           var data = document.getElementById("data");
           while (data.firstChild)
             data.removeChild(data.firstChild);
@@ -198,6 +202,8 @@ function loadModels(result) {
       subdetail = document.createElement("UL");
       var findBookmarks =
         function(answer) {
+          if (!answer.complete)
+            return;
           answer.bookmarks.forEach(
             function (b) {
               var item = document.createElement("LI");
