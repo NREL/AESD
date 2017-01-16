@@ -8,14 +8,14 @@
     <title>CESDS Records Browser</title>
   </head>
   <body>
-    <h1>CESDS Records Browser</h1>
-    <span>
-      Server:
-      <input id="connection" type="text" value="ws://127.0.0.1:50374"/>
-      <button id="connectButton" type="button" onclick="reconnect()">connect</button>
-      <button id="disconnectButton" type="button" onclick="disconnect()" disabled>disconnect</button>
-    </span>
     <div id="metadataPanel">
+      <h1>CESDS Records Browser</h1>
+      <span>
+        Server:
+        <input id="connection" type="text" value="ws://127.0.0.1:50374"/>
+        <button id="connectButton" type="button" onclick="reconnect()">connect</button>
+        <button id="disconnectButton" type="button" onclick="disconnect()" disabled>disconnect</button>
+      </span>
       <ul id="models"></ul>
     </div>
     <div id="dataPanel">

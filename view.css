@@ -1,5 +1,10 @@
 #metadataPanel {
-  width: 35%
+  position  : fixed
+; top       :  0px
+; left      :  1%
+; width     : 34%
+; height    : 100%
+; overflow-y: scroll
 }
 
 #metadataPanel dl {
