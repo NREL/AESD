@@ -233,6 +233,7 @@ function reportError(e) {
 
 
 /* MODIFIED VERSION OF <https://bl.ocks.org/jasondavies/1341281> */
+/* FIXME: This is based on a GPLv3 license.                      */
 
 
 function plot(variables, records) {
