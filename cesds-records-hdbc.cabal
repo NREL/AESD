@@ -1,5 +1,5 @@
 name:                cesds-records-hdbc
-version:             0.3.4.3
+version:             0.3.4.4
 synopsis:            PostgreSQL support for CESDS records API.
 description:         PostgreSQL support for CESDS records API.
 license:             AllRightsReserved
