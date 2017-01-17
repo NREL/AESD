@@ -1,7 +1,7 @@
 name:                cesds-records-hdbc
-version:             0.3.4.4
-synopsis:            PostgreSQL support for CESDS records API.
-description:         PostgreSQL support for CESDS records API.
+version:             0.3.4.5
+synopsis:            Database support for CESDS records API.
+description:         PostgreSQL, SQLite3, MySQL, and ODBC support for CESDS records API.
 license:             AllRightsReserved
 license-file:        LICENSE
 author:              Brian W Bush <brian.bush@nrel.gov>
@@ -16,11 +16,26 @@ homepage:            https://github.nrel.gov/haskell/cesds-records-hdbc
 bug-reports:         https://github.nrel.gov/haskell/cesds-records-hdbc/issues/
 
 extra-source-files:  ReadMe.md
-                     ChangeLog.md
 
 source-repository head
   type: git
   location: https://github.nrel.gov/haskell/cesds-records-hdbc.git
+
+flag PostgreSQL
+  description     : Compile records server for PostgreSQL.
+  default         : True
+
+flag SQLite3
+  description     : Compile records server for SQLite 3.
+  default         : False
+
+flag MySQL
+  description     : Compile records server for MySQL.
+  default         : False
+
+flag ODBC
+  description     : Compile records server for ODBC.
+  default         : False
  
 library
   hs-source-dirs  : src
@@ -50,7 +65,10 @@ executable cesds-postgresql-server
                   , lens
                   , uuid
                   , yaml
-  buildable       : True               
+  if flag(PostgreSQL)
+    buildable     : True
+  else
+    buildable     : False
   default-language: Haskell2010        
   ghc-options     : -Wall -O2 -threaded -rtsopts
 
@@ -68,25 +86,10 @@ executable cesds-sqlite3-server
                   , lens
                   , uuid
                   , yaml
-  buildable       : True               
-  default-language: Haskell2010        
-  ghc-options     : -Wall -O2 -threaded -rtsopts
-
-executable cesds-odbc-server
-  hs-source-dirs  : src
-  main-is         : MainODBC.hs
-  build-depends   : base
-                  , aeson
-                  , cesds-records
-                  , data-default
-                  , directory
-                  , filepath
-                  , HDBC
-                  , HDBC-odbc
-                  , lens
-                  , uuid
-                  , yaml
-  buildable       : True               
+  if flag(SQLite3)
+    buildable     : True
+  else
+    buildable     : False
   default-language: Haskell2010        
   ghc-options     : -Wall -O2 -threaded -rtsopts
 
@@ -104,6 +107,30 @@ executable cesds-mysql-server
                   , lens
                   , uuid
                   , yaml
-  buildable       : True               
+  if flag(MySQL)
+    buildable     : True
+  else
+    buildable     : False
+  default-language: Haskell2010        
+  ghc-options     : -Wall -O2 -threaded -rtsopts
+
+executable cesds-odbc-server
+  hs-source-dirs  : src
+  main-is         : MainODBC.hs
+  build-depends   : base
+                  , aeson
+                  , cesds-records
+                  , data-default
+                  , directory
+                  , filepath
+                  , HDBC
+                  , HDBC-odbc
+                  , lens
+                  , uuid
+                  , yaml
+  if flag(ODBC)
+    buildable     : True
+  else
+    buildable     : False
   default-language: Haskell2010        
   ghc-options     : -Wall -O2 -threaded -rtsopts
