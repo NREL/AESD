@@ -1,5 +1,5 @@
 name:                cesds-records-hdbc
-version:             0.3.4.1
+version:             0.3.4.2
 synopsis:            PostgreSQL support for CESDS records API.
 description:         PostgreSQL support for CESDS records API.
 license:             AllRightsReserved
@@ -65,6 +65,24 @@ executable cesds-sqlite3-server
                   , filepath
                   , HDBC
                   , HDBC-sqlite3
+                  , lens
+                  , uuid
+                  , yaml
+  buildable       : True               
+  default-language: Haskell2010        
+  ghc-options     : -Wall -O2 -threaded -rtsopts
+
+executable cesds-odbc-server
+  hs-source-dirs  : src
+  main-is         : MainODBC.hs
+  build-depends   : base
+                  , aeson
+                  , cesds-records
+                  , data-default
+                  , directory
+                  , filepath
+                  , HDBC
+                  , HDBC-odbc
                   , lens
                   , uuid
                   , yaml
