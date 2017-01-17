@@ -45,7 +45,7 @@ library
                   , data-default
                   , directory
                   , filepath
-                  , HDBC
+                  , HDBC == 2.4.0.1
                   , lens
                   , uuid
   default-language: Haskell2010
@@ -61,7 +61,7 @@ executable cesds-postgresql-server
                   , directory
                   , filepath
                   , HDBC
-                  , HDBC-postgresql
+                  , HDBC-postgresql == 2.3.2.4
                   , lens
                   , uuid
                   , yaml
@@ -82,7 +82,7 @@ executable cesds-sqlite3-server
                   , directory
                   , filepath
                   , HDBC
-                  , HDBC-sqlite3
+                  , HDBC-sqlite3 == 2.3.3.1
                   , lens
                   , uuid
                   , yaml
@@ -103,7 +103,7 @@ executable cesds-mysql-server
                   , directory
                   , filepath
                   , HDBC
-                  , HDBC-mysql
+                  , HDBC-mysql == 0.7.1.0
                   , lens
                   , uuid
                   , yaml
@@ -124,7 +124,7 @@ executable cesds-odbc-server
                   , directory
                   , filepath
                   , HDBC
-                  , HDBC-odbc
+                  , HDBC-odbc == 2.5.0.1
                   , lens
                   , uuid
                   , yaml
