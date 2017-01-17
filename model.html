@@ -3,6 +3,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <link rel="stylesheet" href="view.css" type="text/css">
+    <script src="lib/d3.v3.min.js" type="application/javascript"></script>
     <script src="cesds-bundle.js" type="application/javascript"></script>
     <script src="src/controller.js" type="application/javascript"></script>
     <title>CESDS Records Browser</title>
@@ -15,10 +16,12 @@
         <input id="connection" type="text" value="ws://127.0.0.1:50374"/>
         <button id="connectButton" type="button" onclick="reconnect()">connect</button>
         <button id="disconnectButton" type="button" onclick="disconnect()" disabled>disconnect</button>
+        <input id="showPlot" type="checkbox" checked="true">show plot</input>
       </span>
       <ul id="models"></ul>
     </div>
     <div id="dataPanel">
+      <svg id="plot"></svg>
       <table id="data"></table>
     </div>
   </body>
