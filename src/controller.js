@@ -4,6 +4,9 @@ var ws = null;
 var lastBookmark = null; // FIXME: Move this into a closure, so as to avoid having a global variable.
 
 
+var rows = [];
+
+
 function updateConnectButtons() {
   connectButton.disabled = ws != null;
   disconnectButton.disabled = ws == null;
@@ -162,6 +165,7 @@ function loadModels(result) {
           node.appendChild(row);
           data.appendChild(node);
           node = document.createElement("TBODY");
+          rows = [];
           answer.data.forEach(
             function (r) {
               row = document.createElement("TR");
@@ -180,6 +184,7 @@ function loadModels(result) {
                 }
               );
               node.appendChild(row);
+              rows.push(row);
             }
           );
           data.appendChild(node);
@@ -247,7 +252,7 @@ function plot(variables, records) {
   var numerics = new Object();
   variables.filter(variable => variable.type < 2).forEach(function (v) {++nNumerics; numerics[v.id] = v.name;});
   
-  if (showPlot.checked && records.length > 2 && nNumerics > 2) {
+  if (showPlot.checked && records.length >= 2 && nNumerics >= 2) {
     document.getElementById("data").style.top = "500px"
   } else {
     document.getElementById("data").style.top = "0px"
@@ -301,9 +306,12 @@ function plot(variables, records) {
         extents = actives.map(function(p) { return y[p].brush.extent(); });
     foreground.style("display", function(d) {
       return actives.every(function(p, i) {
-        return extents[i][0] <= d[p] && d[p] <= extents[i][1];
+        return selected = extents[i][0] <= d[p] && d[p] <= extents[i][1];
       }) ? null : "none";
     });
+    var foregrounds = document.getElementById("foreground").children;
+    for (var i = 0; i < rows.length; ++i)
+      rows[i].style.display = foregrounds.item(i).style.display == "none" ? "none" : "table-row";
   }
   
   {
@@ -329,6 +337,7 @@ function plot(variables, records) {
   
     // Add blue foreground lines for focus.
     foreground = svg.append("g")
+        .attr("id", "foreground")
         .attr("class", "foreground")
       .selectAll("path")
         .data(numericRecords)
