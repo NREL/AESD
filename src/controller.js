@@ -7,6 +7,15 @@ var lastBookmark = null; // FIXME: Move this into a closure, so as to avoid havi
 var rows = [];
 
 
+function wait() {
+  document.getElementById("waitMode").style.display = "block";
+}
+
+function unwait() {
+  document.getElementById("waitMode").style.display = "none";
+}
+
+
 function updateConnectButtons() {
   connectButton.disabled = ws != null;
   disconnectButton.disabled = ws == null;
@@ -17,7 +26,7 @@ function reconnect() {
   disconnect();
   ws = cesds.connect(connection.value);
   updateConnectButtons();
-  ws.onopen = function() {cesds.requestModelsMetadata(ws, null, loadModels, reportError);};
+  ws.onopen = function() {wait(); cesds.requestModelsMetadata(ws, null, loadModels, reportError);};
 }
 
 
@@ -189,13 +198,14 @@ function loadModels(result) {
           );
           data.appendChild(node);
           plot(m.variables, answer.data);
+          unwait();
         };
 
       detail = document.createElement("DD");
       subdetail = document.createElement("BUTTON");
       text = document.createTextNode("show");
       subdetail.appendChild(text);
-      subdetail.addEventListener("click", function() {lastBookmark = null; cesds.requestRecordsData(ws, m.id, null, null, null, showRecords, reportError);});
+      subdetail.addEventListener("click", function() {wait(); lastBookmark = null; cesds.requestRecordsData(ws, m.id, null, null, null, showRecords, reportError);});
       detail.appendChild(subdetail);
       subnode.appendChild(detail);
 
@@ -215,7 +225,7 @@ function loadModels(result) {
               var item = document.createElement("LI");
               text = document.createTextNode("[" + b.id + "] " + b.name);
               item.appendChild(text);
-              item.addEventListener("click", function() {lastBookmark = b; cesds.requestRecordsData(ws, m.id, null, null, b.id, showRecords, reportError);});
+              item.addEventListener("click", function() {wait(); lastBookmark = b; cesds.requestRecordsData(ws, m.id, null, null, b.id, showRecords, reportError);});
               item.style.cursor = "pointer";
               subdetail.appendChild(item);
             }
@@ -227,12 +237,15 @@ function loadModels(result) {
 
       node.appendChild(subnode);
       root.appendChild(node);
+
+      unwait();
     }
   );
 }
 
 
 function reportError(e) {
+  unwait();
   alert(e);
 }
 

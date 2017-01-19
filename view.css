@@ -122,6 +122,14 @@ svg {
 
 /* END OF EXCERPT FROM <https://bl.ocks.org/jasondavies/1341281> */
 
+#waitMode {
+  position: fixed
+; width   : 100%
+; height  : 101%
+; display : none
+; cursor  : wait
+}
+
 body {
   font-family: sans-serif
 }
