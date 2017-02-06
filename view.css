@@ -48,10 +48,12 @@
 
 
 #dataPanel {
-  position: absolute
-; left    :  38%
-; width   :  59%
-; height  : 101%
+  position  : fixed
+; left      :  38%
+; width     :  59%
+; height    : 101%
+; overflow-x: scroll
+; overflow-y: scroll
 }
 
 
