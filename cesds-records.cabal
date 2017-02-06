@@ -1,5 +1,5 @@
 name:                cesds-records
-version:             0.3.7.15
+version:             0.3.7.16
 synopsis:            Implementation of CESDS record API
 description:         Implementation of CESDS record API.
 license:             AllRightsReserved
@@ -45,6 +45,7 @@ library
                   , lens
                   , mtl
                   , protobuf
+                  , regex-posix
                   , raft
                   , split
                   , stm
@@ -66,6 +67,7 @@ executable cesds-server
                   , lens
                   , mtl
                   , protobuf
+                  , regex-posix
                   , raft
                   , split
                   , stm

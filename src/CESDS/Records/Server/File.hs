@@ -1,5 +1,6 @@
 module CESDS.Records.Server.File (
   buildModelMeta
+, buildVarMeta
 , buildModelContent
 ) where
 
@@ -7,10 +8,12 @@ module CESDS.Records.Server.File (
 import CESDS.Types.Model (ModelMeta, varMeta)
 import CESDS.Types.Record (RecordContent)
 import CESDS.Types.Value (VarType(..), castVarType, consistentVarTypes)
-import CESDS.Types.Variable (identifier, name, varType)
+import CESDS.Types.Variable (VarMeta, VarUnits(unitName), identifier, name, units, varType)
 import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))
 import Data.Default (def)
+import Data.Int (Int32)
+import Text.Regex.Posix ((=~))
 
 
 buildModelMeta :: [[String]] -> ModelMeta
@@ -21,9 +24,23 @@ buildModelMeta (header : content) =
     vids = [0..]
   in
     def
-      & varMeta .~ zipWith3 (\vid n t -> def & identifier .~ vid & name .~ n & varType .~ t) vids header types
+      & varMeta .~ zipWith3 buildVarMeta vids header types
 buildModelMeta [] = def
 
+
+buildVarMeta :: Int32 -> String -> VarType -> VarMeta
+buildVarMeta i n t =
+  let
+    (n', u) = case n =~ "^(.*[^ ]) *[[](.*)[]] *$" :: [[String]] of
+                [[_, n'', u'']] -> (n'', u'')
+                _               -> (n, "unknown")
+  in
+    def
+      & identifier .~ i
+      & name       .~ n'
+      & varType             .~ t
+      & units               .~ def {unitName = Just u}
+  
 
 buildModelContent :: [[String]] -> [RecordContent]
 buildModelContent (header : content) =
