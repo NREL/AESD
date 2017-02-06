@@ -82,7 +82,8 @@ units =
       \s VarUnits{..} ->
         s
         {
-          si'    = putField [lengthExponent, massExponent, timeExponent, currentExponent, temperatureExponent, molExponent, intensityExponent, angleExponent]
+          units' = putField unitName
+        , si'    = putField [lengthExponent, massExponent, timeExponent, currentExponent, temperatureExponent, molExponent, intensityExponent, angleExponent]
         , scale' = putField scale
         }
     )
