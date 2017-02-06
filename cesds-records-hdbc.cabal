@@ -1,5 +1,5 @@
 name:                cesds-records-hdbc
-version:             0.3.4.6
+version:             0.3.4.7
 synopsis:            Database support for CESDS records API.
 description:         PostgreSQL, SQLite3, MySQL, and ODBC support for CESDS records API.
 license:             AllRightsReserved

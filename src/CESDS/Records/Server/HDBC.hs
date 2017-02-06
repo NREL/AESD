@@ -52,9 +52,9 @@ buildModelMeta connection query =
 buildVarMeta :: Int32 -> String -> VarType -> VarMeta
 buildVarMeta i n t =
   let
-    (n', u) = case n =~ "^(.*) \\[(.*)\\] *$" of
-                [[n'', u'']] -> (n'', u'')
-                _            -> (n, "unknown")
+    (n', u) = case n =~ "^(.*[^ ]) *[[](.*)[]] *$" :: [[String]] of
+                [[_, n'', u'']] -> (n'', u'')
+                _               -> (n, "unknown")
   in
     def
       & Variable.identifier .~ i
