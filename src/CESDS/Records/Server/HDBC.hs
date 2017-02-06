@@ -17,12 +17,13 @@ import CESDS.Types.Model (ModelMeta, varMeta)
 import CESDS.Types.Model as Model (identifier, name, uri)
 import CESDS.Types.Record (RecordContent)
 import CESDS.Types.Value (DataValue, VarType(..), integerValue, realValue, stringValue)
-import CESDS.Types.Variable as Variable (identifier, name, varType)
+import CESDS.Types.Variable as Variable (VarMeta, VarUnits(unitName), identifier, name, units, varType)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))
 import Control.Monad (void)
 import Data.Default (def)
+import Data.Int (Int32)
 import Data.List (isSuffixOf)
 import Data.UUID (toString)
 import Data.UUID.V5 (generateNamed, namespaceURL)
@@ -31,6 +32,7 @@ import Database.HDBC.ColTypes (SqlColDesc(..), SqlTypeId(..))
 import Database.HDBC.SqlValue (SqlValue(SqlNull), fromSql)
 import System.Directory (getDirectoryContents, makeAbsolute)
 import System.FilePath.Posix ((</>))
+import Text.Regex.Posix ((=~))
 
 
 buildModelMeta :: IConnection c => c -> String -> IO ModelMeta
@@ -44,8 +46,22 @@ buildModelMeta connection query =
     return
       $ def
       & varMeta
-      .~ zipWith (\i (n, t, _) -> def & Variable.identifier .~ i & Variable.name .~ n & varType .~ t) vids namesTypes
+      .~ zipWith (\i (n, t, _) -> buildVarMeta i n t) vids namesTypes
 
+
+buildVarMeta :: Int32 -> String -> VarType -> VarMeta
+buildVarMeta i n t =
+  let
+    (n', u) = case n =~ "^(.*) \\[(.*)\\] *$" of
+                [[n'', u'']] -> (n'', u'')
+                _            -> (n, "unknown")
+  in
+    def
+      & Variable.identifier .~ i
+      & Variable.name       .~ n'
+      & varType             .~ t
+      & units               .~ def {unitName = Just u}
+  
 
 buildModelContent :: IConnection c => c -> String -> IO [RecordContent]
 buildModelContent connection query =

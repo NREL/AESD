@@ -1,5 +1,5 @@
 name:                cesds-records-hdbc
-version:             0.3.4.5
+version:             0.3.4.6
 synopsis:            Database support for CESDS records API.
 description:         PostgreSQL, SQLite3, MySQL, and ODBC support for CESDS records API.
 license:             AllRightsReserved
@@ -47,6 +47,7 @@ library
                   , filepath
                   , HDBC == 2.4.0.1
                   , lens
+                  , regex-posix
                   , uuid
   default-language: Haskell2010
   ghc-options     : -Wall -O2
@@ -63,6 +64,7 @@ executable cesds-postgresql-server
                   , HDBC
                   , HDBC-postgresql == 2.3.2.4
                   , lens
+                  , regex-posix
                   , uuid
                   , yaml
   if flag(PostgreSQL)
@@ -84,6 +86,7 @@ executable cesds-sqlite3-server
                   , HDBC
                   , HDBC-sqlite3 == 2.3.3.1
                   , lens
+                  , regex-posix
                   , uuid
                   , yaml
   if flag(SQLite3)
@@ -105,6 +108,7 @@ executable cesds-mysql-server
                   , HDBC
                   , HDBC-mysql == 0.7.1.0
                   , lens
+                  , regex-posix
                   , uuid
                   , yaml
   if flag(MySQL)
@@ -126,6 +130,7 @@ executable cesds-odbc-server
                   , HDBC
                   , HDBC-odbc == 2.5.0.1
                   , lens
+                  , regex-posix
                   , uuid
                   , yaml
   if flag(ODBC)
