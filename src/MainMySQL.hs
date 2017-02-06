@@ -55,4 +55,4 @@ main =
     bracket
       (connectMySQL database)
       disconnect
-      $ hdbcMain host port directory persistence
+      $ hdbcMain True host port directory persistence

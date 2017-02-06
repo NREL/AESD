@@ -41,4 +41,4 @@ main =
     bracket
       (connectODBC database)
       disconnect
-      $ hdbcMain host port directory persistence
+      $ hdbcMain False host port directory persistence

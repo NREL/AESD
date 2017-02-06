@@ -41,4 +41,4 @@ main =
     bracket
       (connectSqlite3 database)
       disconnect
-      $ hdbcMain host port directory persistence
+      $ hdbcMain False host port directory persistence
