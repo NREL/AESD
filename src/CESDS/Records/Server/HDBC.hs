@@ -123,3 +123,6 @@ hdbcMain useDescribe host port directory persistence connection =
         (, ())
           <$> (buildModelContent useDescribe connection =<< readFile (m ^. Model.name))
       )
+      (
+        error "Static data only."
+      )
