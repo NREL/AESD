@@ -11,7 +11,7 @@ function connect(wsURL) {
   result.onmessage =
     function(event) {
       var buffer = new Uint8Array(event.data);
-      var response = proto.cesds.Response.deserializeBinary(buffer);
+      var response = proto.RecordsAPI.Response.deserializeBinary(buffer);
       var id = response.getId();
       if (debug) {
         console.log("Response ID: " , id.getValue());
@@ -45,7 +45,7 @@ function addHandler(id, f) {
 }
 
 
-var version = 3;
+var version = 4;
 
 
 var currentId = 0;
@@ -57,21 +57,21 @@ function nextId() {
 
 
 function optionalInt32(x) {
-  var result = new proto.cesds.OptionalInt32()
+  var result = new proto.RecordsAPI.OptionalInt32()
   result.setValue(x);
   return result;
 }
 
 
 function optionalUInt32(x) {
-  var result = new proto.cesds.OptionalUInt32()
+  var result = new proto.RecordsAPI.OptionalUInt32()
   result.setValue(x);
   return result;
 }
 
 
 function optionalString(x) {
-  var result = new proto.cesds.OptionalString()
+  var result = new proto.RecordsAPI.OptionalString()
   result.setValue(x);
   return result;
 }
@@ -116,10 +116,10 @@ function onResponse(response, handleError, handleModels, handleData, handleBookm
 
 
 function requestModelsMetadata(connection, modelId, notify, notifyError) {
-  var request = new proto.cesds.Request();
+  var request = new proto.RecordsAPI.Request();
   request.setVersion(version);
   request.setId(nextId());
-  var m = new proto.cesds.RequestModelsMeta();
+  var m = new proto.RecordsAPI.RequestModelsMeta();
   if (modelId != null)
     m.setModelId(optionalString(modelId));
   request.setModelsMetadata(m);
@@ -205,10 +205,10 @@ function fromRecordData(rd) {
 
 
 function requestRecordsData(connection, modelId, maxRecords, variableIds, bookmarkId, notify, notifyError) {
-  var request = new proto.cesds.Request();
+  var request = new proto.RecordsAPI.Request();
   request.setVersion(version);
   request.setId(nextId());
-  var d = new proto.cesds.RequestRecordsData();
+  var d = new proto.RecordsAPI.RequestRecordsData();
   d.setModelId(modelId);
   if (maxRecords != null)
     d.setMaxRecords(maxRecords);
@@ -249,9 +249,7 @@ function fromBookmark(b) {
                   id   : b.getBookmarkId()
                 , name : b.getBookmarkName()
                 };
-  if (b.hasNumRecords())
-    result.size = b.getNumRecords();
-  else if (b.hasInterval())
+  if (b.hasInterval())
     result.interval = fromInterval(b.getInterval());
   else if (b.hasSet())
     result.set = b.getSet().getRecordIdsList();
@@ -265,10 +263,10 @@ function fromBookmarks(bs) {
 
 
 function requestBookmarkMeta(connection, modelId, bookmarkId, notify, notifyError) {
-  var request = new proto.cesds.Request();
+  var request = new proto.RecordsAPI.Request();
   request.setVersion(version);
   request.setId(nextId());
-  var b = new proto.cesds.RequestBookmarkMeta();
+  var b = new proto.RecordsAPI.RequestBookmarkMeta();
   b.setModelId(modelId);
   if (bookmarkId != null)
     b.setBookmarkId(string(bookmarkId));
@@ -293,7 +291,7 @@ function requestBookmarkMeta(connection, modelId, bookmarkId, notify, notifyErro
 
 
 function requestSaveBookmarkInterval(connection, modelId, name, firstRecord, lastRecord, notify, notifyError) {
-  var i = new proto.cesds.BookmarkIntervalContent();
+  var i = new proto.RecordsAPI.BookmarkIntervalContent();
   i.setFirstRecord(firstRecord);
   i.setLastRecord(lastRecord);
   return requestSaveBookmark(connection, modelId, name, b => {b.setInterval(i); return b;}, notify, notifyError);
@@ -301,19 +299,19 @@ function requestSaveBookmarkInterval(connection, modelId, name, firstRecord, las
 
 
 function requestSaveBookmarkSet(connection, modelId, name, records, notify, notifyError) {
-  var s = new proto.cesds.BookmarkSetContent();
+  var s = new proto.RecordsAPI.BookmarkSetContent();
   s.setRecordIdsList(records != null ? records : []);
   return requestSaveBookmark(connection, modelId, name, b => {b.setSet(s); return b}, notify, notifyError);
 }
 
 
 function requestSaveBookmark(connection, modelId, name, f, notify, notifyError) {
-  var request = new proto.cesds.Request();
+  var request = new proto.RecordsAPI.Request();
   request.setVersion(version);
   request.setId(nextId());
-  var s = new proto.cesds.RequestSaveBookmark();
+  var s = new proto.RecordsAPI.RequestSaveBookmark();
   s.setModelId(modelId);
-  var b = new proto.cesds.BookmarkMeta();
+  var b = new proto.RecordsAPI.BookmarkMeta();
   b.setBookmarkName(name);
   s.setNewBookmark(f(b));
   request.setSaveBookmark(s);
