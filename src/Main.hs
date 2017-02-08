@@ -45,3 +45,6 @@ main =
                    . flip runCacheT cache
                    $ refreshExtractCacheManager httpManager access (pack $ model ^. Model.identifier) (Just $ read start) Nothing
             )
+            (
+              error "Sensor data only."
+            )
