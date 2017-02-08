@@ -53,3 +53,6 @@ main =
           . lines
           <$> readFile (m ^. name)
       )
+      (
+        error "Static data only."
+      )

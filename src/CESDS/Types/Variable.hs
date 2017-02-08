@@ -32,11 +32,10 @@ data VarMeta =
   {
     identifier' :: Optional 1 (Value       VariableIdentifier)
   , name'       :: Required 2 (Value       String            )
-  , isInput'    :: Optional 3 (Value       Bool              ) -- FIXME: Delete this in next version of API.
-  , units'      :: Optional 4 (Value       String            )
-  , si'         :: Packed   5 (Value       Int32             )
-  , scale'      :: Required 6 (Value       Double            )
-  , varType'    :: Optional 7 (Enumeration VarType           )
+  , units'      :: Optional 3 (Value       String            )
+  , si'         :: Packed   4 (Value       Int32             )
+  , scale'      :: Required 5 (Value       Double            )
+  , varType'    :: Optional 6 (Enumeration VarType           )
   }
     deriving (Generic, Show)
 
@@ -46,7 +45,6 @@ instance Default VarMeta where
     {
       identifier' = putField $ Just 0
     , name'       = putField ""
-    , isInput'    = putField Nothing
     , units'      = putField Nothing
     , si'         = putField $ replicate 8 0
     , scale'      = putField 1

@@ -17,8 +17,9 @@ module CESDS.Records.Server.Manager ( -- FIXME: Should we export less?
 
 import CESDS.Records.Server (ModelManager(..), ServiceM, fromService, modifyService, modifyService')
 import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta, filterBookmark, identifier)
+import CESDS.Types.Filter (filterRecords)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
-import CESDS.Types.Record (RecordContent, filterVariables)
+import CESDS.Types.Record (RecordContent, VarValue, filterVariables)
 import Control.Arrow ((&&&), second)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens (Lens', (&), lens)
@@ -54,6 +55,7 @@ data InMemoryManager a =
   , state        :: a
   , lister       :: a -> IO ([ModelMeta], a)                  -- FIXME: Run this in ServerM instead of IO, and supply a function to modify state.
   , loader       :: a -> ModelMeta -> IO ([RecordContent], a) -- FIXME: Run this in ServerM instead of IO, and supply a function to modify state.
+  , worker       :: a -> ModelMeta -> [VarValue] -> IO ([RecordContent], a) -- FIXME: Run this in ServerM instead of IO, and supply a function to modify state.
   }
 
 instance ModelManager (InMemoryManager a) where
@@ -76,9 +78,12 @@ instance ModelManager (InMemoryManager a) where
   lookupModel model =
     (^. modelMeta)
       <$> checkModel model
-  loadContent model maybeBookmark variables =
+  loadContent model maybeBookmarkOrFilter variables =
     do -- FIXME: Should we also cache the records?
-      f <- maybe (return id) (fmap filterBookmark . lookupBookmark (model ^. Model.identifier)) maybeBookmark
+      f <- case maybeBookmarkOrFilter of
+             Nothing               -> return id
+             Just (Left  bookmark) -> filterBookmark <$> lookupBookmark (model ^. Model.identifier) bookmark
+             Just (Right filtr   ) -> return $ filterRecords filtr
       InMemoryManager{..} <- fromService id
       (records, state') <- guardSomeException $ loader state model
       modifyService
@@ -126,6 +131,13 @@ instance ModelManager (InMemoryManager a) where
               )
       journalBookmark (model, bookmark')
       return bookmark'
+  doWork model inputs =
+    do -- FIXME: Should we also cache the records?
+      InMemoryManager{..} <- fromService id
+      (records, state') <- guardSomeException $ worker state model inputs
+      modifyService
+        $ \c -> c {state = state'}
+      return records
 
 
 checkModel :: ModelIdentifier -> ServiceM (InMemoryManager a) ModelCache
@@ -138,8 +150,8 @@ cache :: Lens' (InMemoryManager a) Cache
 cache = lens cache' (\s x -> s {cache' = x})
 
 
-makeInMemoryManager :: Maybe FilePath -> a -> (a -> IO ([ModelMeta], a)) -> (a -> ModelMeta -> IO ([RecordContent], a)) -> IO (InMemoryManager a)
-makeInMemoryManager persistence state lister loader =
+makeInMemoryManager :: Maybe FilePath -> a -> (a -> IO ([ModelMeta], a)) -> (a -> ModelMeta -> IO ([RecordContent], a)) -> (a -> ModelMeta -> [VarValue] -> IO ([RecordContent], a)) -> IO (InMemoryManager a)
+makeInMemoryManager persistence state lister loader worker =
   do
     let
       cache' = M.empty 

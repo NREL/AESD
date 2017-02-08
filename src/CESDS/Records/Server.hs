@@ -15,9 +15,10 @@ module CESDS.Records.Server (
 
 
 import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta)
+import CESDS.Types.Filter (Filter)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta)
-import CESDS.Types.Record (RecordContent)
-import CESDS.Types.Request as Request (identifier, onLoadBookmarkMeta, onLoadModelsMeta, onLoadRecordsData, onRequest, onSaveBookmarkMeta)
+import CESDS.Types.Record (RecordContent, VarValue)
+import CESDS.Types.Request as Request (identifier, onLoadBookmarkMeta, onCancel, onLoadModelsMeta, onLoadRecordsData, onRequest, onSaveBookmarkMeta, onWork)
 import CESDS.Types.Response as Response (bookmarkMetasResponse, chunkIdentifier, errorResponse, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
 import CESDS.Types.Variable as Variable (VariableIdentifier)
 import Control.Concurrent.STM (atomically)
@@ -85,10 +86,11 @@ runServiceToIO state service = runReaderT (runExceptT (runServiceM service)) sta
 class ModelManager a where
   listModels :: ServiceM a [ModelMeta]
   lookupModel :: ModelIdentifier -> ServiceM a ModelMeta
-  loadContent :: ModelMeta -> Maybe BookmarkIdentifier -> [VariableIdentifier] -> ServiceM a [RecordContent]
+  loadContent :: ModelMeta -> Maybe (Either BookmarkIdentifier Filter) -> [VariableIdentifier] -> ServiceM a [RecordContent]
   listBookmarks :: ModelIdentifier -> ServiceM a [BookmarkMeta]
   lookupBookmark :: ModelIdentifier -> BookmarkIdentifier -> ServiceM a BookmarkMeta
   saveBookmark :: ModelIdentifier -> BookmarkMeta -> ServiceM a BookmarkMeta
+  doWork :: ModelMeta -> [VarValue] -> ServiceM a [RecordContent]
 
 
 lookupModels :: ModelManager a => Bool -> Maybe ModelIdentifier -> ServiceM a [ModelMeta]
@@ -112,6 +114,7 @@ serverMain :: ModelManager a
            -> IO ()
 serverMain host port initialManager =
   do
+    cancellations <- newTVarIO [] -- FIXME: Inefficient.
     manager <- newTVarIO initialManager
     runServer host port
       $ \pending ->
@@ -131,10 +134,10 @@ serverMain host port initialManager =
                   )
                   (
                     onLoadRecordsData
-                      $ \model count variables maybeBookmark ->
+                      $ \model count variables maybeBookmarkOrFilter ->
                       do
                         [model'] <- lookupModels True $ Just model
-                        recs <- loadContent model' maybeBookmark variables
+                        recs <- loadContent model' maybeBookmarkOrFilter variables
                         return
                           [
                             recordsResponse recs''
@@ -156,10 +159,26 @@ serverMain host port initialManager =
                      $ (fmap ((: []) . bookmarkMetasResponse . (: [])) . )
                      . saveBookmark
                   )
+                  (
+                    onCancel
+                      $ \i ->
+                      do
+                        liftIO . atomically $ modifyTVar' cancellations (Just i :)
+                        return []
+                  )
+                  (
+                    onWork
+                      $ \model inputs ->
+                      do
+                        [model'] <- lookupModels True $ Just model
+                        recs <- doWork model' inputs
+                        return [recordsResponse recs]
+                  )
                   [errorResponse "Unsupported request."]
                 request
+              cancellations' <- liftIO . atomically $ readTVar cancellations
               forM_
-                (either ((: []) . errorResponse) id result)
+                (filter ((`notElem` cancellations') . (^. Response.identifier)) $ either ((: []) . errorResponse) id result)
                 $ sendBinaryData connection
                 . (Response.identifier .~ request ^. Request.identifier)
               loop

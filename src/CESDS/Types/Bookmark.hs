@@ -7,9 +7,9 @@ module CESDS.Types.Bookmark (
 , BookmarkMeta
 , identifier
 , name
-, numberOfRecords
 , intervalContent
 , setContent
+, filterContent
 , onBookmarkMeta
 , filterBookmark
 , BookmarkMetas
@@ -17,6 +17,7 @@ module CESDS.Types.Bookmark (
 ) where
 
 
+import CESDS.Types.Filter (Filter, FilterExpression, filterRecords, fromExpression, toExpression)
 import CESDS.Types.Internal ()
 import CESDS.Types.Record (RecordContent, RecordIdentifier)
 import Control.Applicative ((<|>))
@@ -28,7 +29,6 @@ import Control.Monad (liftM2)
 import Data.Default (Default(..))
 import Data.Maybe (fromMaybe)
 import Data.ProtocolBuffers (Decode, Encode, Message, Optional, Packed, Repeated, Required, Value, getField, putField)
-import Data.Word (Word64)
 import GHC.Generics (Generic)
 
 
@@ -91,9 +91,9 @@ data BookmarkMeta =
   {
     identifier'      :: Optional 1 (Value BookmarkIdentifier)
   , name'            :: Required 2 (Value String            )
-  , numberOfRecords' :: Optional 3 (Value Word64            )
-  , intervalContent' :: Optional 4 (Message IntervalContent )
-  , setContent'      :: Optional 5 (Message SetContent      )
+  , intervalContent' :: Optional 3 (Message IntervalContent )
+  , setContent'      :: Optional 4 (Message SetContent      )
+  , filterContent'   :: Optional 5 (Message FilterExpression)
   }
     deriving (Generic, Show)
 
@@ -103,9 +103,9 @@ instance Default BookmarkMeta where
     {
       identifier'      = putField Nothing
     , name'            = putField ""
-    , numberOfRecords' = putField Nothing
     , intervalContent' = putField Nothing
     , setContent'      = putField Nothing
+    , filterContent'   = putField Nothing
     }
 
 instance Decode BookmarkMeta
@@ -119,10 +119,6 @@ identifier = lens (getField . identifier') (\s x -> s {identifier' = putField x}
 
 name :: Lens' BookmarkMeta String
 name = lens (getField . name') (\s x -> s {name' = putField x})
-
-
-numberOfRecords :: Lens' BookmarkMeta (Maybe Word64)
-numberOfRecords = lens (getField . numberOfRecords') (\s x -> s {numberOfRecords' = putField x})
 
 
 intervalContent :: Lens' BookmarkMeta (Maybe (RecordIdentifier, RecordIdentifier))
@@ -139,12 +135,16 @@ setContent =
     (\s x -> s {setContent' = putField $ flip (setIdentifiers .~) def <$> x})
 
 
-onBookmarkMeta :: (Word64 -> a) -> ((RecordIdentifier, RecordIdentifier) -> a) -> ([RecordIdentifier] -> a) -> a -> BookmarkMeta -> a
-onBookmarkMeta f g h d x =
+filterContent :: Lens' BookmarkMeta (Maybe Filter)
+filterContent = lens (fmap fromExpression . getField . filterContent') (\s x -> s {filterContent' = putField $ toExpression <$> x})
+
+
+onBookmarkMeta :: ((RecordIdentifier, RecordIdentifier) -> a) -> ([RecordIdentifier] -> a) -> (Filter -> a) -> a -> BookmarkMeta -> a
+onBookmarkMeta g h f d x =
   fromMaybe d
-     $  f <$> x ^. numberOfRecords
-    <|> g <$> x ^. intervalContent
+     $  g <$> x ^. intervalContent
     <|> h <$> x ^. setContent
+    <|> f <$> x ^. filterContent
 
 
 data BookmarkMetas =
@@ -169,7 +169,7 @@ bookmarks = lens (getField . bookmarks') (\s x -> s {bookmarks' = putField x})
 filterBookmark :: BookmarkMeta -> [RecordContent] -> [RecordContent]
 filterBookmark =
   onBookmarkMeta
-    (const id)
     filterInterval
     filterSet
+    filterRecords
     id

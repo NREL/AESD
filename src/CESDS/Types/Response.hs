@@ -18,7 +18,7 @@ module CESDS.Types.Response (
 
 import CESDS.Types (VersionIdentifier)
 import CESDS.Types.Bookmark (BookmarkMeta, BookmarkMetas, bookmarks)
-import CESDS.Types.Internal (OptionalInt32, int32)
+import CESDS.Types.Internal (OptionalUInt32, uint32)
 import CESDS.Types.Model (ModelMeta, ModelMetas, models)
 import CESDS.Types.Record (RecordContent, RecordData, recordData)
 import Control.Applicative ((<|>))
@@ -29,6 +29,7 @@ import Data.Default (Default(..))
 import Data.Int (Int32)
 import Data.Maybe (fromMaybe)
 import Data.ProtocolBuffers (Decode, Encode, Message, Optional, Required, Value, getField, putField)
+import Data.Word (Word32)
 import GHC.Generics (Generic)
 
 
@@ -36,7 +37,7 @@ data Response =
   Response
   {
     version'             :: Required 1 (Value   VersionIdentifier)
-  , identifier'          :: Optional 2 (Message OptionalInt32    )
+  , identifier'          :: Optional 2 (Message OptionalUInt32   )
   , chunkIdentifier'     :: Optional 3 (Value   Int32            )
   , nextChunkIdentifier' :: Optional 4 (Value   Int32            )
   , responseError'       :: Optional 5 (Value   String           )
@@ -67,11 +68,11 @@ version :: Lens' Response VersionIdentifier
 version = lens (getField . version') (\s x -> s {version' = putField x})
 
 
-identifier :: Lens' Response (Maybe Int32)
+identifier :: Lens' Response (Maybe Word32)
 identifier =
   lens
-    (fmap (^. int32) . getField . identifier')
-    (\s x -> s {identifier' = putField $ flip (int32 .~) def <$> x})
+    (fmap (^. uint32) . getField . identifier')
+    (\s x -> s {identifier' = putField $ flip (uint32 .~) def <$> x})
 
 
 chunkIdentifier :: Lens' Response (Maybe Int32)
@@ -121,10 +122,10 @@ bookmarkMetasResponse bs = def & bookmarkMetas .~ Just bs
 
 
 onResponse :: Monad m
-           => (Maybe Int32 -> String -> m a)
-           -> (Maybe Int32 -> [ModelMeta] -> m a)
-           -> (Maybe Int32 -> [RecordContent] -> m a)
-           -> (Maybe Int32 -> [BookmarkMeta] -> m a)
+           => (Maybe Word32 -> String -> m a)
+           -> (Maybe Word32 -> [ModelMeta] -> m a)
+           -> (Maybe Word32 -> [RecordContent] -> m a)
+           -> (Maybe Word32 -> [BookmarkMeta] -> m a)
            -> a
            -> Response
            -> m a

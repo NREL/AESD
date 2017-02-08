@@ -238,7 +238,7 @@ onRecordContent :: (Double -> a)
 onRecordContent f g h d =
   fmap
     . second
-    $ fmap (second $ fromMaybe d . onDataValue f g h)
+    $ fmap (second $ onDataValue f g h d)
 
 
 filterRecords :: [RecordIdentifier] -> [RecordContent] -> [RecordContent]

@@ -9,11 +9,13 @@ module CESDS.Types.Model (
 , name
 , uri
 , varMeta
+, inputs
 , ModelMetas
 , models
 ) where
 
 
+import CESDS.Types.Domain (DomainMeta)
 import CESDS.Types.Internal ()
 import CESDS.Types.Variable (VarMeta)
 import Control.Lens.Lens (Lens', lens)
@@ -32,6 +34,7 @@ data ModelMeta =
   , name'       :: Required 2 (Value   String         )
   , uri'        :: Required 3 (Value   String         )
   , varMeta'    :: Repeated 4 (Message VarMeta        )
+  , inputs'     :: Repeated 5 (Message DomainMeta     )
   }
     deriving (Generic, Show)
 
@@ -43,6 +46,7 @@ instance Default ModelMeta where
     , name'        = putField ""
     , uri'         = putField ""
     , varMeta'     = putField def
+    , inputs'      = putField def
     }
 
 instance Decode ModelMeta
@@ -64,6 +68,10 @@ uri = lens (getField . uri') (\s x -> s {uri' = putField x})
 
 varMeta :: Lens' ModelMeta [VarMeta]
 varMeta = lens (getField . varMeta') (\s x -> s {varMeta' = putField x})
+
+
+inputs :: Lens' ModelMeta [DomainMeta]
+inputs = lens (getField . inputs') (\s x -> s {inputs' = putField x})
 
 
 data ModelMetas =

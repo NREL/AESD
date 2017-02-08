@@ -8,6 +8,7 @@ module CESDS.Types.Value (
 , integerValue
 , stringValue
 , onDataValue
+, onDataValues
 , VarType(..)
 , varType
 , varTypes
@@ -28,7 +29,7 @@ import Control.Lens.Setter ((.~))
 import Data.Default (Default(..))
 import Data.Int (Int64)
 import Data.List (union)
-import Data.Maybe (catMaybes, isJust)
+import Data.Maybe (catMaybes, fromMaybe, isJust)
 import Data.ProtocolBuffers (Decode, Encode, Optional, Value, getField, putField)
 import GHC.Generics (Generic)
 import Text.Read (readMaybe)
@@ -42,6 +43,13 @@ data DataValue =
   , stringValue'  :: Optional 3 (Value String)
   }
     deriving (Generic, Show)
+
+
+instance Eq DataValue where
+  (==) = onDataValues (==) (==) (==) False
+
+instance Ord DataValue where
+  compare x y = onDataValues compare compare compare (compare x y) x y
 
 instance Read DataValue where
   readsPrec _ x =
@@ -75,11 +83,20 @@ stringValue :: Lens' DataValue (Maybe String)
 stringValue = lens (getField . stringValue') (\s x -> s {stringValue' = putField x})
 
 
-onDataValue :: (Double -> a) -> (Int64 -> a) -> (String -> a) -> DataValue -> Maybe a
-onDataValue f g h x =
-      g <$> x ^. integerValue
-  <|> f <$> x ^. realValue
-  <|> h <$> x ^. stringValue
+onDataValue :: (Double -> a) -> (Int64 -> a) -> (String -> a) -> a -> DataValue -> a
+onDataValue f g h d x =
+  fromMaybe d
+     $  g <$> x ^. integerValue
+    <|> f <$> x ^. realValue
+    <|> h <$> x ^. stringValue
+
+
+onDataValues :: (Double -> Double -> a) -> (Int64 -> Int64 -> a) -> (String -> String -> a) -> a -> DataValue -> DataValue -> a
+onDataValues f g h d x y =
+  fromMaybe d
+     $  g <$> x ^. integerValue <*> y ^. integerValue
+    <|> f <$> x ^. realValue    <*> y ^. realValue
+    <|> h <$> x ^. stringValue  <*> y ^. stringValue
 
 
 data VarType = RealVar | IntegerVar | StringVar
@@ -87,7 +104,7 @@ data VarType = RealVar | IntegerVar | StringVar
 
 
 varType :: DataValue -> Maybe VarType
-varType = onDataValue (const RealVar) (const IntegerVar) (const StringVar)
+varType = onDataValue (Just . const RealVar) (Just . const IntegerVar) (Just . const StringVar) Nothing
 
 
 varTypes :: DataValue -> [VarType]

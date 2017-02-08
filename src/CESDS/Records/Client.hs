@@ -29,8 +29,8 @@ import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVar, writ
 import Control.Monad (join, liftM2, when)
 import Control.Monad.Except (liftIO)
 import Data.Default (def)
-import Data.Int (Int32)
 import Data.Maybe (fromJust, fromMaybe)
+import Data.Word (Word32)
 import Network.WebSockets (Connection, receiveData, runClient, sendBinaryData)
 
 import qualified Data.Map.Strict as M ((!), delete, empty, foldr, fromList, insert, lookup, member)
@@ -58,7 +58,7 @@ fetchRecords (_, processor, modelCache) i =
       then do -- FIXME: Generalize 'accumulate' to this case, too?
              result <- newEmptyMVar
              processor
-               (loadRecordsData i Nothing [] Nothing)
+               (loadRecordsData i Nothing [])
                $ \response ->
                do
                  let
@@ -157,7 +157,7 @@ makeModelCache connection =
       ]
 
 
-handleError :: Maybe Int32 -> String -> IO (Either String a)
+handleError :: Maybe Word32 -> String -> IO (Either String a)
 handleError = const $ return . Left
 
 
@@ -165,11 +165,11 @@ unexpected :: Either String a
 unexpected = Left "Unexpected result."
 
 
-ignore :: Maybe Int32 -> a -> IO (Either String b)
+ignore :: Maybe Word32 -> a -> IO (Either String b)
 ignore = const . const $ return unexpected
 
 
-keep :: Maybe Int32 -> a -> IO (Either String a)
+keep :: Maybe Word32 -> a -> IO (Either String a)
 keep = const $ return . Right
 
 
@@ -183,7 +183,7 @@ makeProcessor :: Connection -> IO (ThreadId, Processor)
 makeProcessor connection =
   do
     handlers <- liftIO $ newTVarIO M.empty
-    nextIdentifier <- liftIO $ makeCounter (+ 1) (0 :: Int32)
+    nextIdentifier <- liftIO $ makeCounter (+ 1) (0 :: Word32)
     receiver <-
       forkIO
         $ let
