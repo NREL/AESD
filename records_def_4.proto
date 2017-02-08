@@ -187,7 +187,8 @@ message DomainMeta {
 
 
 message RequestWork {
-  repeated VarValue inputs = 1; // Semantically optional, specifying which input variables to set.
+    string model_id = 1;
+    repeated VarValue inputs = 2; // Semantically optional, specifying which input variables to set.
   // The response to this request is simply RecordData.
 }
 
