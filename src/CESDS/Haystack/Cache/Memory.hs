@@ -1,3 +1,15 @@
+{-|
+Module      :  $Header$
+Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+License     :  MIT
+Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
+Stability   :  Stable
+Portability :  Portable
+
+A memory cache for data from Haystack.
+-}
+
+
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -22,14 +34,11 @@ import CESDS.Types.Record (RecordContent)
 import CESDS.Types.Value (integerValue, realValue, stringValue)
 import Control.Applicative ((<|>))
 import Control.Arrow ((&&&))
-import Control.Lens.Lens ((&))
-import Control.Lens.Setter ((.~))
 import Control.Monad.Except (MonadError)
 import Control.Monad.Trans (MonadIO)
 import Data.Daft.Cache (Cache(..))
 import Data.Daft.Cache.Memory (Container, MemoryCacheT, emptyContainer, runCacheT)
 import Data.Daft.Vinyl.FieldRec ((=:), (<:))
-import Data.Default (def)
 import Data.Maybe (isNothing)
 import Data.Text (Text, unpack)
 import Data.Time.LocalTime (TimeZone(..))
@@ -99,8 +108,8 @@ asObject (key, row) =
   (
     fromIntegral $ sEpochSeconds <: key
   , [
-      (0, def & stringValue  .~ Just (               sTimeStamp    <: row))
-    , (1, def & integerValue .~ Just (fromIntegral $ sEpochSeconds <: key))
-    , (2, def & realValue    .~ Just (               sMeasurement  <: row))
+      (0, stringValue  (               sTimeStamp    <: row))
+    , (1, integerValue (fromIntegral $ sEpochSeconds <: key))
+    , (2, realValue    (               sMeasurement  <: row))
     ]
   )

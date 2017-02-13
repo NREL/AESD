@@ -1,3 +1,15 @@
+{-|
+Module      :  $Header$
+Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+License     :  MIT
+Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
+Stability   :  Stable
+Portability :  Portable
+
+A server from Haystack.
+-}
+
+
 {-# LANGUAGE TupleSections     #-}
 
 
@@ -10,7 +22,6 @@ import CESDS.Haystack.Cache.Memory (runCacheT, makeCache, refreshExtractCacheMan
 import CESDS.Records.Server (serverMain)
 import CESDS.Records.Server.Manager (makeInMemoryManager)
 import CESDS.Types.Model as Model (identifier)
-import Control.Lens.Getter ((^.))
 import Control.Monad.Except (liftIO)
 import Control.Monad.Except.Util (runToIO)
 import Control.Monad.Trans.Resource (runResourceT)
@@ -43,7 +54,7 @@ main =
               \cache model ->
                  runToIO
                    . flip runCacheT cache
-                   $ refreshExtractCacheManager httpManager access (pack $ model ^. Model.identifier) (Just $ read start) Nothing
+                   $ refreshExtractCacheManager httpManager access (pack $ Model.identifier model) (Just $ read start) Nothing
             )
             (
               error "Sensor data only."

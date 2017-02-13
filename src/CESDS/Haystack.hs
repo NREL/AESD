@@ -1,3 +1,15 @@
+{-|
+Module      :  $Header$
+Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+License     :  MIT
+Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
+Stability   :  Stable
+Portability :  Portable
+
+Access to Haystack servers.
+-}
+
+
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
