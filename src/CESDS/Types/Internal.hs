@@ -1,3 +1,15 @@
+{-|
+Module      :  $Header$
+Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+License     :  MIT
+Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
+Stability   :  Stable
+Portability :  Portable
+
+Internal types, mostly for encoding as protocol buffers.
+-}
+
+
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE FlexibleInstances    #-}
@@ -7,23 +19,31 @@
 
 
 module CESDS.Types.Internal (
+-- * Signed integers
   OptionalInt32
+, makeInt32
 , int32
+-- * Unsigned integers
 , OptionalUInt32
+, makeUint32
 , uint32
+-- * Strings
 , OptionalString
+, makeString
 , string
+-- * List of values
 , Doubles
+, makeReals
 , reals
 , Integers
+, makeIntegers
 , integers
 , Strings
+, makeStrings
 , strings
 ) where
 
 
-import Control.Lens.Lens (Lens', lens)
-import Data.Default (Default(..))
 import Data.Int (Int32, Int64)
 import Data.ProtocolBuffers (Decode, Encode, Packed, Repeated, Required, Value, decodeMessage, encodeMessage, getField, putField)
 import Data.Serialize (runGetLazy, runPutLazy)
@@ -32,6 +52,7 @@ import GHC.Generics (Generic)
 import Network.WebSockets (WebSocketsData(..))
 
 
+-- | A signed integer.
 data OptionalInt32 =
   OptionalInt32
   {
@@ -39,18 +60,24 @@ data OptionalInt32 =
   }
     deriving (Generic, Show)
 
-instance Default OptionalInt32 where
-  def = OptionalInt32 $ putField 0
-
 instance Decode OptionalInt32
 
 instance Encode OptionalInt32
 
 
-int32 :: Lens' OptionalInt32 Int32
-int32 = lens (getField . int32') (\s x -> s {int32' = putField x})
+-- | Make a signed integer.
+{-# INLINE makeInt32 #-}
+makeInt32 :: Int32 -> OptionalInt32
+makeInt32 x = OptionalInt32 {int32' = putField x}
 
 
+-- | Get a signed integer.
+{-# INLINE int32 #-}
+int32 :: OptionalInt32 -> Int32
+int32 = getField . int32'
+
+
+-- | An unsigned integer.
 data OptionalUInt32 =
   OptionalUInt32
   {
@@ -58,18 +85,24 @@ data OptionalUInt32 =
   }
     deriving (Generic, Show)
 
-instance Default OptionalUInt32 where
-  def = OptionalUInt32 $ putField 0
-
 instance Decode OptionalUInt32
 
 instance Encode OptionalUInt32
 
 
-uint32 :: Lens' OptionalUInt32 Word32
-uint32 = lens (getField .uint32') (\s x ->  s {uint32' = putField x})
+-- | Make an unsigned integer.
+{-# INLINE makeUint32 #-}
+makeUint32 :: Word32 -> OptionalUInt32
+makeUint32 x = OptionalUInt32 {uint32' = putField x}
 
 
+-- | Get an unsigned integer.
+{-# INLINE uint32 #-}
+uint32 :: OptionalUInt32 -> Word32
+uint32 = getField .uint32'
+
+
+-- | A string.
 data OptionalString =
   OptionalString
   {
@@ -77,18 +110,24 @@ data OptionalString =
   }
     deriving (Generic, Show)
 
-instance Default OptionalString where
-  def = OptionalString $ putField ""
-
 instance Decode OptionalString
 
 instance Encode OptionalString
 
 
-string :: Lens' OptionalString String
-string = lens (getField . string') (\s x -> s {string' = putField x})
+-- | Make a string.
+{-# INLINE makeString #-}
+makeString :: String -> OptionalString
+makeString x = OptionalString {string' = putField x}
+
+
+-- | Get a string.
+{-# INLINE string #-}
+string :: OptionalString -> String
+string = getField . string'
     
 
+-- | A list of real numbers.
 data Doubles =
   Doubles
   {
@@ -96,18 +135,24 @@ data Doubles =
   }
     deriving (Generic, Show)
 
-instance Default Doubles where
-  def = Doubles $ putField []
-
 instance Decode Doubles
 
 instance Encode Doubles
 
 
-reals :: Lens' Doubles [Double]
-reals = lens (getField . reals') (\s x -> s {reals' = putField x})
+-- | Make a list of real numbers.
+{-# INLINE makeReals #-}
+makeReals :: [Double] -> Doubles
+makeReals x = Doubles {reals' = putField x}
 
 
+-- | Get a list of real numbers.
+{-# INLINE reals #-}
+reals :: Doubles -> [Double]
+reals = getField . reals'
+
+
+-- | A list of integers.
 data Integers =
   Integers
   {
@@ -115,18 +160,24 @@ data Integers =
   }
     deriving (Generic, Show)
 
-instance Default Integers where
-  def = Integers $ putField []
-
 instance Decode Integers
 
 instance Encode Integers
 
 
-integers :: Lens' Integers [Int64]
-integers = lens (getField . integers') (\s x -> s {integers' = putField x})
+-- | Make a list of integers.
+{-# INLINE makeIntegers #-}
+makeIntegers :: [Int64] -> Integers
+makeIntegers x = Integers {integers' = putField x}
 
 
+-- | Get a list of integers.
+{-# INLINE integers #-}
+integers :: Integers -> [Int64]
+integers = getField . integers'
+
+
+-- | A list of strings.
 data Strings =
   Strings
   {
@@ -134,18 +185,24 @@ data Strings =
   }
     deriving (Generic, Show)
 
-instance Default Strings where
-  def = Strings $ putField []
-
 instance Decode Strings
 
 instance Encode Strings
 
 
-strings :: Lens' Strings [String]
-strings = lens (getField . strings') (\s x -> s {strings' = putField x})
+-- | Make a list of strings.
+{-# INLINE makeStrings #-}
+makeStrings :: [String] -> Strings
+makeStrings x = Strings {strings' = putField x}
 
 
+-- | Get a list of strings.
+{-# INLINE strings #-}
+strings :: Strings -> [String]
+strings = getField . strings'
+
+
+-- Enable protocol buffers for transport via web sockets.
 instance (Decode a, Encode a) => WebSocketsData a where
   fromLazyByteString = either error id . runGetLazy decodeMessage
   toLazyByteString = runPutLazy . encodeMessage

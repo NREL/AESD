@@ -1,16 +1,32 @@
+{-|
+Module      :  $Header$
+Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+License     :  MIT
+Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
+Stability   :  Stable
+Portability :  Portable
+
+Types for model metadata.
+-}
+
+
 {-# LANGUAGE DataKinds     #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 
 module CESDS.Types.Model (
+-- * Model metadata
   ModelIdentifier
 , ModelMeta
+, makeModelMeta
 , identifier
 , name
 , uri
 , varMeta
 , inputs
+-- * Collections of model metadata
 , ModelMetas
+, makeModels
 , models
 ) where
 
@@ -18,15 +34,15 @@ module CESDS.Types.Model (
 import CESDS.Types.Domain (DomainMeta)
 import CESDS.Types.Internal ()
 import CESDS.Types.Variable (VarMeta)
-import Control.Lens.Lens (Lens', lens)
-import Data.Default (Default(..))
 import Data.ProtocolBuffers (Decode, Encode, Message, Repeated, Required, Value, getField, putField)
 import GHC.Generics (Generic)
 
 
+-- | A unique identifier for a model.
 type ModelIdentifier = String
 
 
+-- | Model metadata.
 data ModelMeta =
   ModelMeta
   {
@@ -38,42 +54,61 @@ data ModelMeta =
   }
     deriving (Generic, Show)
 
-instance Default ModelMeta where
-  def =
-    ModelMeta
-    {
-      identifier'  = putField ""
-    , name'        = putField ""
-    , uri'         = putField ""
-    , varMeta'     = putField def
-    , inputs'      = putField def
-    }
-
 instance Decode ModelMeta
 
 instance Encode ModelMeta
 
 
-identifier :: Lens' ModelMeta String
-identifier = lens (getField . identifier') (\s x -> s {identifier' = putField x})
+-- | Construct model metadata.
+{-# INLINE makeModelMeta #-}
+makeModelMeta :: ModelIdentifier -- ^ The unique identifier for the model.
+              -> String          -- ^ The name of the model.
+              -> String          -- ^ The URI for the model.
+              -> [VarMeta]       -- ^ The metadata for the variables in the model.
+              -> [DomainMeta]    -- ^ The metadata for the domains of the model's input variables, if any.
+              -> ModelMeta       -- ^ The model metadata.
+makeModelMeta identifier'' name'' uri'' varMeta'' inputs'' =
+    ModelMeta
+    {
+      identifier'  = putField identifier''
+    , name'        = putField name''
+    , uri'         = putField uri''
+    , varMeta'     = putField varMeta''
+    , inputs'      = putField inputs''
+    }
 
 
-name :: Lens' ModelMeta String
-name = lens (getField . name') (\s x -> s {name' = putField x})
+-- | Get the model's identifier.
+{-# INLINE identifier #-}
+identifier :: ModelMeta -> String
+identifier = getField . identifier'
 
 
-uri :: Lens' ModelMeta String
-uri = lens (getField . uri') (\s x -> s {uri' = putField x})
+-- | Get the model's name.
+{-# INLINE name #-}
+name :: ModelMeta -> String
+name = getField . name'
 
 
-varMeta :: Lens' ModelMeta [VarMeta]
-varMeta = lens (getField . varMeta') (\s x -> s {varMeta' = putField x})
+-- | Get the URI for the model.
+{-# INLINE uri #-}
+uri :: ModelMeta -> String
+uri = getField . uri'
 
 
-inputs :: Lens' ModelMeta [DomainMeta]
-inputs = lens (getField . inputs') (\s x -> s {inputs' = putField x})
+-- | Get the metadata for the variables in the model.
+{-# INLINE varMeta #-}
+varMeta :: ModelMeta -> [VarMeta]
+varMeta = getField . varMeta'
 
 
+-- | Get the metadata for the model's input variables, if any.
+{-# INLINE inputs #-}
+inputs :: ModelMeta -> [DomainMeta]
+inputs = getField . inputs'
+
+
+-- | A collection of model metadata.
 data ModelMetas =
   ModelMetas
   {
@@ -81,13 +116,22 @@ data ModelMetas =
   }
     deriving (Generic, Show)
 
-instance Default ModelMetas where
-  def = ModelMetas $ putField []
-
 instance Decode ModelMetas
 
 instance Encode ModelMetas
 
 
-models :: Lens' ModelMetas [ModelMeta]
-models = lens (getField . models') (\s x -> s {models' = putField x})
+-- | Make a collection of model metadata.
+{-# INLINE makeModels #-}
+makeModels :: [ModelMeta] -> ModelMetas
+makeModels models'' =
+  ModelMetas
+  {
+    models' = putField models''
+  }
+
+
+-- | Get the list of model metadata from a collection.
+{-# INLINE models #-}
+models :: ModelMetas -> [ModelMeta]
+models = getField . models'

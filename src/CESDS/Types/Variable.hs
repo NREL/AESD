@@ -1,15 +1,37 @@
+{-|
+Module      :  $Header$
+Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+License     :  MIT
+Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
+Stability   :  Stable
+Portability :  Portable
+
+Types for variables.
+
+For example, one can create variable metadata as follows:
+
+>>> import CESDS.Types.Value (VarType(..))
+>>> import CESDS.Types.Variable (VarUnits(..), makeVarMeta, units, varType)
+>>>
+>>> let x = makeVarMeta 0 "a variable" & varType .~ IntegerVar & units .~ def {unitName = Just "hour", timeExponent = 1, scale = 3600}
+-}
+
+
 {-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE DataKinds       #-}
 {-# LANGUAGE RecordWildCards #-}
 
 
 module CESDS.Types.Variable (
+-- * Variables
   VariableIdentifier
 , VarMeta
+, makeVarMeta
 , identifier
 , name
 , units
 , varType
+-- * Units of measure
 , VarUnits(..)
 ) where
 
@@ -17,16 +39,18 @@ module CESDS.Types.Variable (
 import CESDS.Types.Internal ()
 import CESDS.Types.Value (VarType(RealVar))
 import Control.Lens.Lens (Lens', lens)
-import Data.Default (Default(..))
+import Data.Default (Default(def))
 import Data.Int (Int32)
 import Data.Maybe (fromMaybe)
 import Data.ProtocolBuffers (Decode, Encode, Enumeration, Optional, Packed, Required, Value, getField, putField)
 import GHC.Generics (Generic)
 
 
+-- | A unique identifier for a variable.
 type VariableIdentifier = Int32
 
 
+-- | Metadata for a variable.
 data VarMeta =
   VarMeta
   {
@@ -39,31 +63,38 @@ data VarMeta =
   }
     deriving (Generic, Show)
 
-instance Default VarMeta where
-  def =
-    VarMeta
-    {
-      identifier' = putField $ Just 0
-    , name'       = putField ""
-    , units'      = putField Nothing
-    , si'         = putField $ replicate 8 0
-    , scale'      = putField 1
-    , varType'    = putField $ Just RealVar
-    }
-
 instance Decode VarMeta
 
 instance Encode VarMeta
 
 
-identifier :: Lens' VarMeta Int32
-identifier = lens (fromMaybe 0 . getField . identifier') (\s x -> s {identifier' = putField $ Just x})
+-- | Construct a variable.  By default it is unitless and real.
+makeVarMeta :: VariableIdentifier -- ^ The unique identifier for the variable.
+            -> String             -- ^ The name of the variable.
+            -> VarMeta            -- ^ The variable's metadata.
+makeVarMeta identifier'' name'' =
+  VarMeta
+  {
+    identifier' = putField $ Just identifier''
+  , name'       = putField name''
+  , units'      = mempty
+  , si'         = putField $ replicate 8 0
+  , scale'      = putField 1
+  , varType'    = putField $ Just RealVar
+  }
 
 
-name :: Lens' VarMeta String
-name = lens (getField . name') (\s x -> s {name' = putField x})
+-- | Get the unique identifier for a variable.
+identifier :: VarMeta -> VariableIdentifier
+identifier = fromMaybe 0 . getField . identifier'
 
 
+-- | Get the name of a variable.
+name :: VarMeta -> String
+name = getField . name'
+
+
+-- | Lens for the units of a variable.
 units :: Lens' VarMeta VarUnits
 units =
   lens
@@ -87,23 +118,25 @@ units =
     )
 
 
+-- | Lens for the type of a variable.
 varType :: Lens' VarMeta VarType
 varType = lens (fromMaybe RealVar . getField . varType') (\s x -> s {varType' = putField $ Just x})
 
 
+-- | Units of measure for a variable.
 data VarUnits =
   VarUnits
   {
-    unitName            :: Maybe String
-  , lengthExponent      :: Int32
-  , massExponent        :: Int32
-  , timeExponent        :: Int32
-  , currentExponent     :: Int32
-  , temperatureExponent :: Int32
-  , molExponent         :: Int32
-  , intensityExponent   :: Int32
-  , angleExponent       :: Int32
-  , scale               :: Double
+    unitName            :: Maybe String -- ^ The name of the unit.
+  , lengthExponent      :: Int32        -- ^ The exponent of meters.
+  , massExponent        :: Int32        -- ^ The exponent of kilograms.
+  , timeExponent        :: Int32        -- ^ The exponent of seconds.
+  , currentExponent     :: Int32        -- ^ The exponent of amperes.
+  , temperatureExponent :: Int32        -- ^ The exponent of kelvins.
+  , molExponent         :: Int32        -- ^ The exponent of moles.
+  , intensityExponent   :: Int32        -- ^ The exponent of calendas.
+  , angleExponent       :: Int32        -- ^ The exponent of radians.
+  , scale               :: Double       -- ^ The scale factor.
   }
     deriving (Eq, Generic, Ord, Show)
 

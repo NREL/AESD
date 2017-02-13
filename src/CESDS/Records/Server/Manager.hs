@@ -1,22 +1,37 @@
+{-|
+Module      :  $Header$
+Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+License     :  MIT
+Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
+Stability   :  Stable
+Portability :  Portable
+
+Support for managing models in memory.
+-}
+
+
 {-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE RecordWildCards #-}
 
 
 module CESDS.Records.Server.Manager ( -- FIXME: Should we export less?
+-- * Manager
   InMemoryManager
 , makeInMemoryManager
+-- * Cache
 , Cache
 , ModelCache
 , modelMeta
 , recordContent
 , bookmarkMetas
-, contentStatus
+-- * Status
 , ContentStatus(..)
+, contentStatus
 ) where
 
 
 import CESDS.Records.Server (ModelManager(..), ServiceM, fromService, modifyService, modifyService')
-import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta, filterBookmark, identifier)
+import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta, filterWithBookmark, identifier, setIdentifier)
 import CESDS.Types.Filter (filterRecords)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
 import CESDS.Types.Record (RecordContent, VarValue, filterVariables)
@@ -42,23 +57,22 @@ import GHC.Generics (Generic)
 import qualified Data.Map.Strict as M (elems, empty, findWithDefault, fromList, insert, lookup, mapWithKey, member, null, size, toList, union, update)
 
 
-type Cache = Map ModelIdentifier ModelCache
-
-
+-- | Manager for models in memory.
 data InMemoryManager a =
   InMemoryManager
   {
-    cache'       :: Cache
-  , nextBookmark :: IO BookmarkIdentifier
-  , persistence  :: Maybe FilePath
-  , journal      :: Maybe FileJournal
-  , state        :: a
-  , lister       :: a -> IO ([ModelMeta], a)                  -- FIXME: Run this in ServerM instead of IO, and supply a function to modify state.
-  , loader       :: a -> ModelMeta -> IO ([RecordContent], a) -- FIXME: Run this in ServerM instead of IO, and supply a function to modify state.
-  , worker       :: a -> ModelMeta -> [VarValue] -> IO ([RecordContent], a) -- FIXME: Run this in ServerM instead of IO, and supply a function to modify state.
-  }
+    cache'       :: Cache                                                   -- ^ The cache for models.
+  , nextBookmark :: IO BookmarkIdentifier                                   -- ^ Action for creating the next bookmark identifier.
+  , persistence  :: Maybe FilePath                                          -- ^ The path to the journal for persistence.
+  , journal      :: Maybe FileJournal                                       -- ^ The journal for persistence.
+  , state        :: a                                                       -- ^ The state.
+  , lister       :: a -> IO ([ModelMeta], a)                                -- ^ Handle listing models.
+  , loader       :: a -> ModelMeta -> IO ([RecordContent], a)               -- ^ Handle loading record data.
+  , worker       :: a -> ModelMeta -> [VarValue] -> IO ([RecordContent], a) -- ^ Handle performing work.
+  } -- FIXME: Run the handlers in ServerM instead of IO, and supply a function to modify state.
 
 instance ModelManager (InMemoryManager a) where
+
   listModels =
     do
       InMemoryManager{..} <- fromService id
@@ -67,7 +81,7 @@ instance ModelManager (InMemoryManager a) where
         first = M.null cache'
         additions =
           M.fromList
-            $ ((^. Model.identifier) &&& flip (modelMeta .~) def)
+            $ (Model.identifier &&& flip (modelMeta .~) def)
             <$> models
         -- FIXME: Should we also delete models not longer present?
       modifyService
@@ -75,14 +89,16 @@ instance ModelManager (InMemoryManager a) where
         . over cache (`M.union` additions)
       when first loadBookmarks
       return models
+
   lookupModel model =
     (^. modelMeta)
       <$> checkModel model
+
   loadContent model maybeBookmarkOrFilter variables =
     do -- FIXME: Should we also cache the records?
       f <- case maybeBookmarkOrFilter of
              Nothing               -> return id
-             Just (Left  bookmark) -> filterBookmark <$> lookupBookmark (model ^. Model.identifier) bookmark
+             Just (Left  bookmark) -> filterWithBookmark <$> lookupBookmark (Model.identifier model) bookmark
              Just (Right filtr   ) -> return $ filterRecords filtr
       InMemoryManager{..} <- fromService id
       (records, state') <- guardSomeException $ loader state model
@@ -91,13 +107,16 @@ instance ModelManager (InMemoryManager a) where
       return
         . (if null variables then id else filterVariables variables)
         $ f records
+
   listBookmarks model =
     M.elems . (^. bookmarkMetas)
       <$> checkModel model
+
   lookupBookmark model bookmark =
     maybe (throwError "Bookmark not found.") return
       =<< M.lookup bookmark . (^. bookmarkMetas)
       <$> checkModel model
+
   saveBookmark model bookmark =
     do
       i <- liftIO =<< fromService nextBookmark
@@ -110,8 +129,8 @@ instance ModelManager (InMemoryManager a) where
                 . M.lookup model
                 $ manager ^. cache
             b <-
-              case bookmark ^. Bookmark.identifier of
-                Nothing -> return $ bookmark & Bookmark.identifier .~ Just i
+              case Bookmark.identifier bookmark of
+                Nothing -> return $ setIdentifier i bookmark
                 Just i' -> if i' `M.member` (m ^. bookmarkMetas) then return bookmark else throwError "Bookmark not found."
             return
               (
@@ -122,7 +141,7 @@ instance ModelManager (InMemoryManager a) where
                       (
                         Just . over bookmarkMetas
                         (
-                          M.insert (fromJust $ b ^. Bookmark.identifier) b
+                          M.insert (fromJust $ Bookmark.identifier b) b
                         )
                       )
                       model
@@ -131,6 +150,7 @@ instance ModelManager (InMemoryManager a) where
               )
       journalBookmark (model, bookmark')
       return bookmark'
+
   doWork model inputs =
     do -- FIXME: Should we also cache the records?
       InMemoryManager{..} <- fromService id
@@ -140,17 +160,21 @@ instance ModelManager (InMemoryManager a) where
       return records
 
 
-checkModel :: ModelIdentifier -> ServiceM (InMemoryManager a) ModelCache
+-- | Ensure that a model is in the cache.
+checkModel :: ModelIdentifier                         -- ^ The model identifier.
+           -> ServiceM (InMemoryManager a) ModelCache -- ^ Action to ensure the model is in the cache.
 checkModel model =
   maybe (throwError $ "Model \"" ++ model ++ "\" not found.") return
     =<< fromService (M.lookup model . (^. cache))
 
 
-cache :: Lens' (InMemoryManager a) Cache
-cache = lens cache' (\s x -> s {cache' = x})
-
-
-makeInMemoryManager :: Maybe FilePath -> a -> (a -> IO ([ModelMeta], a)) -> (a -> ModelMeta -> IO ([RecordContent], a)) -> (a -> ModelMeta -> [VarValue] -> IO ([RecordContent], a)) -> IO (InMemoryManager a)
+-- | Construct an in-memory model manager.
+makeInMemoryManager :: Maybe FilePath                                            -- ^ The name of the journal file.
+                    -> a                                                         -- ^ The initial state.
+                    -> (a -> IO ([ModelMeta], a))                                -- ^ Handle listing models.
+                    -> (a -> ModelMeta -> IO ([RecordContent], a))               -- ^ Handle loading record data.
+                    -> (a -> ModelMeta -> [VarValue] -> IO ([RecordContent], a)) -- ^ Handle performing work.
+                    -> IO (InMemoryManager a)                                    -- ^ Action constructing the manager.
 makeInMemoryManager persistence state lister loader worker =
   do
     let
@@ -160,6 +184,12 @@ makeInMemoryManager persistence state lister loader worker =
     return InMemoryManager{..}
 
 
+-- | Lens for the cache.
+cache :: Lens' (InMemoryManager a) Cache
+cache = lens cache' (\s x -> s {cache' = x})
+
+
+-- | Load bookmarks.
 loadBookmarks :: ServiceM (InMemoryManager a) ()
 loadBookmarks =
   do
@@ -168,7 +198,7 @@ loadBookmarks =
       z =
         M.fromList
           $ mapReduce
-            (second ((,) =<< fromJust . (^. Bookmark.identifier)))
+            (second ((,) =<< fromJust . Bookmark.identifier))
             ((. M.fromList) . (,))
             mbs :: Map ModelIdentifier (Map BookmarkIdentifier BookmarkMeta)
     modifyService
@@ -184,6 +214,7 @@ loadBookmarks =
         }
 
 
+-- | Retrieve journaled bookmarks.
 unjournalBookmarks :: ServiceM (InMemoryManager a) [(ModelIdentifier, BookmarkMeta)]
 unjournalBookmarks =
   do
@@ -202,6 +233,7 @@ unjournalBookmarks =
                              =<< replay False journal''
 
 
+-- | Journal a bookmark.
 journalBookmark :: (ModelIdentifier, BookmarkMeta) -> ServiceM (InMemoryManager a) ()
 journalBookmark (model, bookmark) =
   do
@@ -209,25 +241,31 @@ journalBookmark (model, bookmark) =
     forM_ journal'
       $ flip append
       (
-        encode (model, fromJust $ bookmark ^. Bookmark.identifier)
+        encode (model, fromJust $ Bookmark.identifier bookmark)
       , runPut $ encodeMessage bookmark
       )
 
 
+-- | A cache for models.
+type Cache = Map ModelIdentifier ModelCache
+
+
+-- | A cache for a single model.
 data ModelCache =
   ModelCache
   {
-    modelMeta'     :: ModelMeta
-  , recordContent' :: [RecordContent]
-  , contentStatus' :: ContentStatus
-  , bookmarkMetas' :: Map BookmarkIdentifier BookmarkMeta
+    modelMeta'     :: ModelMeta                           -- ^ The model metadata.
+  , recordContent' :: [RecordContent]                     -- ^ The record data.
+  , contentStatus' :: ContentStatus                       -- ^ The status of content.
+  , bookmarkMetas' :: Map BookmarkIdentifier BookmarkMeta -- ^ The bookmark metadata.
   }
     deriving (Generic, Show)
 
 instance Default ModelCache where
-  def = ModelCache def [] def M.empty
+  def = ModelCache undefined [] def M.empty
 
 instance Serialize ModelCache where
+
   get =
     do
       modelMeta' <- decodeMessage
@@ -247,6 +285,7 @@ instance Serialize ModelCache where
             _ <- [1..n] :: [Int]
           ]
       return ModelCache{..}
+
   put ModelCache{..} =
     do
       encodeMessage modelMeta'
@@ -263,22 +302,22 @@ instance Serialize ModelCache where
         ]
 
 
+-- | Lens for model metadata.
 modelMeta :: Lens' ModelCache ModelMeta
 modelMeta = lens modelMeta' (\s x -> s {modelMeta' = x})
 
 
+-- | Lens for record data.
 recordContent :: Lens' ModelCache [RecordContent]
 recordContent = lens recordContent' (\s x -> s {recordContent' = x})
 
 
-contentStatus :: Lens' ModelCache ContentStatus
-contentStatus = lens contentStatus' (\s x -> s {contentStatus' = x})
-
-
+-- | Lens for bookmarks.
 bookmarkMetas :: Lens' ModelCache (Map BookmarkIdentifier BookmarkMeta)
 bookmarkMetas = lens bookmarkMetas' (\s x -> s {bookmarkMetas' = x})
 
 
+-- | Status of record data.
 data ContentStatus =
     EmptyContent
   | PendingContent
@@ -287,3 +326,8 @@ data ContentStatus =
 
 instance Default ContentStatus where
   def = EmptyContent
+
+
+-- | Lens for status of record data.
+contentStatus :: Lens' ModelCache ContentStatus
+contentStatus = lens contentStatus' (\s x -> s {contentStatus' = x})

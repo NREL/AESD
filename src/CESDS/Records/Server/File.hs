@@ -1,52 +1,69 @@
+{-|
+Module      :  $Header$
+Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+License     :  MIT
+Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
+Stability   :  Stable
+Portability :  Portable
+
+Support for file-based serving of records.
+-}
+
+
 module CESDS.Records.Server.File (
-  buildModelMeta
+-- * Metadata
+  buildVarMetas
 , buildVarMeta
+-- * Data
 , buildModelContent
 ) where
 
 
-import CESDS.Types.Model (ModelMeta, varMeta)
 import CESDS.Types.Record (RecordContent)
-import CESDS.Types.Value (VarType(..), castVarType, consistentVarTypes)
-import CESDS.Types.Variable (VarMeta, VarUnits(unitName), identifier, name, units, varType)
+import CESDS.Types.Value (VarType(..), castVarType, commonVarTypes)
+import CESDS.Types.Variable (VariableIdentifier, VarMeta, VarUnits(unitName), makeVarMeta, units, varType)
 import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))
 import Data.Default (def)
-import Data.Int (Int32)
 import Text.Regex.Posix ((=~))
 
 
-buildModelMeta :: [[String]] -> ModelMeta
-buildModelMeta (header : content) =
+-- | Construct variable metadata for a table of data.  The strings in the table are analyzed to determine whether each column is a real, integer, or string value.  If the name of the variable contains its units in square brackets, the units are separated from the variable and put in the units metadata.
+buildVarMetas :: [[String]] -- ^ The rows of data.
+              -> [VarMeta]  -- ^ The variable metadata for each column of the table.
+buildVarMetas (header : content) =
   let
     values = fmap read <$> content
-    types = foldl consistentVarTypes (const IntegerVar <$> header) values
+    types = commonVarTypes values
     vids = [0..]
   in
-    def
-      & varMeta .~ zipWith3 buildVarMeta vids header types
-buildModelMeta [] = def
+    zipWith3 buildVarMeta vids header types
+buildVarMetas [] = def
 
 
-buildVarMeta :: Int32 -> String -> VarType -> VarMeta
+-- | Construct Variable metadata.  If the name of the variable contains its units in square brackets, the units are separated from the variable and put in the units metadata.
+buildVarMeta :: VariableIdentifier -- ^ The variable identifier.
+             -> String             -- ^ The name of the variable.
+             -> VarType            -- ^ The type for the variable.
+             -> VarMeta            -- ^ The variable metadata.
 buildVarMeta i n t =
   let
     (n', u) = case n =~ "^(.*[^ ]) *[[](.*)[]] *$" :: [[String]] of
                 [[_, n'', u'']] -> (n'', u'')
                 _               -> (n, "unknown")
   in
-    def
-      & identifier .~ i
-      & name       .~ n'
-      & varType             .~ t
-      & units               .~ def {unitName = Just u}
+    makeVarMeta i n'
+      & varType    .~ t
+      & units      .~ def {unitName = Just u}
   
 
-buildModelContent :: [[String]] -> [RecordContent]
-buildModelContent (header : content) =
+-- | Construct records from a table of data.  The strings in the table are parsed into values with the most specific value type in each column.
+buildModelContent :: [[String]]      -- ^ The rows of data.
+                  -> [RecordContent] -- ^ The records.
+buildModelContent (_ : content) =
   let
     values = fmap read <$> content
-    types = foldl consistentVarTypes (const IntegerVar <$> header) values
+    types = commonVarTypes values
     vids = [0..]
     rids = [0..]
   in

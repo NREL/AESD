@@ -1,25 +1,29 @@
-name:                cesds-records
-version:             0.4.0.1
-synopsis:            Implementation of CESDS record API
-description:         Implementation of CESDS record API.
-license:             AllRightsReserved
-license-file:        LICENSE
-author:              Brian W Bush <brian.bush@nrel.gov>
-maintainer:          Brian W Bush <brian.bush@nrel.gov>
-copyright:           (c) 2016 National Renewable Energy Laboratory
-category:            Network
-build-type:          Simple
-cabal-version:       >= 1.10
+name         : cesds-records
+version      : 0.4.1.0
+synopsis     : CESDS Records
+description  :
+  Implementation of CESDS Records API, include a skeletal server and client.
+  .
+  The executable program /cesds-server/ serves tab-separated-value files as CESDS Records.  Its command-line arguments are (i) the WebSocket host address, (ii) the WebSocket port number, (iii) the directory where the tab-separated-value files reside, and (iv) the path to the journal file that persists data for future invocations.
+  .
+  The executable program /cesds-client-example/ prints out a model and creates a bookmark.  Its command-line arguments are (i) the WebSocket host address and (ii) the WebSocket port number.
+license      : AllRightsReserved
+license-file : LICENSE
+author       : Brian W Bush <brian.bush@nrel.gov>
+maintainer   : Brian W Bush <brian.bush@nrel.gov>
+copyright    : (c) 2016 National Renewable Energy Laboratory
+category     : Network
+build-type   : Simple
+cabal-version: >= 1.10
 
-stability:           Stable
-homepage:            https://github.nrel.gov/haskell/cesds-records
-bug-reports:         https://github.nrel.gov/haskell/cesds-records/issues/
+stability    : Stable
+homepage     : https://github.nrel.gov/haskell/cesds-records
+bug-reports  : https://github.nrel.gov/haskell/cesds-records/issues/
 
 extra-source-files:  ReadMe.md
-                     ChangeLog.md
 
 source-repository head
-  type: git
+  type    : git
   location: https://github.nrel.gov/haskell/cesds-records.git
  
 library
