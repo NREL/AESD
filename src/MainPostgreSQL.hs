@@ -1,8 +1,21 @@
+{-|
+Module      :  $Header$
+Copyright   :  (c) 2017 National Renewable Energy Laboratory
+License     :  MIT
+Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
+Stability   :  Stable
+Portability :  Portable
+
+Server for PostgreSQL.
+-}
+
+
 {-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE RecordWildCards #-}
 
 
 module Main (
+-- * Entry point
   main
 ) where
 
@@ -17,14 +30,15 @@ import GHC.Generics (Generic)
 import System.Environment (getArgs)
 
 
+-- Configuration.
 data Configuration =
   Configuration
   {
-    host        :: String
-  , port        :: Int
-  , directory   :: FilePath
-  , persistence :: Maybe FilePath
-  , database    :: String
+    host        :: String         -- ^ WebSocket host address.
+  , port        :: Int            -- ^ WebSocket port number.
+  , directory   :: FilePath       -- ^ Path to SQL queries.
+  , persistence :: Maybe FilePath -- ^ Path to persistnce journal.
+  , database    :: String         -- ^ PostgreSQL connection information.
   }
     deriving (Eq, Generic, Show)
 
@@ -33,6 +47,7 @@ instance FromJSON Configuration
 instance ToJSON Configuration
 
 
+-- Run the server.
 main :: IO ()
 main =
   do

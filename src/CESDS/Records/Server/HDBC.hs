@@ -1,26 +1,38 @@
+{-|
+Module      :  $Header$
+Copyright   :  (c) 2017 National Renewable Energy Laboratory
+License     :  MIT
+Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
+Stability   :  Stable
+Portability :  Portable
+
+Support serving of records from databases.
+-}
+
+
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RecordWildCards  #-}
 {-# LANGUAGE TupleSections    #-}
 
 
 module CESDS.Records.Server.HDBC (
+-- * Entry point
   hdbcMain
-, buildModelMeta
-, buildModelContent
+-- * Metadata
+, buildVarMetas
 , analyzeColumn
+-- * Data
+, buildModelContent
 ) where
 
 
 import CESDS.Records.Server (serverMain)
 import CESDS.Records.Server.File (buildVarMeta)
 import CESDS.Records.Server.Manager (makeInMemoryManager)
-import CESDS.Types.Model (ModelMeta, varMeta)
-import CESDS.Types.Model as Model (identifier, name, uri)
+import CESDS.Types.Model as Model (makeModelMeta, name)
 import CESDS.Types.Record (RecordContent)
 import CESDS.Types.Value (DataValue, VarType(..), integerValue, realValue, stringValue)
-import Control.Lens.Getter ((^.))
-import Control.Lens.Lens ((&))
-import Control.Lens.Setter ((.~))
+import CESDS.Types.Variable (VarMeta)
 import Control.Monad (void)
 import Data.Default (def)
 import Data.List (isSuffixOf)
@@ -34,8 +46,56 @@ import System.Directory (getDirectoryContents, makeAbsolute)
 import System.FilePath.Posix ((</>))
 
 
-buildModelMeta :: IConnection c => Bool -> c -> String -> IO ModelMeta
-buildModelMeta useDescribe connection query =
+-- | Run the server.
+hdbcMain :: IConnection c
+         => Bool           -- ^ Whether to use the 'Database.HDBC.describeResult'.
+         -> String         -- ^ The WebSocket host address.
+         -> Int            -- ^ The WebSocket port number.
+         -> FilePath       -- ^ The directory where SQL queries reside.
+         -> Maybe FilePath -- ^ The location of the peristence journal file.
+         -> c              -- ^ The database connection.
+         -> IO ()          -- ^ Action to run the server.
+hdbcMain useDescribe host port directory persistence connection =
+  do
+    directory' <- makeAbsolute directory
+    files <- getDirectoryContents directory'
+    serverMain host port
+      =<< makeInMemoryManager persistence ()
+      (
+        const
+          . fmap (, ())
+          $ sequence
+          [
+            flip
+              (
+                makeModelMeta
+                (toString (generateNamed namespaceURL $ toEnum . fromEnum <$> "file://" ++ file))
+                file
+                ("file://" ++ file)
+              )
+              []
+              <$> (buildVarMetas useDescribe connection =<< readFile file)
+          |
+            file <- (directory' </>) <$> files
+          , ".sql" `isSuffixOf` file
+          ]
+      )
+      ( \_ m ->
+        (, ())
+          <$> (buildModelContent useDescribe connection =<< readFile (Model.name m))
+      )
+      (
+        error "Static data only."
+      )
+
+
+-- | Construct metadata for variables in a query.
+buildVarMetas :: IConnection c
+              => Bool         -- ^ Whether to use the 'Database.HDBC.describeResult'.
+              -> c            -- ^ The database connection.
+              -> String       -- ^ The SQL query.
+              -> IO [VarMeta] -- ^ The action to return the metadata for variables.
+buildVarMetas useDescribe connection query =
   do
     statement <- prepare connection $ "SELECT * FROM (" ++ query ++ ") AS buildModelMeta LIMIT " ++ (if useDescribe then "0" else "1")
     void $ execute statement []
@@ -43,12 +103,15 @@ buildModelMeta useDescribe connection query =
     let
       vids = [1..]
     return
-      $ def
-      & varMeta
-      .~ zipWith (\i (n, t, _) -> buildVarMeta i n t) vids namesTypes
+      $ zipWith (\i (n, t, _) -> buildVarMeta i n t) vids namesTypes
 
 
-buildModelContent :: IConnection c => Bool -> c -> String -> IO [RecordContent]
+-- | Construct the record data.
+buildModelContent :: IConnection c
+                  => Bool               -- ^ Whether to use the 'Database.HDBC.describeResult'.
+                  -> c                  -- ^ The database connection.
+                  -> String             -- ^ The SQL query.
+                  -> IO [RecordContent] -- ^ Action to return the record data.
 buildModelContent useDescribe connection query =
   do
     statement <- prepare connection query
@@ -64,7 +127,12 @@ buildModelContent useDescribe connection query =
       <$> values
 
 
-analyzeColumns :: IConnection c => Bool -> c -> Statement -> IO [(String, VarType, SqlValue -> DataValue)]
+-- | Analyze columns.
+analyzeColumns :: IConnection c
+               => Bool                                          -- ^ Whether to use the 'Database.HDBC.describeResult'.
+               -> c                                             -- ^ The database connection.
+               -> Statement                                     -- ^ The prepared statement.
+               -> IO [(String, VarType, SqlValue -> DataValue)] -- ^ Action to return the column names, types, and cast functions.
 analyzeColumns True _ statement = fmap analyzeColumn <$> describeResult statement
 analyzeColumns False connection statement =
   do
@@ -73,11 +141,15 @@ analyzeColumns False connection statement =
     maybe [] (fmap analyzeColumn') <$> fetchRowAL statement'
 
 
-analyzeColumn :: (String, SqlColDesc) -> (String, VarType, SqlValue -> DataValue)
+-- | Analyze a column.
+analyzeColumn :: (String, SqlColDesc)                     -- ^ The name and column description.
+              -> (String, VarType, SqlValue -> DataValue) -- ^ The column name, type, and cast function.
 analyzeColumn (column, SqlColDesc{..}) = analyzeType column colType
+  
 
-
-analyzeColumn' :: (String, SqlValue) -> (String, VarType, SqlValue -> DataValue)
+-- | Analyze a column.
+analyzeColumn' :: (String, SqlValue)                       -- ^ The name and a sample value.
+               -> (String, VarType, SqlValue -> DataValue) -- ^ The column name, type, and cast function.
 analyzeColumn' (column, SqlWord32   _) = analyzeType column SqlIntegerT
 analyzeColumn' (column, SqlWord64   _) = analyzeType column SqlIntegerT
 analyzeColumn' (column, SqlInt32    _) = analyzeType column SqlIntegerT
@@ -88,41 +160,14 @@ analyzeColumn' (column, SqlRational _) = analyzeType column SqlDoubleT
 analyzeColumn' (column, _            ) = analyzeType column SqlVarCharT
 
 
-analyzeType :: String -> SqlTypeId -> (String, VarType, SqlValue -> DataValue)
+-- | Analyze an SQL type.
+analyzeType :: String                                   -- ^ The column name.
+            -> SqlTypeId                                -- ^ The SQL type.
+            -> (String, VarType, SqlValue -> DataValue) -- ^ The column name, type, and cast function.
 analyzeType column typ
-  | typ `elem` [SqlNumericT, SqlSmallIntT, SqlIntegerT, SqlTinyIntT, SqlBigIntT] = (column, IntegerVar, flip (integerValue .~) def . Just . fromSql')
-  | typ `elem` [SqlDecimalT, SqlRealT, SqlFloatT, SqlDoubleT]                    = (column, RealVar   , flip (realValue    .~) def . Just . fromSql')
-  | otherwise                                                                    = (column, StringVar , flip (stringValue  .~) def . Just . fromSql')
+  | typ `elem` [SqlNumericT, SqlSmallIntT, SqlIntegerT, SqlTinyIntT, SqlBigIntT] = (column, IntegerVar, integerValue . fromSql')
+  | typ `elem` [SqlDecimalT, SqlRealT, SqlFloatT, SqlDoubleT]                    = (column, RealVar   , realValue    . fromSql')
+  | otherwise                                                                    = (column, StringVar , stringValue  . fromSql')
   where
     fromSql' SqlNull = def
     fromSql' x       = fromSql x
-
-
-hdbcMain :: IConnection c => Bool -> String -> Int -> FilePath -> Maybe FilePath -> c -> IO ()
-hdbcMain useDescribe host port directory persistence connection =
-  do
-    directory' <- makeAbsolute directory
-    files <- getDirectoryContents directory'
-    serverMain host port
-      =<< makeInMemoryManager persistence ()
-      (
-        const
-          . fmap (, ())
-          $ sequence
-          [
-            (Model.identifier .~ toString (generateNamed namespaceURL $ toEnum . fromEnum <$> "file://" ++ file))
-              . (Model.name .~ file)
-              . (uri .~ "file://" ++ file)
-              <$> (buildModelMeta useDescribe connection =<< readFile file)
-          |
-            file <- (directory' </>) <$> files
-          , ".sql" `isSuffixOf` file
-          ]
-      )
-      ( \_ m ->
-        (, ())
-          <$> (buildModelContent useDescribe connection =<< readFile (m ^. Model.name))
-      )
-      (
-        error "Static data only."
-      )

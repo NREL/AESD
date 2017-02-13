@@ -1,19 +1,60 @@
-name:                cesds-records-hdbc
-version:             0.4.0.0
-synopsis:            Database support for CESDS records API.
-description:         PostgreSQL, SQLite3, MySQL, and ODBC support for CESDS records API.
-license:             AllRightsReserved
-license-file:        LICENSE
-author:              Brian W Bush <brian.bush@nrel.gov>
-maintainer:          Brian W Bush <brian.bush@nrel.gov>
-copyright:           (c) 2017 National Renewable Energy Laboratory
-category:            Network
-build-type:          Simple
-cabal-version:       >= 1.10
+name         : cesds-records-hdbc
+version      : 0.4.1.0
+synopsis     : Database support for CESDS records API.
+description  :
+  The package provides HDBC support for PostgreSQL, SQLite3, MySQL, and ODBC support for the CESDS records API.
+  .
+  The executable program /cesds-postgresql-server/ takes a single argument, which is a configuration file in YAML or JSON format, is a server for PostgreSQL.  See <https://www.postgresql.org/docs/8.1/static/libpq.html#LIBPQ-CONNECT> for documentation of the connection string.
+  .
+  @
+  host        : \<\<WebSocket host address\>\>
+  port        : \<\<WebSocket port number\>\>
+  directory   : \<\<path to directory containing SQL SELECT queries\>\>
+  persistence : \<\<optional path to journal file for persisting bookmarks\>\>
+  database    : \<\<PostgreSQL connection information\>\>
+  @
+  .
+  The executable program /cesds-mysql-server/ takes a single argument, which is a configuration file in YAML or JSON format, is a server for MySQL.  See <https://hackage.haskell.org/package/HDBC-mysql-0.7.1.0/docs/Database-HDBC-MySQL.html> for documentation of the connection string.
+  .
+  @
+  host        : \<\<WebSocket host address\>\>
+  port        : \<\<WebSocket port number\>\>
+  directory   : \<\<path to directory containing SQL SELECT queries\>\>
+  persistence : \<\<optional path to journal file for persisting bookmarks\>\>
+  database    : \<\<MySQL connection information\>\>
+  @
+  .
+  The executable program /cesds-sqlite3-server/ takes a single argument, which is a configuration file in YAML or JSON format, is a server for SQLite3.
+  .
+  @
+  host        : \<\<WebSocket host address\>\>
+  port        : \<\<WebSocket port number\>\>
+  directory   : \<\<path to directory containing SQL SELECT queries\>\>
+  persistence : \<\<optional path to journal file for persisting bookmarks\>\>
+  database    : \<\<Path to database file\>\>
+  @
+  .
+  The executable program /cesds-odbc-server/ takes a single argument, which is a configuration file in YAML or JSON format, is a server for ODBC.  See <http://msdn2.microsoft.com/en-us/library/ms715433(VS.85).aspx> for documentation of the connection string.
+  .
+  @
+  host        : \<\<WebSocket host address\>\>
+  port        : \<\<WebSocket port number\>\>
+  directory   : \<\<path to directory containing SQL SELECT queries\>\>
+  persistence : \<\<optional path to journal file for persisting bookmarks\>\>
+  database    : \<\<ODBC connection information\>\>
+  @
+license      : AllRightsReserved
+license-file : LICENSE
+author       : Brian W Bush <brian.bush@nrel.gov>
+maintainer   : Brian W Bush <brian.bush@nrel.gov>
+copyright    : (c) 2017 National Renewable Energy Laboratory
+category     : Network
+build-type   : Simple
+cabal-version: >= 1.10
 
-stability:           Stable
-homepage:            https://github.nrel.gov/haskell/cesds-records-hdbc
-bug-reports:         https://github.nrel.gov/haskell/cesds-records-hdbc/issues/
+stability    : Stable
+homepage     : https://github.nrel.gov/haskell/cesds-records-hdbc
+bug-reports  : https://github.nrel.gov/haskell/cesds-records-hdbc/issues/
 
 extra-source-files:  ReadMe.md
 
@@ -46,7 +87,6 @@ library
                   , directory
                   , filepath
                   , HDBC == 2.4.0.1
-                  , lens
                   , uuid
   default-language: Haskell2010
   ghc-options     : -Wall -O2
@@ -62,7 +102,6 @@ executable cesds-postgresql-server
                   , filepath
                   , HDBC
                   , HDBC-postgresql == 2.3.2.4
-                  , lens
                   , uuid
                   , yaml
   if flag(PostgreSQL)
@@ -83,7 +122,6 @@ executable cesds-sqlite3-server
                   , filepath
                   , HDBC
                   , HDBC-sqlite3 == 2.3.3.1
-                  , lens
                   , uuid
                   , yaml
   if flag(SQLite3)
@@ -104,7 +142,6 @@ executable cesds-mysql-server
                   , filepath
                   , HDBC
                   , HDBC-mysql == 0.7.1.0
-                  , lens
                   , uuid
                   , yaml
   if flag(MySQL)
@@ -125,7 +162,6 @@ executable cesds-odbc-server
                   , filepath
                   , HDBC
                   , HDBC-odbc == 2.5.0.1
-                  , lens
                   , uuid
                   , yaml
   if flag(ODBC)
