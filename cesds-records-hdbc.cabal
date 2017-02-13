@@ -1,5 +1,5 @@
 name         : cesds-records-hdbc
-version      : 0.4.1.0
+version      : 0.4.1.1
 synopsis     : Database support for CESDS records API.
 description  :
   The package provides HDBC support for PostgreSQL, SQLite3, MySQL, and ODBC support for the CESDS records API.
@@ -11,6 +11,7 @@ description  :
   port        : \<\<WebSocket port number\>\>
   directory   : \<\<path to directory containing SQL SELECT queries\>\>
   persistence : \<\<optional path to journal file for persisting bookmarks\>\>
+  chunkSize   : \<\<optional number of records per chunk\>\>
   database    : \<\<PostgreSQL connection information\>\>
   @
   .
@@ -21,6 +22,7 @@ description  :
   port        : \<\<WebSocket port number\>\>
   directory   : \<\<path to directory containing SQL SELECT queries\>\>
   persistence : \<\<optional path to journal file for persisting bookmarks\>\>
+  chunkSize   : \<\<optional number of records per chunk\>\>
   database    : \<\<MySQL connection information\>\>
   @
   .
@@ -31,6 +33,7 @@ description  :
   port        : \<\<WebSocket port number\>\>
   directory   : \<\<path to directory containing SQL SELECT queries\>\>
   persistence : \<\<optional path to journal file for persisting bookmarks\>\>
+  chunkSize   : \<\<optional number of records per chunk\>\>
   database    : \<\<Path to database file\>\>
   @
   .
@@ -41,6 +44,7 @@ description  :
   port        : \<\<WebSocket port number\>\>
   directory   : \<\<path to directory containing SQL SELECT queries\>\>
   persistence : \<\<optional path to journal file for persisting bookmarks\>\>
+  chunkSize   : \<\<optional number of records per chunk\>\>
   database    : \<\<ODBC connection information\>\>
   @
 license      : AllRightsReserved

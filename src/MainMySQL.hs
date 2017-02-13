@@ -41,6 +41,7 @@ data Configuration =
   , port        :: Int              -- ^ WebSocket port number.
   , directory   :: FilePath         -- ^ Path to SQL queries.
   , persistence :: Maybe FilePath   -- ^ Path to persistnce journal.
+  , chunkSize   :: Maybe Int        -- ^ The number of records per chunk.
   , database    :: MySQLConnectInfo -- ^ MySQL connection information.
   }
     deriving (Eq, Generic, Show)
@@ -69,4 +70,4 @@ main =
     bracket
       (connectMySQL database)
       disconnect
-      $ hdbcMain True host port directory persistence
+      $ hdbcMain True host port directory persistence chunkSize

@@ -53,13 +53,14 @@ hdbcMain :: IConnection c
          -> Int            -- ^ The WebSocket port number.
          -> FilePath       -- ^ The directory where SQL queries reside.
          -> Maybe FilePath -- ^ The location of the peristence journal file.
+         -> Maybe Int      -- ^ The number of records per chunk.
          -> c              -- ^ The database connection.
          -> IO ()          -- ^ Action to run the server.
-hdbcMain useDescribe host port directory persistence connection =
+hdbcMain useDescribe host port directory persistence chunkSize connection =
   do
     directory' <- makeAbsolute directory
     files <- getDirectoryContents directory'
-    serverMain host port
+    serverMain host port chunkSize
       =<< makeInMemoryManager persistence ()
       (
         const

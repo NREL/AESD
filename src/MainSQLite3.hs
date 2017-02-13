@@ -38,6 +38,7 @@ data Configuration =
   , port        :: Int            -- ^ WebSocket port number.
   , directory   :: FilePath       -- ^ Path to SQL queries.
   , persistence :: Maybe FilePath -- ^ Path to persistnce journal.
+  , chunkSize   :: Maybe Int      -- ^ The number of records per chunk.
   , database    :: FilePath       -- ^ Path to database file.
   }
     deriving (Eq, Generic, Show)
@@ -56,4 +57,4 @@ main =
     bracket
       (connectSqlite3 database)
       disconnect
-      $ hdbcMain False host port directory persistence
+      $ hdbcMain False host port directory persistence chunkSize
