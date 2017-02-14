@@ -1,5 +1,5 @@
 name         : cesds-records
-version      : 0.4.1.0
+version      : 0.4.2.0
 synopsis     : CESDS Records
 description  :
   Implementation of CESDS Records API, include a skeletal server and client.
@@ -42,6 +42,7 @@ library
                     CESDS.Types.Response
                     CESDS.Types.Value
                     CESDS.Types.Variable
+                    Network.WebSockets.STM
   other-modules   : CESDS.Types.Internal
   build-depends   : base >= 4.8 && < 4.9
                   , bytestring
