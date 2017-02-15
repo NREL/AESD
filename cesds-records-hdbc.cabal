@@ -1,5 +1,5 @@
 name         : cesds-records-hdbc
-version      : 0.4.1.1
+version      : 0.4.1.2
 synopsis     : Database support for CESDS records API.
 description  :
   The package provides HDBC support for PostgreSQL, SQLite3, MySQL, and ODBC support for the CESDS records API.
@@ -72,7 +72,7 @@ flag PostgreSQL
 
 flag SQLite3
   description     : Compile records server for SQLite 3.
-  default         : False
+  default         : True
 
 flag MySQL
   description     : Compile records server for MySQL.
