@@ -81,7 +81,8 @@ close State{..} = stop communicator
 
 
 -- | Fetch model metadata.
-fetchModels :: State -> IO (Either String [ModelMeta])
+fetchModels :: State                          -- ^ The state of the client.
+            -> IO (Either String [ModelMeta]) -- ^ Action returning either an error or the models.
 fetchModels state@State{..} =
   do
     -- Fetch the model model metadata.
