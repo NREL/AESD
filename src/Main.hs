@@ -35,7 +35,7 @@ import System.Environment (getArgs)
 main :: IO ()
 main =
   do
-    [configuration, host, port, start, persistence] <- getArgs -- FIXME
+    [configuration, host, port, start, persistence, chunkSize] <- getArgs -- FIXME
     Just site <- decodeFile configuration
     let
       access = siteAccess site
@@ -43,8 +43,8 @@ main =
       $ do
         httpManager <- liftIO $ newManager tlsManagerSettings
         liftIO
-          $ serverMain host (read port)
-          =<< makeInMemoryManager (read persistence)
+          $ serverMain host (read port) (Just $ read chunkSize)
+          =<< makeInMemoryManager (Just persistence)
             (makeCache $ meters site)
             (
               return
