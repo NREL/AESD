@@ -39,7 +39,9 @@ import CESDS.Types.Variable as Variable (VariableIdentifier)
 import Control.Concurrent.STM (atomically)
 import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVar, readTVarIO, writeTVar)
 import Control.Lens.Getter ((^.))
+import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))
+import Control.Monad (when)
 import Control.Monad.Except (ExceptT, MonadError, MonadIO, liftIO, runExceptT, throwError)
 import Control.Monad.Except.Util (guardSomeException)
 import Control.Monad.Reader (MonadReader, ReaderT, ask, lift, runReaderT)
@@ -82,8 +84,7 @@ serverMain host port chunkSize initialManager =
               return False
           sendChunks rid xs =
             do
-              xs' <- runServiceToIO manager xs
-              flip (either $ send communicator (). (Response.identifier .~ rid) . errorResponse) xs'
+              flip (either $ send communicator (). (Response.identifier .~ rid) . errorResponse) xs
                 $ \xs'' ->
                   sequence_
                   [
@@ -98,6 +99,14 @@ serverMain host port chunkSize initialManager =
                   , (i', zs) <- zip [1..] ys
                   ]
               return False
+          streamChunks rid count action =
+            do
+              result <- {- maybe id (take . fromIntegral) count <$> -} runServiceToIO manager action :: Either String [RecordContent]
+              sendChunks rid result
+              let
+                count' = either (const 0) ((count -) . length) result
+              when (count' > 0)
+                $ streamChunks rid count' action
         -- Process all requests on a single thread, but queue the messages to be sent for the sender thread.
         launch communicator () -- FIXME: Cancellation won't work until we either have the sending thread filter or put workers on separate threads and have them filter.
           $ \request -> onRequest
@@ -111,14 +120,26 @@ serverMain host port chunkSize initialManager =
               -- Load records.
               onLoadRecordsData' -- FIXME: Do this on a separate thread.
                 $ \model count variables maybeBookmarkOrFilter ->
-                  -- Break the records into chunks and package them into separate responses.
-                  sendChunks (request ^. Request.identifier)
-                    $ do
-                      -- Find the model.
-                      [model'] <- lookupModels True $ Just model
-                      -- Take only the requested number of records
-                      maybe id (take . fromIntegral) count
-                        <$> loadContent model' maybeBookmarkOrFilter variables
+                  do
+                    action <-
+                      runServiceToIO manager
+                        $ do
+                          -- Find the model.
+                          [model'] <- lookupModels True $ Just model
+                          loadContent model' maybeBookmarkOrFilter variables
+                    case action of
+                      Left  message -> do
+                                         send communicator ()
+                                           $ errorResponse message
+                                           & Response.identifier .~ request ^. Request.identifier
+                      Right action' -> streamChunks (request ^. Request.identifier) count action'
+                    return False
+ 
+                    -- Break the records into chunks and package them into separate responses.
+---                    $ do
+---                      -- Take only the requested number of records
+---                      maybe id (take . fromIntegral) count
+---                        <$> loadContent model' maybeBookmarkOrFilter variables
             )
             (
               -- Load metadata for bookmark(s)
@@ -147,7 +168,7 @@ serverMain host port chunkSize initialManager =
                   sendChunks (request ^. Request.identifier)
                     $ do
                       [model'] <- lookupModels True (Just model)
-                      doWork model' inputs
+                      undefined -- doWork model' inputs
             )
             (
               -- Handle unknown requests.
@@ -173,7 +194,7 @@ class ModelManager a where
   loadContent :: ModelMeta                                -- ^ The model metadata.
               -> Maybe (Either BookmarkIdentifier Filter) -- ^ Maybe the bookmark or filter.
               -> [VariableIdentifier]                     -- ^ The variables to select.
-              -> ServiceM a [RecordContent]               -- ^ Action to load record data.
+              -> ServiceM a (ServiceM a [RecordContent])  -- ^ Action for action to load record data.
 
   -- | List all bookmarks.
   listBookmarks :: ModelIdentifier           -- ^ The model identifier.
@@ -190,9 +211,9 @@ class ModelManager a where
                -> ServiceM a BookmarkMeta -- ^ Action to save a bookmark and return it.
 
   -- | Perform work for a model.
-  doWork :: ModelMeta                  -- ^ The model metadata.
-         -> [VarValue]                 -- ^ The values of the input variables.
-         -> ServiceM a [RecordContent] -- ^ Action to perform the work and return the new records.
+  doWork :: ModelMeta                               -- ^ The model metadata.
+         -> [VarValue]                              -- ^ The values of the input variables.
+         -> ServiceM a (ServiceM a [RecordContent]) -- ^ Action to perform the work and return the new records.
 
 
 -- | Lookup a model.

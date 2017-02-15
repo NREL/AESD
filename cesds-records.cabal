@@ -1,5 +1,5 @@
 name         : cesds-records
-version      : 0.4.3.2
+version      : 0.4.4.0
 synopsis     : CESDS Records
 description  :
   Implementation of CESDS Records API, include a skeletal server and client.
@@ -67,7 +67,7 @@ library
     cpp-options   : -DCESDS_VERBOSE
   ghc-options     : -Wall -O2
 
-executable cesds-server
+executable cesds-file-server
   main-is         : MainServer.hs
   hs-source-dirs  : src
   build-depends   : base               
@@ -81,6 +81,28 @@ executable cesds-server
                   , mtl
                   , protobuf
                   , regex-posix
+                  , raft
+                  , split
+                  , stm
+                  , uuid
+                  , websockets
+  buildable       : True               
+  default-language: Haskell2010        
+  if flag(verbose)
+    cpp-options   : -DCESDS_VERBOSE
+  ghc-options     : -Wall -O2 -threaded
+
+executable cesds-random-server
+  main-is         : MainRandomServer.hs
+  hs-source-dirs  : src
+  build-depends   : base               
+                  , bytestring
+                  , cereal
+                  , containers
+                  , data-default
+                  , lens
+                  , mtl
+                  , protobuf
                   , raft
                   , split
                   , stm

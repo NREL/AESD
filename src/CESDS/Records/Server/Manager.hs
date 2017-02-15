@@ -36,6 +36,7 @@ import CESDS.Types.Filter (filterRecords)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
 import CESDS.Types.Record (RecordContent, VarValue, filterVariables)
 import Control.Arrow ((&&&), second)
+import Control.Concurrent.MVar (newMVar, swapMVar)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens (Lens', (&), lens)
 import Control.Lens.Setter ((.~), over)
@@ -104,9 +105,14 @@ instance ModelManager (InMemoryManager a) where
       (records, state') <- guardSomeException $ loader state model
       modifyService
         $ \c -> c {state = state'}
+      newRecords <-
+        liftIO
+          . newMVar
+          . (if null variables then id else filterVariables variables)
+          $ f records
       return
-        . (if null variables then id else filterVariables variables)
-        $ f records
+        . liftIO
+        $ swapMVar newRecords []
 
   listBookmarks model =
     M.elems . (^. bookmarkMetas)
