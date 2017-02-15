@@ -10,6 +10,7 @@ WebSockets with STM queues for sending and receiving messages.  There is one thr
 -}
 
 
+{-# LANGUAGE CPP             #-}
 {-# LANGUAGE RecordWildCards #-}
 
 
@@ -44,7 +45,11 @@ import Network.WebSockets (Connection, ConnectionException, WebSocketsData, rece
 
 -- | Whether to write debugging messages.
 debug :: Bool
+#ifdef CESDS_VERBOSE
+debug = True
+#else
 debug = False
+#endif
 
 
 -- | The state of communication via WebSockets.

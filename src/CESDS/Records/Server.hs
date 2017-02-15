@@ -93,7 +93,7 @@ serverMain host port chunkSize initialManager =
                       . (nextChunkIdentifier .~ (if fromIntegral i' < n then Just (i' + 1) else Nothing))
                       $ recordsResponse zs
                   |
-                    let ys = chunksOf (fromMaybe maxBound chunkSize) xs''
+                    let ys = if null xs'' then [[]] else chunksOf (fromMaybe maxBound chunkSize) xs''
                   , let n = length ys
                   , (i', zs) <- zip [1..] ys
                   ]
