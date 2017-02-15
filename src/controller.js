@@ -205,7 +205,7 @@ function loadModels(result) {
       subdetail = document.createElement("BUTTON");
       text = document.createTextNode("show");
       subdetail.appendChild(text);
-      subdetail.addEventListener("click", function() {wait(); lastBookmark = null; cesds.requestRecordsData(ws, m.id, null, null, null, showRecords, reportError);});
+      subdetail.addEventListener("click", function() {wait(); lastBookmark = null; cesds.requestRecordsData(ws, m.id, maxRecords.valueAsNumber, null, null, showRecords, reportError);});
       detail.appendChild(subdetail);
       subnode.appendChild(detail);
 
@@ -225,7 +225,7 @@ function loadModels(result) {
               var item = document.createElement("LI");
               text = document.createTextNode("[" + b.id + "] " + b.name);
               item.appendChild(text);
-              item.addEventListener("click", function() {wait(); lastBookmark = b; cesds.requestRecordsData(ws, m.id, null, null, b.id, showRecords, reportError);});
+              item.addEventListener("click", function() {wait(); lastBookmark = b; cesds.requestRecordsData(ws, m.id, maxRecords.valueAsNumber, null, b.id, showRecords, reportError);});
               item.style.cursor = "pointer";
               subdetail.appendChild(item);
             }

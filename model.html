@@ -16,7 +16,10 @@
         <input id="connection" type="text" value="ws://127.0.0.1:50374"/>
         <button id="connectButton" type="button" onclick="reconnect()">connect</button>
         <button id="disconnectButton" type="button" onclick="disconnect()" disabled>disconnect</button>
-        <input id="showPlot" type="checkbox" checked="true">show plot</input>
+        <br/>
+        Maximum records to display:
+        <input id="maxRecords" type="number" min="1" max="5000" value="1000"/>
+         <input id="showPlot" type="checkbox" checked="true">show plot</input>
       </span>
       <ul id="models"></ul>
     </div>
