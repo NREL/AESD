@@ -18,7 +18,7 @@ module Main (
 
 import CESDS.Types.Bookmark as Bookmark (identifier, name, makeSet)
 import CESDS.Types.Model as Model (identifier, varMeta)
-import CESDS.Records.Client (clientMain, close, fetchBookmarks, fetchModels, fetchRecords, storeBookmark)
+import CESDS.Records.Client (clientMain, fetchBookmarks, fetchModels, fetchRecords, storeBookmark)
 import CESDS.Types.Record (onRecordContent)
 import CESDS.Types.Variable as Variable (identifier, name)
 import Data.List (intercalate)
@@ -77,4 +77,3 @@ main =
               b' <- bs
             ]
           putStrLn ""
-          close state

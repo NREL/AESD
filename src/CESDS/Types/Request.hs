@@ -61,7 +61,7 @@ import CESDS.Types.Record (VarValue)
 import CESDS.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>))
 import Control.Lens.Lens (Lens', lens)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromJust, fromMaybe)
 import Data.ProtocolBuffers (Decode, Encode, Message, Optional, Repeated, Required, Value, getField, putField)
 import Data.Word (Word32, Word64)
 import GHC.Generics (Generic)
@@ -134,11 +134,11 @@ onRequest :: Monad m
             -> (SaveBookmarkMeta -> m a) -- ^ Handler saving a bookmark.
             -> (Cancel           -> m a) -- ^ Handler cancelling another request.
             -> (Work             -> m a) -- ^ Handler performing work.
-            -> a                         -- ^ The default result.
+            -> m a                       -- ^ The default result.
             -> Request                   -- ^ The request.
             -> m a                       -- ^ The action to handle the request.
 onRequest f g h i j k d Request{..} =
-  fmap (fromMaybe d)
+  fmap fromJust
      . sequence
      $  f <$> getField loadModelsMeta'
     <|> g <$> getField loadRecordsData'
@@ -146,6 +146,7 @@ onRequest f g h i j k d Request{..} =
     <|> i <$> getField saveBookmarkMeta'
     <|> j <$> getField cancel'
     <|> k <$> getField work'
+    <|> Just d
 
 
 -- | A request to load model metadata.

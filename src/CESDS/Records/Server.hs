@@ -33,22 +33,21 @@ import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta)
 import CESDS.Types.Filter (Filter)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta)
 import CESDS.Types.Record (RecordContent, VarValue)
-import CESDS.Types.Request as Request (identifier, onLoadBookmarkMeta, onCancel, onLoadModelsMeta, onLoadRecordsData', onRequest, onSaveBookmarkMeta, onWork)
-import CESDS.Types.Response as Response (bookmarkMetasResponse, chunkIdentifier, errorResponse, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
+import CESDS.Types.Request as Request (Request, identifier, onLoadBookmarkMeta, onCancel, onLoadModelsMeta, onLoadRecordsData', onRequest, onSaveBookmarkMeta, onWork)
+import CESDS.Types.Response as Response (Response, bookmarkMetasResponse, chunkIdentifier, errorResponse, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
 import CESDS.Types.Variable as Variable (VariableIdentifier)
 import Control.Concurrent.STM (atomically)
 import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVar, readTVarIO, writeTVar)
 import Control.Lens.Getter ((^.))
-import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))
-import Control.Monad (forM_)
 import Control.Monad.Except (ExceptT, MonadError, MonadIO, liftIO, runExceptT, throwError)
 import Control.Monad.Except.Util (guardSomeException)
 import Control.Monad.Reader (MonadReader, ReaderT, ask, lift, runReaderT)
 import Control.Monad.Trans (MonadTrans)
 import Data.List.Split (chunksOf)
 import Data.Maybe (fromMaybe)
-import Network.WebSockets (acceptRequest, receiveData, runServer, sendBinaryData)
+import Network.WebSockets (acceptRequest, runServer)
+import Network.WebSockets.STM (Communicator, launch, send, start, waitToStop)
 
 
 -- | Run the server.
@@ -70,82 +69,94 @@ serverMain host port chunkSize initialManager =
       do
         -- Accept all pending requests.
         connection <- acceptRequest pending
+        -- Start threads for communication.
+        communicator <- start connection (const id) (const ()) :: IO (Communicator Response Request ())
+        -- Define a function to send chucks of records.
         let
-          -- Loop forever.
-          loop =
+          sendResponse rid toResponse x =
             do
-              -- Receive a new request.
-              request <- receiveData connection
-              -- Process the request to determine its result.
-              result <-
-                runServiceToIO manager -- FIXME: If the ModelManager uses guardSomeException, then no IOExceptions ever show up here?
-                  $ onRequest
-                  (
-                    -- Look metadata for model(s).
-                    onLoadModelsMeta -- FIXME: Do this on a separate thread.
-                      $ fmap ((: []) . modelMetasResponse)
-                      . lookupModels False
-                  )
-                  (
-                    -- Load records.
-                    onLoadRecordsData' -- FIXME: Do this on a separate thread.
-                      $ \model count variables maybeBookmarkOrFilter ->
-                      do
-                        -- Find the model.
-                        [model'] <- lookupModels True $ Just model
-                        -- Take only the requested number of records
-                        recs <- maybe id (take . fromIntegral) count <$> loadContent model' maybeBookmarkOrFilter variables
-                        -- Break the records into chunks and package them into separate responses.
-                        return
-                          [
-                            recordsResponse recs''
-                              & chunkIdentifier .~ Just i'
-                              & nextChunkIdentifier .~ (if fromIntegral i' < n then Just (i' + 1) else Nothing)
-                          |
-                            let recs' = if null recs then [[]] else chunksOf (fromMaybe maxBound chunkSize) recs
-                          , let n = length recs'
-                          , (i', recs'') <- zip [1..] recs'
-                          ]
-                  )
-                  (
-                    -- Load metadata for bookmark(s)
-                    onLoadBookmarkMeta
-                      $ (fmap ((: []) . bookmarkMetasResponse) .)
-                      . lookupBookmarks
-                  )
-                  (
-                    -- Save a new bookmark.
-                    onSaveBookmarkMeta
-                     $ (fmap ((: []) . bookmarkMetasResponse . (: [])) . )
-                     . saveBookmark
-                  )
-                  (
-                    -- Record a previous request as having been cancelled.
-                    onCancel
-                      $ \i ->
-                      do
-                        liftIO . atomically $ modifyTVar' cancellations (Just i :)
-                        return []
-                  )
-                  (
-                    -- Dispatch more work.
-                    onWork -- FIXME: Do this on a separate thread.
-                      $ \model inputs ->
-                      do
-                        [model'] <- lookupModels True $ Just model
-                        recs <- doWork model' inputs
-                        return [recordsResponse recs]
-                  )
-                  [errorResponse "Unsupported request."]
-                request
-              -- Check for cancellation, and then send the responses.
-              cancellations' <- liftIO . atomically $ readTVar cancellations
-              forM_
-                (filter ((`notElem` cancellations') . (^. Response.identifier)) $ either ((: []) . errorResponse) id result)
-                $ sendBinaryData connection
-                . (Response.identifier .~ request ^. Request.identifier)
-              loop
-        loop
+              x' <- runServiceToIO manager x
+              send communicator ()
+                . (Response.identifier .~ rid)
+                $ either errorResponse toResponse x'
+              return False
+          sendChunks rid xs =
+            do
+              xs' <- runServiceToIO manager xs
+              flip (either $ send communicator (). (Response.identifier .~ rid) . errorResponse) xs'
+                $ \xs'' ->
+                  sequence_
+                  [
+                    send communicator ()
+                      . (Response.identifier .~ rid                                                     )
+                      . (chunkIdentifier     .~ Just i'                                                 )
+                      . (nextChunkIdentifier .~ (if fromIntegral i' < n then Just (i' + 1) else Nothing))
+                      $ recordsResponse zs
+                  |
+                    let ys = chunksOf (fromMaybe maxBound chunkSize) xs''
+                  , let n = length ys
+                  , (i', zs) <- zip [1..] ys
+                  ]
+              return False
+        -- Process all requests on a single thread, but queue the messages to be sent for the sender thread.
+        launch communicator () -- FIXME: Cancellation won't work until we either have the sending thread filter or put workers on separate threads and have them filter.
+          $ \request -> onRequest
+            (
+              -- Look metadata for model(s).
+              onLoadModelsMeta
+                $ sendResponse (request ^. Request.identifier) modelMetasResponse
+                . lookupModels False
+            )
+            (
+              -- Load records.
+              onLoadRecordsData' -- FIXME: Do this on a separate thread.
+                $ \model count variables maybeBookmarkOrFilter ->
+                  -- Break the records into chunks and package them into separate responses.
+                  sendChunks (request ^. Request.identifier)
+                    $ do
+                      -- Find the model.
+                      [model'] <- lookupModels True $ Just model
+                      -- Take only the requested number of records
+                      maybe id (take . fromIntegral) count
+                        <$> loadContent model' maybeBookmarkOrFilter variables
+            )
+            (
+              -- Load metadata for bookmark(s)
+              onLoadBookmarkMeta
+                $ (sendResponse (request ^. Request.identifier) bookmarkMetasResponse .)
+                .  lookupBookmarks
+            )
+            (
+              -- Save a new bookmark.
+              onSaveBookmarkMeta
+                $ (sendResponse (request ^. Request.identifier) (bookmarkMetasResponse . (: [])) .)
+                . saveBookmark
+            )
+            (
+              -- Record a previous request as having been cancelled.
+              onCancel
+                $ \i ->
+                do
+                  liftIO . atomically $ modifyTVar' cancellations (Just i :)
+                  return False
+            )
+            (
+              -- Dispatch more work.
+              onWork -- FIXME: Do this on a separate thread.
+                $ \model inputs ->
+                  sendChunks (request ^. Request.identifier)
+                    $ do
+                      [model'] <- lookupModels True (Just model)
+                      doWork model' inputs
+            )
+            (
+              -- Handle unknown requests.
+              send communicator () (errorResponse "Unsupported request.")
+                >> return False
+            )
+            request
+        -- Don't exit until the receiver thread has closed.
+        waitToStop communicator
 
 
 -- | Type class for managing a model.

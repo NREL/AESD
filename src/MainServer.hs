@@ -50,7 +50,7 @@ main =
             flip
               (
                 makeModelMeta
-                  (toString $ generateNamed namespaceURL $ toEnum . fromEnum <$> "file://" ++ file)
+                  (toString . generateNamed namespaceURL $ toEnum . fromEnum <$> "file://" ++ file)
                   file
                   ("file://" ++ file)
                   . buildVarMetas

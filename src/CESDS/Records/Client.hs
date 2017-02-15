@@ -50,7 +50,6 @@ import Network.WebSockets (Connection, runClient)
 import Network.WebSockets.STM (Communicator, launch, send, start, stop)
 
 
-
 -- | State information for a client.
 data State =
   State
@@ -69,8 +68,11 @@ clientMain :: String           -- ^ The WebSocket host address.
            -> IO ()            -- ^ Action for running the client.
 clientMain host port path client =
   runClient host port path
-    $ (client =<<)
-    . makeModelCache
+    $ \connection ->
+    do
+      state <- makeModelCache connection
+      client state
+      close state
 
 
 -- | Close a client.
