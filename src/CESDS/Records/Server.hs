@@ -36,18 +36,18 @@ import CESDS.Types.Record (RecordContent, VarValue)
 import CESDS.Types.Request as Request (Request, identifier, onLoadBookmarkMeta, onCancel, onLoadModelsMeta, onLoadRecordsData', onRequest, onSaveBookmarkMeta, onWork)
 import CESDS.Types.Response as Response (Response, bookmarkMetasResponse, chunkIdentifier, errorResponse, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
 import CESDS.Types.Variable as Variable (VariableIdentifier)
+import Control.Concurrent (forkIO)
 import Control.Concurrent.STM (atomically)
 import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVar, readTVarIO, writeTVar)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))
-import Control.Monad (when)
+import Control.Monad (unless, void)
 import Control.Monad.Except (ExceptT, MonadError, MonadIO, liftIO, runExceptT, throwError)
 import Control.Monad.Except.Util (guardSomeException)
 import Control.Monad.Reader (MonadReader, ReaderT, ask, lift, runReaderT)
 import Control.Monad.Trans (MonadTrans)
-import Data.List.Split (chunksOf)
-import Data.Maybe (fromMaybe)
+import Data.Set as S (delete, empty, insert, member)
 import Network.WebSockets (acceptRequest, runServer)
 import Network.WebSockets.STM (Communicator, launch, send, start, waitToStop)
 
@@ -62,7 +62,7 @@ serverMain :: ModelManager a
 serverMain host port chunkSize initialManager =
   do
     -- Maintain a list of requests that have been cancelled.
-    cancellations <- newTVarIO [] -- FIXME: Inefficient.
+    cancellations <- newTVarIO S.empty
     -- Create a TVar for the model manager.
     manager <- newTVarIO initialManager
     -- Run a WebSocket server.
@@ -75,6 +75,7 @@ serverMain host port chunkSize initialManager =
         communicator <- start connection (const id) (const ()) :: IO (Communicator Response Request ())
         -- Define a function to send chucks of records.
         let
+          -- Send a single response.
           sendResponse rid toResponse x =
             do
               x' <- runServiceToIO manager x
@@ -82,31 +83,37 @@ serverMain host port chunkSize initialManager =
                 . (Response.identifier .~ rid)
                 $ either errorResponse toResponse x'
               return False
-          sendChunks rid xs =
+          -- Send a stream of records.
+          streamChunks rid chunker =
             do
-              flip (either $ send communicator (). (Response.identifier .~ rid) . errorResponse) xs
-                $ \xs'' ->
-                  sequence_
-                  [
-                    send communicator ()
-                      . (Response.identifier .~ rid                                                     )
-                      . (chunkIdentifier     .~ Just i'                                                 )
-                      . (nextChunkIdentifier .~ (if fromIntegral i' < n then Just (i' + 1) else Nothing))
-                      $ recordsResponse zs
-                  |
-                    let ys = if null xs'' then [[]] else chunksOf (fromMaybe maxBound chunkSize) xs''
-                  , let n = length ys
-                  , (i', zs) <- zip [1..] ys
-                  ]
+              void
+                . forkIO -- Do all of the work on a separate thread.
+                $ do
+                  result <- runServiceToIO manager chunker
+                  case result of
+                    Left  message   -> send communicator () $ errorResponse message & Response.identifier .~ rid
+                    Right nextChunk -> sendChunks rid 1 nextChunk
               return False
-          streamChunks rid count action =
+          -- Send the next chunk in a stream of records.
+          sendChunks rid cid nextChunk =
             do
-              result <- {- maybe id (take . fromIntegral) count <$> -} runServiceToIO manager action :: Either String [RecordContent]
-              sendChunks rid result
+              result <- runServiceToIO manager nextChunk
+              cancelled <-
+                atomically  -- FIXME: Clean this up?
+                  $ do
+                    cancellations' <- readTVar cancellations
+                    modifyTVar' cancellations $ S.delete rid
+                    return $ rid `S.member` cancellations'
               let
-                count' = either (const 0) ((count -) . length) result
-              when (count' > 0)
-                $ streamChunks rid count' action
+                lastChunk = cancelled || either (const True) null result
+                cid' = cid + 1
+              send communicator ()
+                . (Response.identifier .~ rid                                     )
+                . (chunkIdentifier     .~ Just cid                                )
+                . (nextChunkIdentifier .~ if lastChunk then Nothing else Just cid')
+                $ either errorResponse recordsResponse result
+              unless lastChunk
+                $ sendChunks rid cid' nextChunk
         -- Process all requests on a single thread, but queue the messages to be sent for the sender thread.
         launch communicator () -- FIXME: Cancellation won't work until we either have the sending thread filter or put workers on separate threads and have them filter.
           $ \request -> onRequest
@@ -120,26 +127,11 @@ serverMain host port chunkSize initialManager =
               -- Load records.
               onLoadRecordsData' -- FIXME: Do this on a separate thread.
                 $ \model count variables maybeBookmarkOrFilter ->
-                  do
-                    action <-
-                      runServiceToIO manager
-                        $ do
-                          -- Find the model.
-                          [model'] <- lookupModels True $ Just model
-                          loadContent model' maybeBookmarkOrFilter variables
-                    case action of
-                      Left  message -> do
-                                         send communicator ()
-                                           $ errorResponse message
-                                           & Response.identifier .~ request ^. Request.identifier
-                      Right action' -> streamChunks (request ^. Request.identifier) count action'
-                    return False
- 
-                    -- Break the records into chunks and package them into separate responses.
----                    $ do
----                      -- Take only the requested number of records
----                      maybe id (take . fromIntegral) count
----                        <$> loadContent model' maybeBookmarkOrFilter variables
+                  streamChunks (request ^. Request.identifier)
+                    $ do
+                      -- Find the model.
+                      [model'] <- lookupModels True $ Just model
+                      loadContent model' maybeBookmarkOrFilter variables (fromIntegral <$> count) chunkSize
             )
             (
               -- Load metadata for bookmark(s)
@@ -158,17 +150,19 @@ serverMain host port chunkSize initialManager =
               onCancel
                 $ \i ->
                 do
-                  liftIO . atomically $ modifyTVar' cancellations (Just i :)
+                  liftIO . atomically $ modifyTVar' cancellations (S.insert $ Just i)
                   return False
             )
             (
               -- Dispatch more work.
               onWork -- FIXME: Do this on a separate thread.
                 $ \model inputs ->
-                  sendChunks (request ^. Request.identifier)
+                  streamChunks (request ^. Request.identifier)
                     $ do
+                      -- Find the model.
                       [model'] <- lookupModels True (Just model)
-                      undefined -- doWork model' inputs
+                      -- Do the work.
+                      doWork model' inputs Nothing chunkSize
             )
             (
               -- Handle unknown requests.
@@ -194,7 +188,9 @@ class ModelManager a where
   loadContent :: ModelMeta                                -- ^ The model metadata.
               -> Maybe (Either BookmarkIdentifier Filter) -- ^ Maybe the bookmark or filter.
               -> [VariableIdentifier]                     -- ^ The variables to select.
-              -> ServiceM a (ServiceM a [RecordContent])  -- ^ Action for action to load record data.
+              -> Maybe Int                                -- ^ The maximum number of records to return.
+              -> Maybe Int                                -- ^ The number of records per chunk.
+              -> ServiceM a (ServiceM a [RecordContent])  -- ^ Action returning an action for loading chunks of record data.
 
   -- | List all bookmarks.
   listBookmarks :: ModelIdentifier           -- ^ The model identifier.
@@ -213,7 +209,9 @@ class ModelManager a where
   -- | Perform work for a model.
   doWork :: ModelMeta                               -- ^ The model metadata.
          -> [VarValue]                              -- ^ The values of the input variables.
-         -> ServiceM a (ServiceM a [RecordContent]) -- ^ Action to perform the work and return the new records.
+         -> Maybe Int                               -- ^ The maximum number of records to return.
+         -> Maybe Int                               -- ^ The number of records per chunk.
+         -> ServiceM a (ServiceM a [RecordContent]) -- ^ Action to perform the work and return an action for loading chunks of the new records.
 
 
 -- | Lookup a model.

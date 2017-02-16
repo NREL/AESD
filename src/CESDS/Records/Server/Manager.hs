@@ -12,6 +12,7 @@ Support for managing models in memory.
 
 {-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections   #-}
 
 
 module CESDS.Records.Server.Manager ( -- FIXME: Should we export less?
@@ -36,7 +37,7 @@ import CESDS.Types.Filter (filterRecords)
 import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
 import CESDS.Types.Record (RecordContent, VarValue, filterVariables)
 import Control.Arrow ((&&&), second)
-import Control.Concurrent.MVar (newMVar, swapMVar)
+import Control.Concurrent.MVar (newMVar, modifyMVar)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens (Lens', (&), lens)
 import Control.Lens.Setter ((.~), over)
@@ -51,6 +52,7 @@ import Data.Map.Strict (Map)
 import Data.Maybe (fromJust)
 import Data.ProtocolBuffers (decodeMessage, encodeMessage)
 import Data.Serialize (Serialize(..), decode, encode, runGet, runPut)
+import Data.Tuple (swap)
 import Data.UUID (toString)
 import Data.UUID.V4 (nextRandom)
 import GHC.Generics (Generic)
@@ -95,7 +97,7 @@ instance ModelManager (InMemoryManager a) where
     (^. modelMeta)
       <$> checkModel model
 
-  loadContent model maybeBookmarkOrFilter variables =
+  loadContent model maybeBookmarkOrFilter variables maybeCount maybeChunkSize =
     do -- FIXME: Should we also cache the records?
       f <- case maybeBookmarkOrFilter of
              Nothing               -> return id
@@ -105,14 +107,17 @@ instance ModelManager (InMemoryManager a) where
       (records, state') <- guardSomeException $ loader state model
       modifyService
         $ \c -> c {state = state'}
-      newRecords <-
+      remainingRecords <-
         liftIO
           . newMVar
           . (if null variables then id else filterVariables variables)
+          . maybe id take maybeCount
           $ f records
       return
         . liftIO
-        $ swapMVar newRecords []
+        . modifyMVar remainingRecords
+        . (return .)
+        $ maybe ([],) ((swap .) . splitAt) maybeChunkSize
 
   listBookmarks model =
     M.elems . (^. bookmarkMetas)
@@ -157,13 +162,21 @@ instance ModelManager (InMemoryManager a) where
       journalBookmark (model, bookmark')
       return bookmark'
 
-  doWork model inputs =
+  doWork model inputs maybeCount maybeChunkSize =
     do -- FIXME: Should we also cache the records?
       InMemoryManager{..} <- fromService id
       (records, state') <- guardSomeException $ worker state model inputs
       modifyService
         $ \c -> c {state = state'}
-      return records
+      remainingRecords <-
+        liftIO
+          . newMVar
+          $ maybe id take maybeCount records
+      return
+        . liftIO
+        . modifyMVar remainingRecords
+        . (return .)
+        $ maybe ([],) ((swap .) . splitAt) maybeChunkSize
 
 
 -- | Ensure that a model is in the cache.
