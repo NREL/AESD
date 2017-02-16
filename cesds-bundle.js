@@ -8511,7 +8511,7 @@ function fromRecordTable(rt) {
   for (var i = 0; i < nr; ++i) {
     var obj = new Object();
     for (var j = 0; j < nv; ++j)
-      obj[vids[j]] = vals[i * nr + j];
+      obj[vids[j]] = vals[i * nv + j];
     rows.push({id : rids[i], values : obj});
   }
   return rows;
