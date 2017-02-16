@@ -25,6 +25,7 @@ import CESDS.Types.Model (makeModelMeta)
 import CESDS.Types.Value (realValue)
 import CESDS.Types.Variable (makeVarMeta)
 import Control.Arrow (second)
+import Data.List.Split (chunksOf)
 import Data.UUID (toString)
 import Data.UUID.V5 (generateNamed, namespaceURL)
 import System.Environment (getArgs)
@@ -36,7 +37,7 @@ main :: IO ()
 main =
   do
     [host, port, persistence, chunkSize] <- getArgs -- FIXME
-    xs <- randoms <$> getStdGen
+    xs <- chunksOf 5 . randoms <$> getStdGen
     serverMain host (read port) (Just $ read chunkSize)
       =<< makeInMemoryManager (Just persistence) ()
       (
@@ -48,7 +49,7 @@ main =
                   (toString . generateNamed namespaceURL $ toEnum . fromEnum <$> "random")
                   "random data"
                   "http://random.nrel.gov"
-                  [makeVarMeta 1 "random"]
+                  (zipWith makeVarMeta [1..] ["x", "y", "z", "u", "v"])
                   []
               ]
             , ()
@@ -58,7 +59,7 @@ main =
         \() _ ->
           return
             (
-              second ((: []) . (1, ) . realValue) <$> zip [1..] xs
+              second (fmap (second realValue) . zip [1..]) <$> zip [1..] xs
             , ()
             )
       )

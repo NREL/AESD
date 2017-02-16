@@ -1,5 +1,5 @@
 name         : cesds-records
-version      : 0.4.4.1
+version      : 0.4.4.2
 synopsis     : CESDS Records
 description  :
   Implementation of CESDS Records API, include a skeletal server and client.
@@ -11,7 +11,7 @@ license      : AllRightsReserved
 license-file : LICENSE
 author       : Brian W Bush <brian.bush@nrel.gov>
 maintainer   : Brian W Bush <brian.bush@nrel.gov>
-copyright    : (c) 2016 National Renewable Energy Laboratory
+copyright    : (c) 2016-17 National Renewable Energy Laboratory
 category     : Network
 build-type   : Simple
 cabal-version: >= 1.10
