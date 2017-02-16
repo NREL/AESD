@@ -65,7 +65,7 @@ buildModelContent (_ : content) =
     values = fmap read <$> content
     types = commonVarTypes values
     vids = [0..]
-    rids = [0..]
+    rids = [1..]
   in
     zipWith (\rid vs -> (rid, zip vids vs)) rids
       $ zipWith castVarType types

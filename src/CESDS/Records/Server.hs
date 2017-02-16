@@ -10,6 +10,7 @@ A skeletal implementation of a server.
 -}
 
 
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 
@@ -50,6 +51,20 @@ import Control.Monad.Trans (MonadTrans)
 import Data.Set as S (delete, empty, insert, member)
 import Network.WebSockets (acceptRequest, runServer)
 import Network.WebSockets.STM (Communicator, launch, send, start, waitToStop)
+
+#ifdef CESDS_THROTTLE
+import Control.Concurrent (threadDelay)
+
+{-# INLINE pause #-}
+pause :: IO ()
+pause = threadDelay $ CESDS_THROTTLE * 1000
+
+#else
+
+{-# INLINE pause #-}
+pause :: IO ()
+pause = return ()
+#endif
 
 
 -- | Run the server.
@@ -112,6 +127,7 @@ serverMain host port chunkSize initialManager =
                 . (chunkIdentifier     .~ Just cid                                )
                 . (nextChunkIdentifier .~ if lastChunk then Nothing else Just cid')
                 $ either errorResponse recordsResponse result
+              pause
               unless lastChunk
                 $ sendChunks rid cid' nextChunk
         -- Process all requests on a single thread, but queue the messages to be sent for the sender thread.
