@@ -190,3 +190,26 @@ def from_list(record_table):
         return record_table.strings.values
     else:
         raise Exception('Cannot parse RecordTable list')
+
+
+def empty_data_chunk(record_data):
+    """
+    Check to see if data chunk is empty
+    Parameters
+    ----------
+    records_data : 'proto.data'
+        proto data message from Response type
+
+    Returns
+    -------
+    'bool'
+        Returns True if data chunk is empty, else False
+    """
+    try:
+        data = record_data.list.records
+        if len(data) == 0:
+            return True
+        else:
+            return False
+    except Exception:
+        return False
