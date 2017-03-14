@@ -8,9 +8,58 @@ from .bookmarks import (request_bookmark_meta, handle_bookmark_response)
 from .data import (request_records_data, handle_data_response)
 from .models import (request_model_metadata, handle_models_response)
 import records_def_4_pb2 as proto
+import signal
 import websockets
 
 __all__ = ['on_response', 'send_request', 'CESDS']
+
+
+class Timeout(object):
+    """
+    Timeout wrapper for signal.alarm
+    Currently only compatible with linux systems, need to update for windows
+    """
+    def __init__(self, sec):
+        self.sec = sec
+
+    def __enter__(self):
+        """
+        Enter method to allow use of with
+        Parameters
+        ----------
+
+        Returns
+        ---------
+        """
+        signal.signal(signal.SIGALRM, self.raise_timeout)
+        signal.alarm(self.sec)
+
+    def __exit__(self, type, value, traceback):
+        """
+        Closes event_loop on exit from with
+        Parameters
+        ----------
+
+        Returns
+        ---------
+        """
+        # Reset alarm
+        signal.alarm(0)
+
+        if type is not None:
+            raise
+
+    def raise_timeout(self, *args):
+        """
+        Closes event_loop on exit from with
+        Parameters
+        ----------
+        *args : 'signal.signal handler args'
+            signal number and frame
+        Returns
+        ---------
+        """
+        raise Exception('Connection timed out!')
 
 
 async def on_response(websocket, request_id):
@@ -72,6 +121,9 @@ async def send_request(url, request):
 
 
 class CESDS(object):
+    """
+    CESDS Records class to handle communication with servers
+    """
     currentID = 0
     version = 4
 
@@ -80,38 +132,30 @@ class CESDS(object):
         CESDS class instance creates an asyncio event loop
         Parameters
         ----------
-        path_in : 'sting'
-            Path to WRF netCDF file.
+        server_url : 'string'
+            server url
 
         Returns
         ---------
-        self.path_in : path to WRF netCDF file
-        self.dataset : netCDF dataset instance
-        self.variables : list of WRF variables
-        self.dimensions : list of dimensions for netCDF file
+        self.url : 'string'
+            server url
         """
         self.url = server_url
-        self.event_loop = asyncio.get_event_loop()
-
-        if self.event_loop.is_closed():
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-            self.event_loop = new_loop
 
     def __repr__(self):
         return ('{n} connected to {s}'
                 .format(n=self.__class__.__name__, s=self.url))
 
     def __enter__(self):
-        """
-        Enter method to allow use of with
-        Parameters
-        ----------
+            """
+            Enter method to allow use of with
+            Parameters
+            ----------
 
-        Returns
-        ---------
-        """
-        return self
+            Returns
+            ---------
+            """
+            return self
 
     def __exit__(self, type, value, traceback):
         """
@@ -122,30 +166,50 @@ class CESDS(object):
         Returns
         ---------
         """
-        self.disconnect
-
         if type is not None:
             raise
 
-    @property
-    def disconnect(self):
+    def new_server(self, server_url):
+        """
+        Change server url to which websocket will connnect
+        Parameters
+        ----------
+        server_url : 'string'
+            server url
+
+        Returns
+        ---------
+        self.url : 'string'
+            server url
+        """
+        self.url = server_url
+
+    def send(self, request, timeout=60):
         """
         Closes event_loop
         Parameters
         ----------
+        request : 'proto.request'
+            proto request message
+        timeout : 'int'
+            timeout in seconds for connection
 
         Returns
         ---------
+        response : 'list'
+            List of responses from the server, each response is a proto message
         """
-        self.event_loop.close()
-
-    def send(self, request):
         try:
-            r = self.event_loop.run_until_complete(send_request(self.url,
-                                                                request))
-            return r
+            event_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(event_loop)
+            with Timeout(sec=timeout):
+                response = event_loop.run_until_complete(send_request(self.url,
+                                                                      request))
+                return response
         except Exception:
             raise
+        finally:
+            event_loop.close()
 
     def get_model_info(self, model_id):
         """
