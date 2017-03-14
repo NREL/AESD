@@ -10,10 +10,11 @@ import records_def_4_pb2 as proto
 
 __all__ = ['request_records_data', 'from_record_data',
            'from_record_list', 'from_record', 'from_value',
-           'from_record_table', 'from_list']
+           'from_record_table', 'from_list', 'empty_data_chunk',
+           'handle_data_response']
 
 
-def request_records_data(model_id, request_id, max_records=0,
+def request_records_data(model_id, request_id, max_records=1000,
                          variable_ids=None, bookmark_id=None, version=4):
     """
     Create request for records data
@@ -141,16 +142,13 @@ def from_value(value):
         raise Exception('Cannot parse Value type')
 
 
-def from_record_table(record_table, labels=False):
+def from_record_table(record_table):
     """
     Extract record data from RecordTable
     Parameters
     ----------
     record_table : 'proto.RecordTable'
         proto RecordTable message from RecordData style
-    labels : 'bool'
-        Option to return data as a pd.DataFrame with
-        indexes = rec_ids and columns = var_ids
 
     Returns
     -------
@@ -162,10 +160,7 @@ def from_record_table(record_table, labels=False):
     table_values = from_list(record_table)
     array = np.array(table_values).reshape(len(rec_ids), len(var_ids))
 
-    if labels:
-        return pd.DataFrame(array, columns=var_ids, index=rec_ids)
-    else:
-        return array
+    return pd.DataFrame(array, columns=var_ids, index=rec_ids)
 
 
 def from_list(record_table):
@@ -192,7 +187,7 @@ def from_list(record_table):
         raise Exception('Cannot parse RecordTable list')
 
 
-def empty_data_chunk(record_data):
+def empty_data_chunk(records_data):
     """
     Check to see if data chunk is empty
     Parameters
@@ -202,14 +197,38 @@ def empty_data_chunk(record_data):
 
     Returns
     -------
-    'bool'
+    empty : 'bool'
         Returns True if data chunk is empty, else False
     """
-    try:
-        data = record_data.list.records
+    if records_data.WhichOneof('style') == 'list':
+        data = records_data.list.records
+
         if len(data) == 0:
-            return True
+            empty = True
         else:
-            return False
-    except Exception:
-        return False
+            empty = False
+    else:
+        empty = False
+
+    return empty
+
+
+def handle_data_response(response):
+    """
+    Extracts records_data from each server response message
+    Parameters
+    ----------
+    response : 'list'
+        list of proto Response messages
+    Returns
+    -------
+    'pd.DataFrame'
+        Concatinated data from each response message
+    """
+    records_data = []
+    for message in response:
+        data = message.data
+        if not empty_data_chunk(data):
+            records_data.append(from_record_data(data))
+
+    return pd.concat(records_data)

@@ -6,7 +6,7 @@ Created by: Michael Rossol Feb. 2017
 import records_def_4_pb2 as proto
 
 __all__ = ['request_model_metadata', 'from_model', 'from_variable',
-           'from_models_metadata']
+           'from_models_metadata', 'handle_models_response']
 
 
 def request_model_metadata(model_id, request_id, version=4):
@@ -89,3 +89,22 @@ def from_models_metadata(models):
         List of model's metadata dictionaries for each model in models
     """
     return list(map(from_model, models.models))
+
+
+def handle_models_response(response):
+    """
+    Extract model metadata from each server response message
+    Parameters
+    ----------
+    response : 'list'
+        list of proto Response messages
+    Returns
+    -------
+    model_metadata : 'list'
+        List of model's metadata dictionaries for each model in models
+    """
+    models_metadata = []
+    for message in response:
+        models_metadata.extend(from_models_metadata(message.models))
+
+    return models_metadata

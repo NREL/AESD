@@ -6,7 +6,7 @@ Created by: Michael Rossol Feb. 2017
 import records_def_4_pb2 as proto
 
 __all__ = ['request_bookmark_meta', 'from_bookmark_meta',
-           'from_bookmark_meta_list']
+           'from_bookmark_meta_list', 'handle_bookmark_response']
 
 
 def request_bookmark_meta(model_id, bookmark_id, request_id, version=4):
@@ -16,7 +16,9 @@ def request_bookmark_meta(model_id, bookmark_id, request_id, version=4):
     ----------
     model_id : 'string'
         Id of model for which to requst bookmark_meta
-        if None requests all models
+    bookmark_id : 'string'
+        Id of bookmark for which to request models_metadata
+        if None request all bookmarks
     request_id : 'int'
         Unique request id
     version : 'int'
@@ -84,6 +86,25 @@ def from_bookmark_meta_list(bookmarks):
         Dictionary containing the bookmark's metadata
     """
     return list(map(from_bookmark_meta, bookmarks.bookmark_metas))
+
+
+def handle_bookmark_response(response):
+    """
+    Extract bookmark metadata from each server response message
+    Parameters
+    ----------
+    response : 'list'
+        list of proto Response messages
+    Returns
+    -------
+    bookmark_metadata : 'list'
+        List of bookmark's metadata dictionaries for each model in models
+    """
+    bookmark_metadata = []
+    for message in response:
+        bookmark_metadata.extend(from_bookmark_meta_list(message.bookmarks))
+
+    return bookmark_metadata
 
 
 def save_bookmark(model_id, name, content, request_id, version=4):

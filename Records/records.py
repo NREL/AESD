@@ -4,28 +4,13 @@ Design Studio Python Records API
 Created by: Michael Rossol Feb. 2017
 """
 import asyncio
+from .bookmarks import (request_bookmark_meta, handle_bookmark_response)
+from .data import (request_records_data, handle_data_response)
+from .models import (request_model_metadata, handle_models_response)
 import records_def_4_pb2 as proto
 import websockets
 
-currentID = 0
-
-__all__ = ['next_ID', ]
-
-
-def next_ID():
-    """
-    Creates new ID from global currentID counter
-    Parameters
-    ----------
-
-    Returns
-    -------
-    currentID : 'int'
-        New ID
-    """
-    global currentID
-    currentID += 1
-    return currentID
+__all__ = ['on_response', 'send_request', 'CESDS']
 
 
 async def on_response(websocket, request_id):
@@ -87,6 +72,9 @@ async def send_request(url, request):
 
 
 class CESDS(object):
+    currentID = 0
+    version = 4
+
     def __init__(self, server_url):
         """
         CESDS class instance creates an asyncio event loop
@@ -105,9 +93,14 @@ class CESDS(object):
         self.url = server_url
         self.event_loop = asyncio.get_event_loop()
 
+        if self.event_loop.is_closed():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            self.event_loop = new_loop
+
     def __repr__(self):
-        print('{n} connecting to {s}'
-              .format(n=self.__class__.__name__, s=self.url))
+        return ('{n} connected to {s}'
+                .format(n=self.__class__.__name__, s=self.url))
 
     def __enter__(self):
         """
@@ -145,3 +138,116 @@ class CESDS(object):
         ---------
         """
         self.event_loop.close()
+
+    def send(self, request):
+        try:
+            r = self.event_loop.run_until_complete(send_request(self.url,
+                                                                request))
+            return r
+        except Exception:
+            raise
+
+    def get_model_info(self, model_id):
+        """
+        Sends request of model metadata and extracts response
+        Parameters
+        ----------
+        model_id : 'string'
+            Id of model for which to requst models_metadata
+            if None requests all models
+
+        Returns
+        -------
+        model_info : 'list'|'dict'
+            List of model's metadata dictionaries for each model in models or
+            dictionary for model_id
+        """
+        # Get current id and update id
+        CESDS.currentID += 1
+        request_id = CESDS.currentID
+        version = CESDS.version
+        request = request_model_metadata(model_id, request_id, version=version)
+
+        response = self.send(request)
+
+        model_info = handle_models_response(response)
+
+        if len(model_info) == 1:
+            return model_info[0]
+        else:
+            return model_info
+
+    def get_data(self, model_id, max_records=1000, variable_ids=None,
+                 bookmark_id=None):
+        """
+        Sends request of model metadata and extracts response
+        Parameters
+        ----------
+        model_id : 'string'
+            Id of model for which to requst records_data
+        max_records : 'int'
+            Number or records being request
+            Default=0, will return all records
+        variable_ids : 'list'
+            List of variable ids (ints) to be requested
+            Will be returned in same order as request
+            Default=None, all variables will be returned (order?)
+        bookmark_id : 'int'
+            Request records_data based on bookmark id
+
+        Returns
+        -------
+        data : 'pd.DataFrame'
+            Concatinated data from each response message
+            Variable ids replaced with names from model_info
+        """
+        # Get current id and update id
+        CESDS.currentID += 1
+        request_id = CESDS.currentID
+        version = CESDS.version
+        request = request_records_data(model_id, request_id,
+                                       max_records=max_records,
+                                       variable_ids=variable_ids,
+                                       bookmark_id=bookmark_id,
+                                       version=version)
+
+        response = self.send(request)
+        data = handle_data_response(response)
+
+        model_info = self.get_model_info(model_id)
+        variables = {var['id']: var['name'] for var in model_info['variables']}
+
+        return data.rename(columns=variables)
+
+    def get_bookmark_info(self, model_id, bookmark_id):
+        """
+        Sends request of model metadata and extracts response
+        Parameters
+        ----------
+        model_id : 'string'
+            Id of model for which to requst bookmark_meta
+        bookmark_id : 'string'
+            Id of bookmark for which to request models_metadata
+            if None request all bookmarks
+
+        Returns
+        -------
+        model_info : 'list'|'dict'
+            List of model's metadata dictionaries for each model in models or
+            dictionary for model_id
+        """
+        # Get current id and update id
+        CESDS.currentID += 1
+        request_id = CESDS.currentID
+        version = CESDS.version
+        request = request_bookmark_meta(model_id, bookmark_id, request_id,
+                                        version=version)
+
+        response = self.send(request)
+
+        bookmark_info = handle_bookmark_response(response)
+
+        if len(bookmark_info) == 1:
+            return bookmark_info[0]
+        else:
+            return bookmark_info
