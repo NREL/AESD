@@ -6,7 +6,7 @@ Created by: Michael Rossol Feb. 2017
 import asyncio
 from .bookmarks import (request_bookmark_meta, handle_bookmark_response,
                         save_bookmark)
-from .data import (request_records_data, handle_data_response)
+from .data import (request_records_data, handle_data_response, request_work)
 from .error import TimeoutError, ProtoError
 from .models import (request_model_metadata, handle_models_response)
 import records_def_4_pb2 as proto
@@ -357,3 +357,33 @@ class CESDS(object):
             return bookmark_info[0]
         else:
             return bookmark_info
+
+    def do_work(self, model_id, inputs):
+        """
+        Sends request of model metadata and extracts response
+        Parameters
+        ----------
+        model_id : 'string'
+            Id of model for which to requst records_data
+        inputs : 'dict'
+            Dictionary of {var_id: value} pairs
+
+        Returns
+        -------
+        data : 'pd.DataFrame'
+            Concatinated data from each response message
+            Variable ids replaced with names from model_info
+        """
+        # Get current id and update id
+        CESDS.currentID += 1
+        request_id = CESDS.currentID
+        version = CESDS.version
+        request = request_work(model_id, inputs, request_id, version=version)
+
+        response = self.send(request)
+        data = handle_data_response(response)
+
+        model_info = self.get_model_info(model_id)
+        variables = {var['id']: var['name'] for var in model_info['variables']}
+
+        return data.rename(columns=variables)

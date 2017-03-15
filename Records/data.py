@@ -12,7 +12,7 @@ import records_def_4_pb2 as proto
 __all__ = ['request_records_data', 'from_record_data',
            'from_record_list', 'from_record', 'from_value',
            'from_record_table', 'from_list', 'empty_data_chunk',
-           'handle_data_response']
+           'handle_data_response', 'request_work', 'set_var_value']
 
 
 def request_records_data(model_id, request_id, max_records=1000,
@@ -234,3 +234,66 @@ def handle_data_response(response):
             records_data.append(from_record_data(data))
 
     return pd.concat(records_data)
+
+
+def request_work(model_id, inputs, request_id, version=4):
+    """
+    Create request for records data
+    Parameters
+    ----------
+    model_id : 'string'
+        Id of model for which to requst records_data
+    inputs : 'dict'
+        Dictionary of {var_id: value} pairs
+    request_id : 'int'
+        Unique request id
+    version : 'int'
+        Google protobuf version, default = 4
+
+    Returns
+    -------
+    request : 'proto.Request'
+        proto Request message for records_data
+    """
+    request = proto.Request()
+    request.version = version
+    request.id.value = request_id
+    work_request = request.work
+    work_request.model_id = model_id
+
+    var_values = []
+    for key, value in inputs.items():
+        var_values.append(set_var_value(key, value))
+
+    work_request.inputs.extend(var_values)
+
+    return request
+
+
+def set_var_value(var_id, value):
+    """
+    set proto.VarValue message
+    Parameters
+    ----------
+    var_id : 'int'
+        input var_id
+    value : 'float'|'int'|'string'
+        input value
+
+    Returns
+    -------
+    var_value : 'proto.VarValue'
+        Filled proto.VarValue message
+    """
+    var_value = proto.VarValue()
+    var_value.var_id = var_id
+    if isinstance(value, float):
+        var_value.value.real_value = value
+    elif isinstance(value, int):
+        var_value.value.integer_value = value
+    elif isinstance(value, str):
+        var_value.value.string_value = value
+    else:
+        raise ProtoError('Cannot parse value type')
+
+    return var_value
