@@ -3,6 +3,7 @@ Package for models request
 
 Created by: Michael Rossol Feb. 2017
 """
+from .error import ProtoError
 import records_def_4_pb2 as proto
 
 __all__ = ['request_model_metadata', 'from_model', 'from_variable',
@@ -45,15 +46,24 @@ def from_model(model):
     ----------
     model : 'proto.ModelsMeta'
         proto ModelsMeta message from ModelsMetaList
+
     Returns
     -------
-    'dict'
+    model_meta : 'dict'
         Dictionary containing the model's metadata
     """
-    return {'id': model.model_id,
-            'name': model.model_name,
-            'uri': model.model_uri,
-            'variables': list(map(from_variable, model.variables))}
+    model_meta = {'id': model.model_id,
+                  'name': model.model_name,
+                  'uri': model.model_uri}
+    variables = model.variables
+    if len(variables) > 0:
+        model_meta['variables'] = list(map(from_variable, variables))
+
+    inputs = model.inputs
+    if len(inputs) > 0:
+        model_meta['inputs'] = list(map(from_domain_meta, inputs))
+
+    return model_meta
 
 
 def from_variable(variable):
@@ -61,8 +71,9 @@ def from_variable(variable):
     Unpacks proto VarMeta message to dictionary
     Parameters
     ----------
-    model : 'proto.VarMeta'
+    variable : 'proto.VarMeta'
         proto VarMeta message from list of variables in ModelsMeta
+
     Returns
     -------
     'dict'
@@ -76,6 +87,33 @@ def from_variable(variable):
             'type': variable.type}
 
 
+def from_domain_meta(input):
+    """
+    Unpacks proto DomainMeta message to dictionary
+    Parameters
+    ----------
+    input : 'proto.DomainMeta'
+        proto DomainMeta message from list of inputs in ModelsMeta
+
+    Returns
+    -------
+    domain_meta : 'dict'
+        Dictionary containing the domain's metadata
+    """
+    domain_meta = {'id': input.var_id}
+
+    domain = input.WhichOneof('domain')
+    if domain == 'interval':
+        domain_val = input.interval
+    elif domain == 'set':
+        domain_val = input.set
+    else:
+        raise ProtoError('Cannot parse DomainMeta domain!')
+
+    domain_meta[domain] = domain_val
+    return domain_meta
+
+
 def from_models_metadata(models):
     """
     Extract metadata for each model in ModelsMetaList
@@ -83,6 +121,7 @@ def from_models_metadata(models):
     ----------
     models : 'proto.ModelsMetaList'
         proto ModelsMetaList message from Response type
+
     Returns
     -------
     'list'
@@ -98,6 +137,7 @@ def handle_models_response(response):
     ----------
     response : 'list'
         list of proto Response messages
+
     Returns
     -------
     model_metadata : 'list'

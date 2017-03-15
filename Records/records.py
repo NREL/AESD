@@ -4,8 +4,10 @@ Design Studio Python Records API
 Created by: Michael Rossol Feb. 2017
 """
 import asyncio
-from .bookmarks import (request_bookmark_meta, handle_bookmark_response)
+from .bookmarks import (request_bookmark_meta, handle_bookmark_response,
+                        save_bookmark)
 from .data import (request_records_data, handle_data_response)
+from .error import TimeoutError, ProtoError
 from .models import (request_model_metadata, handle_models_response)
 import records_def_4_pb2 as proto
 import signal
@@ -59,7 +61,8 @@ class Timeout(object):
         Returns
         ---------
         """
-        raise Exception('Connection timed out!')
+        raise TimeoutError("Connection timed out after {:} seconds!"
+                           .format(self.sec))
 
 
 async def on_response(websocket, request_id):
@@ -86,7 +89,7 @@ async def on_response(websocket, request_id):
         if response.id.value == request_id:
             response_type = response.WhichOneof('type')
             if response_type == 'error':
-                raise Exception(response.error)
+                raise ProtoError(response.error)
             else:
                 responses.append(response)
 
@@ -127,13 +130,15 @@ class CESDS(object):
     currentID = 0
     version = 4
 
-    def __init__(self, server_url):
+    def __init__(self, server_url, timeout=60):
         """
         CESDS class instance creates an asyncio event loop
         Parameters
         ----------
         server_url : 'string'
             server url
+        timeout : 'int'
+            timeout time for communication with server in sec
 
         Returns
         ---------
@@ -141,6 +146,7 @@ class CESDS(object):
             server url
         """
         self.url = server_url
+        self.timeout = timeout
 
     def __repr__(self):
         return ('{n} connected to {s}'
@@ -184,7 +190,7 @@ class CESDS(object):
         """
         self.url = server_url
 
-    def send(self, request, timeout=60):
+    def send(self, request):
         """
         Closes event_loop
         Parameters
@@ -202,10 +208,10 @@ class CESDS(object):
         try:
             event_loop = asyncio.new_event_loop()
             asyncio.set_event_loop(event_loop)
-            with Timeout(sec=timeout):
+            with Timeout(sec=self.timeout):
                 response = event_loop.run_until_complete(send_request(self.url,
                                                                       request))
-                return response
+            return response
         except Exception:
             raise
         finally:
@@ -306,6 +312,42 @@ class CESDS(object):
         version = CESDS.version
         request = request_bookmark_meta(model_id, bookmark_id, request_id,
                                         version=version)
+
+        response = self.send(request)
+
+        bookmark_info = handle_bookmark_response(response)
+
+        if len(bookmark_info) == 1:
+            return bookmark_info[0]
+        else:
+            return bookmark_info
+
+    def save_bookmark(self, model_id, name, content):
+        """
+        Sends request to save new bookmark
+        Parameters
+        ----------
+        model_id : 'string'
+            Id of model for which to requst bookmark_meta
+        name : 'string'
+            Name for new bookmark
+        content : 'list'|'tuple'
+            Contents of bookmark
+            list is a bookmark set
+            tuple is a bookmark interval
+
+        Returns
+        -------
+        model_info : 'list'|'dict'
+            List of model's metadata dictionaries for each model in models or
+            dictionary for model_id
+        """
+        # Get current id and update id
+        CESDS.currentID += 1
+        request_id = CESDS.currentID
+        version = CESDS.version
+        request = save_bookmark(model_id, name, content, request_id,
+                                version=version)
 
         response = self.send(request)
 

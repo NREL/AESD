@@ -3,6 +3,7 @@ Package for data requests
 
 Created by: Michael Rossol Feb. 2017
 """
+from .error import ProtoError
 import numpy as np
 import pandas as pd
 import records_def_4_pb2 as proto
@@ -77,7 +78,7 @@ def from_record_data(record_data):
     elif style == 'table':
         return from_record_table(record_data.table)
     else:
-        raise Exception('Cannot parce RecordData style')
+        raise ProtoError('Cannot parce RecordData style!')
 
 
 def from_record_list(record_list):
@@ -139,7 +140,7 @@ def from_value(value):
     elif value_type == 'string_value':
         return value.string_value
     else:
-        raise Exception('Cannot parse Value type')
+        raise ProtoError('Cannot parse Value type!')
 
 
 def from_record_table(record_table):
@@ -184,7 +185,7 @@ def from_list(record_table):
     elif list_type == 'strings':
         return record_table.strings.values
     else:
-        raise Exception('Cannot parse RecordTable list')
+        raise ProtoError('Cannot parse RecordTable list!')
 
 
 def empty_data_chunk(records_data):
@@ -220,6 +221,7 @@ def handle_data_response(response):
     ----------
     response : 'list'
         list of proto Response messages
+
     Returns
     -------
     'pd.DataFrame'

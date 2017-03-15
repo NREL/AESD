@@ -3,6 +3,7 @@ Package for models request
 
 Created by: Michael Rossol Feb. 2017
 """
+from .error import ProtoError
 import records_def_4_pb2 as proto
 
 __all__ = ['request_bookmark_meta', 'from_bookmark_meta',
@@ -48,6 +49,7 @@ def from_bookmark_meta(bookmark_meta):
     ----------
     bookmark_meta : 'proto.BookmarkMeta'
         proto BookmarkMeta message from BookmarkMetaList
+
     Returns
     -------
     'dict'
@@ -68,7 +70,7 @@ def from_bookmark_meta(bookmark_meta):
         # INCOMPLETE need parser for FilterExpression
         bookmark_dict['filter'] = bookmark_meta.filter
     else:
-        raise Exception('Cannot parce BookmarkMeta content')
+        raise ProtoError('Cannot parce BookmarkMeta content!')
 
     return bookmark_dict
 
@@ -80,6 +82,7 @@ def from_bookmark_meta_list(bookmarks):
     ----------
     bookmarks : 'proto.BookmarkMetaList'
         proto BookmarkMeta message from BookmarkMetaList
+
     Returns
     -------
     'list'
@@ -95,6 +98,7 @@ def handle_bookmark_response(response):
     ----------
     response : 'list'
         list of proto Response messages
+
     Returns
     -------
     bookmark_metadata : 'list'
@@ -108,6 +112,28 @@ def handle_bookmark_response(response):
 
 
 def save_bookmark(model_id, name, content, request_id, version=4):
+    """
+    Create request for bookmark bookmark_meta
+    Parameters
+    ----------
+    model_id : 'string'
+        Id of model for which to requst bookmark_meta
+    name : 'string'
+        Name for new bookmark
+    content : 'list'|'tuple'
+        Contents of bookmark
+        list is a bookmark set
+        tuple is a bookmark interval
+    request_id : 'int'
+        Unique request id
+    version : 'int'
+        Google protobuf version, default = 4
+
+    Returns
+    -------
+    request : 'proto.Request'
+        proto Request message for models_metadata
+    """
     # Does not get a response from server
     request = proto.Request()
     request.version = version
@@ -123,6 +149,6 @@ last record'
         new_bookmark.set.record_ids.extent(content)
     else:
         # INCOMPLETE need filter expression parsers to pass filter
-        raise Exception('Cannot parse bookmark content!')
+        raise ProtoError('Cannot parse bookmark content!')
 
     return request
