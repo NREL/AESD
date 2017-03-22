@@ -4,65 +4,16 @@ Design Studio Python Records API
 Created by: Michael Rossol Feb. 2017
 """
 import asyncio
+import async_timeout
 from .bookmarks import (request_bookmark_meta, handle_bookmark_response,
                         save_bookmark)
 from .data import (request_records_data, handle_data_response, request_work)
-from .error import TimeoutError, ProtoError
+from .errors import TimeoutError, ProtoError
 from .models import (request_model_metadata, handle_models_response)
 import records_def_4_pb2 as proto
-import signal
 import websockets
 
 __all__ = ['on_response', 'send_request', 'CESDS']
-
-
-class Timeout(object):
-    """
-    Timeout wrapper for signal.alarm
-    Currently only compatible with linux systems, need to update for windows
-    """
-    def __init__(self, sec):
-        self.sec = sec
-
-    def __enter__(self):
-        """
-        Enter method to allow use of with
-        Parameters
-        ----------
-
-        Returns
-        ---------
-        """
-        signal.signal(signal.SIGALRM, self.raise_timeout)
-        signal.alarm(self.sec)
-
-    def __exit__(self, type, value, traceback):
-        """
-        Closes event_loop on exit from with
-        Parameters
-        ----------
-
-        Returns
-        ---------
-        """
-        # Reset alarm
-        signal.alarm(0)
-
-        if type is not None:
-            raise
-
-    def raise_timeout(self, *args):
-        """
-        Closes event_loop on exit from with
-        Parameters
-        ----------
-        *args : 'signal.signal handler args'
-            signal number and frame
-        Returns
-        ---------
-        """
-        raise TimeoutError("Connection timed out after {:} seconds!"
-                           .format(self.sec))
 
 
 async def on_response(websocket, request_id):
@@ -99,7 +50,7 @@ async def on_response(websocket, request_id):
     return responses
 
 
-async def send_request(url, request):
+async def send_request(url, request, timeout=60):
     """
     Send request to server and compile response
     Parameters
@@ -108,17 +59,20 @@ async def send_request(url, request):
         Server url
     request : 'proto.request'
         proto request message
+    timeout : 'int'
+        timeout time for communication with server in sec
 
     Returns
     -------
     response : 'list'
         List of responses from the server, each response is a proto message
     """
-    async with websockets.connect(url) as websocket:
-        await websocket.send(request.SerializeToString())
+    with async_timeout.timeout(timeout):
+        async with websockets.connect(url) as websocket:
+            await websocket.send(request.SerializeToString())
 
-        request_id = request.id.value
-        response = await on_response(websocket, request_id)
+            request_id = request.id.value
+            response = await on_response(websocket, request_id)
 
     return response
 
@@ -190,6 +144,19 @@ class CESDS(object):
         """
         self.url = server_url
 
+    @property
+    def next_ID(self):
+        """
+        update currentID and return new unique request_ID
+        Parameters
+        ----------
+
+        Returns
+        ---------
+        """
+        self.currentID += 1
+        return self.currentID
+
     def send(self, request):
         """
         Closes event_loop
@@ -208,10 +175,14 @@ class CESDS(object):
         try:
             event_loop = asyncio.new_event_loop()
             asyncio.set_event_loop(event_loop)
-            with Timeout(sec=self.timeout):
-                response = event_loop.run_until_complete(send_request(self.url,
-                                                                      request))
+            sec = self.timeout
+            response = event_loop.run_until_complete(send_request(self.url,
+                                                                  request,
+                                                                  timeout=sec))
             return response
+        except asyncio.TimeoutError:
+            raise TimeoutError('Connection timed out after {:} seconds!'
+                               .format(sec))
         except Exception:
             raise
         finally:
@@ -232,11 +203,9 @@ class CESDS(object):
             List of model's metadata dictionaries for each model in models or
             dictionary for model_id
         """
-        # Get current id and update id
-        CESDS.currentID += 1
-        request_id = CESDS.currentID
-        version = CESDS.version
-        request = request_model_metadata(model_id, request_id, version=version)
+        request_id = self.next_ID
+        request = request_model_metadata(model_id, request_id,
+                                         version=self.version)
 
         response = self.send(request)
 
@@ -271,15 +240,12 @@ class CESDS(object):
             Concatinated data from each response message
             Variable ids replaced with names from model_info
         """
-        # Get current id and update id
-        CESDS.currentID += 1
-        request_id = CESDS.currentID
-        version = CESDS.version
+        request_id = self.next_ID
         request = request_records_data(model_id, request_id,
                                        max_records=max_records,
                                        variable_ids=variable_ids,
                                        bookmark_id=bookmark_id,
-                                       version=version)
+                                       version=self.version)
 
         response = self.send(request)
         data = handle_data_response(response)
@@ -306,12 +272,9 @@ class CESDS(object):
             List of model's metadata dictionaries for each model in models or
             dictionary for model_id
         """
-        # Get current id and update id
-        CESDS.currentID += 1
-        request_id = CESDS.currentID
-        version = CESDS.version
+        request_id = self.next_ID
         request = request_bookmark_meta(model_id, bookmark_id, request_id,
-                                        version=version)
+                                        version=self.version)
 
         response = self.send(request)
 
@@ -342,12 +305,9 @@ class CESDS(object):
             List of model's metadata dictionaries for each model in models or
             dictionary for model_id
         """
-        # Get current id and update id
-        CESDS.currentID += 1
-        request_id = CESDS.currentID
-        version = CESDS.version
+        request_id = self.next_ID
         request = save_bookmark(model_id, name, content, request_id,
-                                version=version)
+                                version=self.version)
 
         response = self.send(request)
 
@@ -374,11 +334,9 @@ class CESDS(object):
             Concatinated data from each response message
             Variable ids replaced with names from model_info
         """
-        # Get current id and update id
-        CESDS.currentID += 1
-        request_id = CESDS.currentID
-        version = CESDS.version
-        request = request_work(model_id, inputs, request_id, version=version)
+        request_id = self.next_ID
+        request = request_work(model_id, inputs, request_id,
+                               version=self.version)
 
         response = self.send(request)
         data = handle_data_response(response)

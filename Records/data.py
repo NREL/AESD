@@ -3,7 +3,7 @@ Package for data requests
 
 Created by: Michael Rossol Feb. 2017
 """
-from .error import ProtoError
+from .errors import ProtoError
 import numpy as np
 import pandas as pd
 import records_def_4_pb2 as proto

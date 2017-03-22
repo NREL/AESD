@@ -3,7 +3,7 @@ Package for models request
 
 Created by: Michael Rossol Feb. 2017
 """
-from .error import ProtoError
+from .errors import ProtoError
 import records_def_4_pb2 as proto
 
 __all__ = ['request_bookmark_meta', 'from_bookmark_meta',
