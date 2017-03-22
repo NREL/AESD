@@ -225,8 +225,7 @@ class CESDS(object):
         model_id : 'string'
             Id of model for which to requst records_data
         max_records : 'int'
-            Number or records being request
-            Default=0, will return all records
+            Number or records being request (0 will return all records)
         variable_ids : 'list'
             List of variable ids (ints) to be requested
             Will be returned in same order as request
