@@ -27,7 +27,7 @@ def request_model_metadata(server_url, model_id, timeout, file_out):
                 file_out = os.path.splitext(file_out)[0] + '.pkl'
             pickle.dump(models, open(file_out, 'rb'))
 
-        return models
+        print(models)
 
 
 @cli.command()
@@ -57,7 +57,7 @@ def request_records_data(server_url, model_id, max_records, variable_ids,
                 file_out = os.path.splitext(file_out)[0] + '.pkl'
             pickle.dump(data, open(file_out, 'rb'))
 
-        return data
+        print(data)
 
 
 @cli.command()
@@ -81,7 +81,7 @@ def request_bookmark_meta(server_url, model_id, bookmark_id, timeout,
                 file_out = os.path.splitext(file_out)[0] + '.pkl'
             pickle.dump(bookmarks, open(file_out, 'rb'))
 
-        return bookmarks
+        print(bookmarks)
 
 
 @cli.command()
@@ -105,7 +105,7 @@ def save_bookmark(server_url, model_id, name, content, timeout,
                 file_out = os.path.splitext(file_out)[0] + '.pkl'
             pickle.dump(new_bookmark, open(file_out, 'rb'))
 
-        return new_bookmark
+        print(new_bookmark)
 
 
 @cli.command()
@@ -127,7 +127,7 @@ def request_work(server_url, model_id, inputs, timeout, file_out):
                 file_out = os.path.splitext(file_out)[0] + '.pkl'
             pickle.dump(work, open(file_out, 'rb'))
 
-        return work
+        print(work)
 
 
 if __name__ == '__main__':
