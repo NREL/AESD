@@ -6,7 +6,7 @@ Created by: Michael Rossol Feb. 2017
 from .errors import ProtoError
 import numpy as np
 import pandas as pd
-import records_def_4_pb2 as proto
+from . import records_def_4_pb2 as proto
 
 
 __all__ = ['request_records_data', 'from_record_data',

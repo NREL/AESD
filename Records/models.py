@@ -4,7 +4,7 @@ Package for models request
 Created by: Michael Rossol Feb. 2017
 """
 from .errors import ProtoError
-import records_def_4_pb2 as proto
+from . import records_def_4_pb2 as proto
 
 __all__ = ['request_model_metadata', 'from_model', 'from_variable',
            'from_models_metadata', 'handle_models_response']

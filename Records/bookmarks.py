@@ -4,7 +4,7 @@ Package for models request
 Created by: Michael Rossol Feb. 2017
 """
 from .errors import ProtoError
-import records_def_4_pb2 as proto
+from . import records_def_4_pb2 as proto
 
 __all__ = ['request_bookmark_meta', 'from_bookmark_meta',
            'from_bookmark_meta_list', 'handle_bookmark_response']

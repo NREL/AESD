@@ -10,7 +10,7 @@ from .bookmarks import (request_bookmark_meta, handle_bookmark_response,
 from .data import (request_records_data, handle_data_response, request_work)
 from .errors import TimeoutError, ProtoError
 from .models import (request_model_metadata, handle_models_response)
-import records_def_4_pb2 as proto
+from . import records_def_4_pb2 as proto
 import websockets
 
 __all__ = ['on_response', 'send_request', 'CESDS']
