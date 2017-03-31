@@ -1,0 +1,78 @@
+# ESDA Records API, Version 4
+
+## General conventions
+
+*  `var_id` is [int32](#int32)
+*  `model_id` is [string](#string)
+*  `record_id` is [int64](#int64)
+
+Since all fields are optional in ProtoBuf 3, one cannot determine whether an optional value has been set or not if it is just a value, as opposed to a message.  That is not true for fields that are messages, where the absence of the field truly indicates that the value is absent, not just a default or unset value.  The message `OptionalString`, for example, is used in this API to indicate whether a character string value is truly present.  Thus `[RequestModelsMeta](#EsdaRecords.RequestModelsMeta)` has a `model_id` field that indicates whether the request is for all models, when the field has not been set, or for a specific one, when the field has been set.
+
+{{#files}}
+
+{{#file_description}}{{& file_description}}{{/file_description}}
+
+{{#file_messages}}
+
+### {{message_long_name}} {#{{message_full_name}}}
+
+{{& message_description}}
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+{{#message_fields}}
+| {{field_name}} | [{{field_long_type}}](#{{field_full_type}}) | {{field_label}} | {{#nobr}}{{& field_description}}{{#field_default_value}} Default: {{field_default_value}}{{/field_default_value}}{{/nobr}} |
+{{/message_fields}}
+
+{{#message_has_extensions}}
+| Extension | Type | Base | Number | Description |
+| --------- | ---- | ---- | ------ | ----------- |
+{{#message_extensions}}
+| {{extension_name}} | {{extension_long_type}} | {{extension_containing_long_type}} | {{extension_number}} | {{#nobr}}{{& extension_description}}{{#extension_default_value}} Default: {{extension_default_value}}{{/extension_default_value}}{{/nobr}} |
+{{/message_extensions}}
+{{/message_has_extensions}}
+
+{{/file_messages}}
+
+{{#file_enums}}
+### {{enum_long_name}}
+{{& enum_description}}
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+{{#enum_values}}
+| {{value_name}} | {{value_number}} | {{#nobr}}{{& value_description}}{{/nobr}} |
+{{/enum_values}}
+
+{{/file_enums}}
+
+{{#file_has_extensions}}
+### File-level Extensions
+| Extension | Type | Base | Number | Description |
+| --------- | ---- | ---- | ------ | ----------- |
+{{#file_extensions}}
+| {{extension_name}} | {{extension_long_type}} | {{extension_containing_long_type}} | {{extension_number}} | {{#nobr}}{{extension_description}}{{#extension_default_value}} Default: {{extension_default_value}}{{/extension_default_value}}{{/nobr}} |
+{{/file_extensions}}
+{{/file_has_extensions}}
+
+{{#file_services}}
+### {{service_name}}
+{{& service_description}}
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+{{#service_methods}}
+| {{method_name}} | [{{method_request_long_type}}](#{{method_request_full_type}}) | [{{method_response_long_type}}](#{{method_response_full_type}}) | {{#nobr}}{{& method_description}}{{/nobr}} |
+{{/service_methods}}
+
+{{/file_services}}
+
+{{/files}}
+
+## Scalar Value Types
+
+| .proto Type | Notes | C++ Type | Java Type | Python Type |
+| ----------- | ----- | -------- | --------- | ----------- |
+{{#scalar_value_types}}
+| {{scalar_value_proto_type}} | {{scalar_value_notes}} | {{scalar_value_cpp_type}} | {{scalar_value_java_type}} | {{scalar_value_python_type}} |
+{{/scalar_value_types}}
