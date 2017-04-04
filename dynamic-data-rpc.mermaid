@@ -24,9 +24,23 @@ Visualizer Client ->> ESDA Records Server: RequestRecordsData
 activate ESDA Records Server
 ESDA Records Server ->> Backend Supplying Data: get data from source
 activate Backend Supplying Data
-Backend Supplying Data -->> ESDA Records Server: all data from source
+Backend Supplying Data -->> ESDA Records Server: available data from source
 deactivate Backend Supplying Data
 ESDA Records Server --x Visualizer Client: RecordData
+Visualizer Client --x User: show visualization
+ESDA Records Server ->> Backend Supplying Data: get data from source
+activate Backend Supplying Data
+Backend Supplying Data -->> ESDA Records Server: new data from source
+deactivate Backend Supplying Data
+ESDA Records Server --x Visualizer Client: RecordData
+Visualizer Client --x User: update visualization
+ESDA Records Server ->> Backend Supplying Data: get data from source
+activate Backend Supplying Data
+Backend Supplying Data -->> ESDA Records Server: new data from source
+deactivate Backend Supplying Data
+ESDA Records Server --x Visualizer Client: RecordData
+Visualizer Client --x User: update visualization
+User ->> Visualizer Client: stop updates
+Visualizer Client ->> ESDA Records Server: RequestCancel
 deactivate ESDA Records Server
-Visualizer Client -->> User: show visualization
 deactivate Visualizer Client
