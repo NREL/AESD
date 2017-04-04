@@ -1,13 +1,3 @@
-# ESDA Records API, Version 4
-
-## General conventions
-
-*  `var_id` is [int32](#int32)
-*  `model_id` is [string](#string)
-*  `record_id` is [int64](#int64)
-
-Since all fields are optional in ProtoBuf 3, one cannot determine whether an optional value has been set or not if it is just a value, as opposed to a message.  That is not true for fields that are messages, where the absence of the field truly indicates that the value is absent, not just a default or unset value.  The message `OptionalString`, for example, is used in this API to indicate whether a character string value is truly present.  Thus `[RequestModelsMeta](#EsdaRecords.RequestModelsMeta)` has a `model_id` field that indicates whether the request is for all models, when the field has not been set, or for a specific one, when the field has been set.
-
 {{#files}}
 
 {{#file_description}}{{& file_description}}{{/file_description}}

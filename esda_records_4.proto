@@ -1,18 +1,64 @@
-// Use ProtoBuf 3.
-syntax = "proto3";
-
-
 /**
  * # ESDA Records API, Version 4
  *
+ * ## Contents
+ *
+ * *   Requests and responses
+ *     *   [Request](#EsdaRecords.Request)
+ *     *   [RequestModelsMeta](#EsdaRecords.RequestModelsMeta)
+ *     *   [RequestRecordsData](#EsdaRecords.RequestRecordsData)
+ *     *   [RequestWork](#EsdaRecords.RequestWork)
+ *     *   [RequestBoomarkMeta](#EsdaRecords.RequestBoomarkMeta)
+ *     *   [RequestSaveBookmark](#EsdaRecords.RequestSaveBookmark)
+ *     *   [RequestCancel](#EsdaRecords.RequestCancel)
+ *     *   [Response](#EsdaRecords.Response)
+ * *   Model and variable metadata
+ *     *   [ModelMeta](#EsdaRecords.ModelMeta)
+ *     *   [ModelMetaList](#EsdaRecords.ModelMetaList)
+ *     *   [DomainMeta](#EsdaRecords.DomainMeta)
+ *     *   [VarMeta](#EsdaRecords.VarMeta)
+ *     *   [VariableType](#EsdaRecords.VariableType)
+ *     *   [VarSet](#EsdaRecords.VarSet)
+ *     *   [VarInterval](#EsdaRecords.VarInterval)
+ * *   Data records and values
+ *     *   [Record](#EsdaRecords.Record)
+ *     *   [VarValue](#EsdaRecords.VarValue)
+ *     *   [Value](#EsdaRecords.Value)
+ *     *   [RecordData](#EsdaRecords.RecordData)
+ *     *   [RecordList](#EsdaRecords.RecordList)
+ *     *   [RecordTable](#EsdaRecords.RecordTable)
+ * *   Filtering
+ *     *   [FilterExpression](#EsdaRecords.FilterExpression)
+ *     *   [FilterNot](#EsdaRecords.FilterNot)
+ *     *   [FilterIntersection](#EsdaRecords.FilterIntersection)
+ *     *   [FilterUnion](#EsdaRecords.FilterUnion)
+ * *   Bookmarks
+ *     *   [BookmarkMeta](#EsdaRecords.BookmarkMeta)
+ *     *   [BookmarkMetaList](#EsdaRecords.BookmarkMetaList)
+ *     *   [BookmarkIntervalContent](#EsdaRecords.BookmarkIntervalContent)
+ *     *   [BookmarkSetContent](#EsdaRecords.BookmarkSetContent)
+ * *   Miscellaneous utility messages
+ *     *   [DoubleList](#EsdaRecords.DoubleList)
+ *     *   [IntegerList](#EsdaRecords.IntegerList)
+ *     *   [StringList](#EsdaRecords.StringList)
+ *     *   [OptionalInt32](#EsdaRecords.OptionalInt32)
+ *     *   [OptionalUInt32](#EsdaRecords.OptionalUInt32)
+ *     *   [OptionalString](#EsdaRecords.OptionalString)
+ * 
  * ## General conventions
  *
+ * All fields are technically optional in ProtoBuf 3, but some fields may be required in each message type in order for the message to be semantically valid.  In the following specifications for the messages, fields are annotated as *semantically required* or *semantically optional*.  Also, the specification notes when field in the [protobuf `oneof` construct](https://developers.google.com/protocol-buffers/docs/proto3#oneof) are required or mutually exclusive.
+ *
+ * Furthermore, one cannot determine whether an optional value has been set or not if it is just a value, as opposed to a message. That is not true for fields that are messages, where the absence of the field truly indicates that the value is absent, not just a default or unset value. The message `OptionalString`, for example, is used in this API to indicate whether a character string value is truly present. Thus [`RequestModelsMeta`](#EsdaRecords.RequestModelsMeta) has a `model_id` field that indicates whether the request is for all models, when the field has not been set, or for a specific one, when the field has been set.
+ *
+ * Throughout this specification, the following types are used for identifiers:
  * *  `var_id` is [int32](#int32)
  * *  `model_id` is [string](#string)
  * *  `record_id` is [int64](#int64)
  *
- * Since all fields are optional in ProtoBuf 3, one cannot determine whether an optional value has been set or not if it is just a value, as opposed to a message. That is not true for fields that are messages, where the absence of the field truly indicates that the value is absent, not just a default or unset value. The message `OptionalString`, for example, is used in this API to indicate whether a character string value is truly present. Thus `[RequestModelsMeta](#EsdaRecords.RequestModelsMeta)` has a `model_id` field that indicates whether the request is for all models, when the field has not been set, or for a specific one, when the field has been set.
+ * This specification conforms to [Protocol Buffers version 3](https://developers.google.com/protocol-buffers/docs/proto3).
  */
+syntax = "proto3";
 package EsdaRecords;
 
 
@@ -106,7 +152,7 @@ message BookmarkIntervalContent {
 
 
 /**
- * A list (set) of [record identifiers](#Record) can specify the contents of a [bookmark](#EsdaRecords.BookmarkMeta). Bookmark set content provides a convenient means to bookmark a specific selection of non-continuous records in a [model](#EsdaRecords.ModelMeta).
+ * A list (set) of [record identifiers](#EsdaRecords.Record) can specify the contents of a [bookmark](#EsdaRecords.BookmarkMeta). Bookmark set content provides a convenient means to bookmark a specific selection of non-continuous records in a [model](#EsdaRecords.ModelMeta).
  */
 message BookmarkSetContent {
     repeated int64 record_ids = 1; /// [semantically optional] The list of record identifiers in the set.
@@ -434,7 +480,7 @@ message RecordData {
  * 2.  Request records in [a bookmark](#EsdaRecords.BookmarkMeta).
  * 3.  [Filter](#EsdaRecords.FilterExpression) records according to a criterion.
  *
- * The response to this request is [RecordData](](#EsdaRecords.RecordData).
+ * The response to this request is [RecordData](#EsdaRecords.RecordData).
  *
  * *No more than on of `bookmark_id` or `expression` may be present in the message.*
  */
@@ -490,7 +536,7 @@ message RequestCancel {
  * | Request                        | Response                                          |
  * |--------------------------------|---------------------------------------------------|
  * | Metadata for model(s)          | [ModelMetaList](#EsdaRecords.ModelMetaList)       |
- * | Data records                   | [RecordData](#EsdaRecords.RecordData]             |
+ * | Data records                   | [RecordData](#EsdaRecords.RecordData)             |
  * | Metadata for bookmark(s)       | [BookmarkMetaList](#EsdaRecords.BookmarkMetaList) |
  * | Saving a bookmark              | [BookmarkMetaList](#EsdaRecords.BookmarkMetaList) |
  * | Canceling a previous request   | n/a                                               |

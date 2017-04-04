@@ -13,6 +13,9 @@ esda-manual.docx: $(sections)
 esda-manual.html: $(sections)
 	pandoc --standalone --smart --metadata date="$(today)" --output=esda-manual.html $^
 
+clean:
+	-rm esda-manual.{docx,html}
+
 02-api.md: esda_records_4.proto templates/records-api.mustache
 	$(PROTOC) --plugin=$(PROTOC_GEN_DOC) --doc_out=templates/records-api.mustache,$@:./ $<
 
