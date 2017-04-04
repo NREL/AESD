@@ -1,0 +1,32 @@
+sequenceDiagram
+
+participant User
+participant Visualizer Client
+participant ESDA Records Server
+participant Backend Supplying Data
+
+User ->> Visualizer Client: load configuration
+activate Visualizer Client
+Visualizer Client ->> ESDA Records Server: RequestModelsMeta
+activate ESDA Records Server
+ESDA Records Server ->> Backend Supplying Data: list data sources
+activate Backend Supplying Data
+Backend Supplying Data -->> ESDA Records Server: metadata for sources
+deactivate Backend Supplying Data
+ESDA Records Server -->> Visualizer Client: ModelMetaList
+deactivate ESDA Records Server
+Visualizer Client -->> User: display list of models
+deactivate Visualizer Client
+
+User ->> Visualizer Client: select model to display
+activate Visualizer Client
+Visualizer Client ->> ESDA Records Server: RequestRecordsData
+activate ESDA Records Server
+ESDA Records Server ->> Backend Supplying Data: get data from source
+activate Backend Supplying Data
+Backend Supplying Data -->> ESDA Records Server: data for source
+deactivate Backend Supplying Data
+ESDA Records Server -->> Visualizer Client: RecordData
+deactivate ESDA Records Server
+Visualizer Client -->> User: display visualization
+deactivate Visualizer Client
