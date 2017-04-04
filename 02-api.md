@@ -441,7 +441,7 @@ The response to this request is [RecordData](#EsdaRecords.RecordData).
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | model_id | [string](#string) | optional | [semantically required] The identifier for the model. |
-| inputs | [VarValue](#EsdaRecords.VarValue) | repeated | [semantically optional, specifying which input variables to set. |
+| inputs | [VarValue](#EsdaRecords.VarValue) | repeated | [semantically optional, specifying which input variables to set] |
 
 
 
@@ -517,7 +517,7 @@ Metadata for a variable.
 | units | [string](#string) | optional | [semantically optional] The name of the unit of measure for values of the variable. |
 | si | [sint32](#sint32) | repeated | [semantically optional] The unit of measure expressed as a list of the exponents for the eigth fundamental SI quantities [meter, kilogram, second, ampere, kelvin, mole, calenda, radian]. For example, the unit of acceleration $m/s^2$ would be express as `[1, 0, -2, 0, 0, 0, 0, 0]` because meters has an exponent of positive one and seconds has an exponent of negative two. |
 | scale | [double](#double) | optional | [semantically optional] An overall scale relative to the fundamental SI scale of the unit of measure. For instance, kilometers would have a scale 1000 because the fundamental unit of distance is meters. |
-| type | [VariableType](#EsdaRecords.VariableType) | optional | [semanatically optional] The data type for values of the variable. The default type is real number. |
+| type | [VariableType](#EsdaRecords.VariableType) | optional | [semantically optional] The data type for values of the variable. The default type is real number. |
 
 
 

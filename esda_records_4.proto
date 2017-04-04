@@ -285,7 +285,7 @@ message VarMeta {
     string          units    = 3; /// [semantically optional] The name of the unit of measure for values of the variable.
     repeated sint32 si       = 4; /// [semantically optional] The unit of measure expressed as a list of the exponents for the eigth fundamental SI quantities [meter, kilogram, second, ampere, kelvin, mole, calenda, radian]. For example, the unit of acceleration $m/s^2$ would be express as `[1, 0, -2, 0, 0, 0, 0, 0]` because meters has an exponent of positive one and seconds has an exponent of negative two.
     double          scale    = 5; /// [semantically optional] An overall scale relative to the fundamental SI scale of the unit of measure. For instance, kilometers would have a scale 1000 because the fundamental unit of distance is meters.
-    VariableType    type     = 6; /// [semanatically optional] The data type for values of the variable. The default type is real number.
+    VariableType    type     = 6; /// [semantically optional] The data type for values of the variable. The default type is real number.
 }
 
 
@@ -378,7 +378,7 @@ message DomainMeta {
  */
 message RequestWork {
     string model_id          = 1; /// [semantically required] The identifier for the model.
-    repeated VarValue inputs = 2; /// [semantically optional, specifying which input variables to set.
+    repeated VarValue inputs = 2; /// [semantically optional, specifying which input variables to set]
 }
 
 

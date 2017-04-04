@@ -2,3 +2,4 @@
 
 1.  [Overview](01-overview.md)
 1.  [ESDA Records API](02-api.md)
+1.  [Appendix: ESDA Records Version 4 Protocol Buffers](90-protobuf.md)

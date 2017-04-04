@@ -27,10 +27,11 @@ clean:
 	$(PROTOC) --plugin=$(PROTOC_GEN_DOC) --doc_out=templates/records-api.mustache,$@:./ $<
 
 90-protobuf.md: esda_records_4.proto
-
+	sed -e '1i# Appendix: ESDA Records Version 4 Protocol Buffers\n' -e '/^\//d ; /^ \*/d ; s/\/\/\/ [^[].*// ; s/\(\/\/\/ \[[^]]*\]\).*/\1/ ; s/^/\t/' $< | uniq > $@
 
 timestamp:
-	sed -r -e 's/^% ..? .+ ....$$/% $(today)/' 00-front.md > z && mv z 00-front.md
+	sed -i -r -e 's/^% ..? .+ ....$$/% $(today)/' 00-front.md
+
 
 %.mermaid.png: %.mermaid
 	$(MERMAID) --phantomPath $(PHANTOM) $<
