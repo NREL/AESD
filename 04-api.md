@@ -3,7 +3,7 @@
 
 ## Message Groups
 
-### Requests and responses
+### Requests and Responses
 
 *   [Request](#EsdaRecords.Request)
 *   [RequestModelsMeta](#EsdaRecords.RequestModelsMeta)
@@ -14,7 +14,7 @@
 *   [RequestCancel](#EsdaRecords.RequestCancel)
 *   [Response](#EsdaRecords.Response)
 
-### Model and variable metadata
+### Metadata
 
 *   [ModelMeta](#EsdaRecords.ModelMeta)
 *   [ModelMetaList](#EsdaRecords.ModelMetaList)
@@ -24,7 +24,7 @@
 *   [VarSet](#EsdaRecords.VarSet)
 *   [VarInterval](#EsdaRecords.VarInterval)
 
-### Data records and values
+### Data Records
 
 *   [Record](#EsdaRecords.Record)
 *   [VarValue](#EsdaRecords.VarValue)
@@ -47,7 +47,7 @@
 *   [BookmarkIntervalContent](#EsdaRecords.BookmarkIntervalContent)
 *   [BookmarkSetContent](#EsdaRecords.BookmarkSetContent)
 
-### Miscellaneous utility messages
+### Miscellaneous
 
 *   [DoubleList](#EsdaRecords.DoubleList)
 *   [IntegerList](#EsdaRecords.IntegerList)
