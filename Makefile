@@ -16,15 +16,18 @@ all: esda-manual.docx esda-manual.html
 clean:
 	-rm esda-manual.{docx,html} $(diagrams)
 
+veryclean: clean
+	touch --date="1970-01-01" 04-api.md 11-protobuf.md
+
 
 esda-manual.%: $(sections) $(diagrams)
-	pandoc --standalone --smart --metadata date="$(today)" --output=$@ $(sections)
+	pandoc --standalone --smart --table-of-contents --metadata date="$(today)" --output=$@ $(sections)
 
-02-api.md: esda_records_4.proto templates/records-api.mustache
+04-api.md: esda_records_4.proto templates/records-api.mustache
 	$(PROTOC) --plugin=$(PROTOC_GEN_DOC) --doc_out=templates/records-api.mustache,$@:./ $<
 
-90-protobuf.md: esda_records_4.proto
-	sed -e '1i# Appendix: ESDA Records Version 4 Protocol Buffers\n' -e '/^\//d ; /^ \*/d ; s/\/\/\/ [^[].*// ; s/\(\/\/\/ \[[^]]*\]\).*/\1/ ; s/^/\t/' $< | uniq > $@
+11-protobuf.md: esda_records_4.proto
+	sed -e '1i# Appendix: Protocol Buffers for Records API Version 4\n' -e '/^\//d ; /^ \*/d ; s/\/\/\/ [^[].*// ; s/\(\/\/\/ \[[^]]*\]\).*/\1/ ; s/^/\t/' $< | uniq > $@
 
 timestamp:
 	sed -i -r -e 's/^% ..? .+ ....$$/% $(today)/' 00-front.md

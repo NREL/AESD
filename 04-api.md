@@ -1,49 +1,60 @@
 
-# ESDA Records API, Version 4
+# Records API, Version 4
 
-## Contents
+## Message Groups
 
-*   Requests and responses
-    *   [Request](#EsdaRecords.Request)
-    *   [RequestModelsMeta](#EsdaRecords.RequestModelsMeta)
-    *   [RequestRecordsData](#EsdaRecords.RequestRecordsData)
-    *   [RequestWork](#EsdaRecords.RequestWork)
-    *   [RequestBoomarkMeta](#EsdaRecords.RequestBoomarkMeta)
-    *   [RequestSaveBookmark](#EsdaRecords.RequestSaveBookmark)
-    *   [RequestCancel](#EsdaRecords.RequestCancel)
-    *   [Response](#EsdaRecords.Response)
-*   Model and variable metadata
-    *   [ModelMeta](#EsdaRecords.ModelMeta)
-    *   [ModelMetaList](#EsdaRecords.ModelMetaList)
-    *   [DomainMeta](#EsdaRecords.DomainMeta)
-    *   [VarMeta](#EsdaRecords.VarMeta)
-    *   [VariableType](#EsdaRecords.VariableType)
-    *   [VarSet](#EsdaRecords.VarSet)
-    *   [VarInterval](#EsdaRecords.VarInterval)
-*   Data records and values
-    *   [Record](#EsdaRecords.Record)
-    *   [VarValue](#EsdaRecords.VarValue)
-    *   [Value](#EsdaRecords.Value)
-    *   [RecordData](#EsdaRecords.RecordData)
-    *   [RecordList](#EsdaRecords.RecordList)
-    *   [RecordTable](#EsdaRecords.RecordTable)
-*   Filtering
-    *   [FilterExpression](#EsdaRecords.FilterExpression)
-    *   [FilterNot](#EsdaRecords.FilterNot)
-    *   [FilterIntersection](#EsdaRecords.FilterIntersection)
-    *   [FilterUnion](#EsdaRecords.FilterUnion)
-*   Bookmarks
-    *   [BookmarkMeta](#EsdaRecords.BookmarkMeta)
-    *   [BookmarkMetaList](#EsdaRecords.BookmarkMetaList)
-    *   [BookmarkIntervalContent](#EsdaRecords.BookmarkIntervalContent)
-    *   [BookmarkSetContent](#EsdaRecords.BookmarkSetContent)
-*   Miscellaneous utility messages
-    *   [DoubleList](#EsdaRecords.DoubleList)
-    *   [IntegerList](#EsdaRecords.IntegerList)
-    *   [StringList](#EsdaRecords.StringList)
-    *   [OptionalInt32](#EsdaRecords.OptionalInt32)
-    *   [OptionalUInt32](#EsdaRecords.OptionalUInt32)
-    *   [OptionalString](#EsdaRecords.OptionalString)
+### Requests and responses
+
+*   [Request](#EsdaRecords.Request)
+*   [RequestModelsMeta](#EsdaRecords.RequestModelsMeta)
+*   [RequestRecordsData](#EsdaRecords.RequestRecordsData)
+*   [RequestWork](#EsdaRecords.RequestWork)
+*   [RequestBoomarkMeta](#EsdaRecords.RequestBoomarkMeta)
+*   [RequestSaveBookmark](#EsdaRecords.RequestSaveBookmark)
+*   [RequestCancel](#EsdaRecords.RequestCancel)
+*   [Response](#EsdaRecords.Response)
+
+### Model and variable metadata
+
+*   [ModelMeta](#EsdaRecords.ModelMeta)
+*   [ModelMetaList](#EsdaRecords.ModelMetaList)
+*   [DomainMeta](#EsdaRecords.DomainMeta)
+*   [VarMeta](#EsdaRecords.VarMeta)
+*   [VariableType](#EsdaRecords.VariableType)
+*   [VarSet](#EsdaRecords.VarSet)
+*   [VarInterval](#EsdaRecords.VarInterval)
+
+### Data records and values
+
+*   [Record](#EsdaRecords.Record)
+*   [VarValue](#EsdaRecords.VarValue)
+*   [Value](#EsdaRecords.Value)
+*   [RecordData](#EsdaRecords.RecordData)
+*   [RecordList](#EsdaRecords.RecordList)
+*   [RecordTable](#EsdaRecords.RecordTable)
+
+### Filtering
+
+*   [FilterExpression](#EsdaRecords.FilterExpression)
+*   [FilterNot](#EsdaRecords.FilterNot)
+*   [FilterIntersection](#EsdaRecords.FilterIntersection)
+*   [FilterUnion](#EsdaRecords.FilterUnion)
+
+### Bookmarks
+
+*   [BookmarkMeta](#EsdaRecords.BookmarkMeta)
+*   [BookmarkMetaList](#EsdaRecords.BookmarkMetaList)
+*   [BookmarkIntervalContent](#EsdaRecords.BookmarkIntervalContent)
+*   [BookmarkSetContent](#EsdaRecords.BookmarkSetContent)
+
+### Miscellaneous utility messages
+
+*   [DoubleList](#EsdaRecords.DoubleList)
+*   [IntegerList](#EsdaRecords.IntegerList)
+*   [StringList](#EsdaRecords.StringList)
+*   [OptionalInt32](#EsdaRecords.OptionalInt32)
+*   [OptionalUInt32](#EsdaRecords.OptionalUInt32)
+*   [OptionalString](#EsdaRecords.OptionalString)
 
 ## General conventions
 
@@ -57,6 +68,8 @@ Throughout this specification, the following types are used for identifiers:
 *  `record_id` is [int64](#int64)
 
 This specification conforms to [Protocol Buffers version 3](https://developers.google.com/protocol-buffers/docs/proto3).
+
+## Messages
 
 
 ### BookmarkIntervalContent {#EsdaRecords.BookmarkIntervalContent}
