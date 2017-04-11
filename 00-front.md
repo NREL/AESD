@@ -1,5 +1,5 @@
 % Energy System Design Architecture:\
-  Technical Manual for Records API
+  Technical Manual for the Records API
 % Nicholas Brunhart-Lupo; Brian Bush; Kenny Gruchalla; Michael Rossol\
   *National Renewable Energy Laboratory*
-%  5 April 2017
+% 11 April 2017

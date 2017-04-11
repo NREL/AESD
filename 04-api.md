@@ -454,7 +454,7 @@ The response to this request is [RecordData](#EsdaRecords.RecordData).
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | model_id | [string](#string) | optional | [semantically required] The identifier for the model. |
-| inputs | [VarValue](#EsdaRecords.VarValue) | repeated | [semantically optional, specifying which input variables to set] |
+| inputs | [VarValue](#EsdaRecords.VarValue) | repeated | [semantically optional] Which input variables to set to which values. |
 
 
 

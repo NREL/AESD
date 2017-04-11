@@ -389,7 +389,7 @@ message DomainMeta {
  */
 message RequestWork {
     string model_id          = 1; /// [semantically required] The identifier for the model.
-    repeated VarValue inputs = 2; /// [semantically optional, specifying which input variables to set]
+    repeated VarValue inputs = 2; /// [semantically optional] Which input variables to set to which values.
 }
 
 

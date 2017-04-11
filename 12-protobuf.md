@@ -1,4 +1,5 @@
-# Appendix: Protocol Buffers for Records API Version 4
+# Appendices
+## Protocol Buffers for Records API Version 4
 
 	syntax = "proto3";
 	package EsdaRecords;
@@ -146,7 +147,7 @@
 	
 	message RequestWork {
 	    string model_id          = 1; /// [semantically required]
-	    repeated VarValue inputs = 2; /// [semantically optional, specifying which input variables to set]
+	    repeated VarValue inputs = 2; /// [semantically optional]
 	}
 	
 	message VarValue {
