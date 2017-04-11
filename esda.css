@@ -223,13 +223,13 @@ img {
   vertical-align: middle;
 }
 
-figure {
+.figure {
   display: block;
   text-align: center;
   margin: 1em 0;
 }
 
-figure img {
+.figure img {
   border: none;
   margin: 0 auto;
 }
@@ -240,7 +240,7 @@ figcaption {
   margin: 0 0 .8em;
 }
 
-.caption {
+.caption, caption {
 //text-align: center;
   font-weight: bold;
   font-size: smaller;
