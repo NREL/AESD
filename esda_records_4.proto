@@ -1,10 +1,16 @@
 /**
  * # Records API, Version 4
  *
+ * The ESDA Records API consists of Google Protobuf 3 [@protobuf] messages used for requesting and providing data and metadata for record-oriented information. This section contains the complete specification for version 4 of the Records API. Clients send `Request` messages and servers send `Response` messages, typically transported via WebSockets [@websockets].
+ * 
  * ## Message Groups
+ *
+ * The message types in the Records API are organized into thematic groups below.
  *
  * ### Requests and Responses
  * 
+ * `Request` messages are sent from client to server and `Response` messages are sent from server to client.  Request messages contain a specific type of request and response messages contain a corresponding specific type of response.
+ *
  * *   [Request](#EsdaRecords.Request)
  * *   [RequestModelsMeta](#EsdaRecords.RequestModelsMeta)
  * *   [RequestRecordsData](#EsdaRecords.RequestRecordsData)
@@ -16,6 +22,8 @@
  * 
  * ### Metadata
  * 
+ * Metadata messages describe data sources ("models") and variables.
+ *
  * *   [ModelMeta](#EsdaRecords.ModelMeta)
  * *   [ModelMetaList](#EsdaRecords.ModelMetaList)
  * *   [DomainMeta](#EsdaRecords.DomainMeta)
@@ -26,6 +34,8 @@
  * 
  * ### Data Records
  * 
+ * Data is represented as either lists of records or tables of them.
+ *
  * *   [Record](#EsdaRecords.Record)
  * *   [VarValue](#EsdaRecords.VarValue)
  * *   [Value](#EsdaRecords.Value)
@@ -34,14 +44,19 @@
  * *   [RecordTable](#EsdaRecords.RecordTable)
  * 
  * ### Filtering
- * 
+ *
+ * Records can be filtered by logical operations on conditions on values of variables in the records.
+ *
  * *   [FilterExpression](#EsdaRecords.FilterExpression)
  * *   [FilterNot](#EsdaRecords.FilterNot)
  * *   [FilterIntersection](#EsdaRecords.FilterIntersection)
  * *   [FilterUnion](#EsdaRecords.FilterUnion)
+ * *   [DomainMeta](#EsdaRecords.DomainMeta)
  * 
  * ### Bookmarks
  * 
+ * Bookmarks record particular sets or records or conditions on record data.
+ *
  * *   [BookmarkMeta](#EsdaRecords.BookmarkMeta)
  * *   [BookmarkMetaList](#EsdaRecords.BookmarkMetaList)
  * *   [BookmarkIntervalContent](#EsdaRecords.BookmarkIntervalContent)
@@ -49,6 +64,8 @@
  * 
  * ### Miscellaneous
  * 
+ * The following messages wrap data types for the content of records.
+ *
  * *   [DoubleList](#EsdaRecords.DoubleList)
  * *   [IntegerList](#EsdaRecords.IntegerList)
  * *   [StringList](#EsdaRecords.StringList)
