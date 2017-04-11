@@ -7,26 +7,26 @@ participant Backend Supplying Data
 
 User ->> Visualizer Client: load configuration
 activate Visualizer Client
-Visualizer Client ->> ESDA Records Server: Request: RequestModelsMeta
+Visualizer Client ->> ESDA Records Server: Request models_metadata
 activate ESDA Records Server
 ESDA Records Server ->> Backend Supplying Data: list data sources
 activate Backend Supplying Data
 Backend Supplying Data -->> ESDA Records Server: metadata for sources
 deactivate Backend Supplying Data
-ESDA Records Server --x Visualizer Client: Response: ModelMetaList
+ESDA Records Server --x Visualizer Client: Response models
 deactivate ESDA Records Server
 Visualizer Client -->> User: show list of models
 deactivate Visualizer Client
 
 User ->> Visualizer Client: select model to display
 activate Visualizer Client
-Visualizer Client ->> ESDA Records Server: Request: RequestRecordsData
+Visualizer Client ->> ESDA Records Server: Request records_data
 activate ESDA Records Server
 ESDA Records Server ->> Backend Supplying Data: get data from source
 activate Backend Supplying Data
 Backend Supplying Data -->> ESDA Records Server: all data from source
 deactivate Backend Supplying Data
-ESDA Records Server --x Visualizer Client: Response: RecordData
+ESDA Records Server --x Visualizer Client: Response data
 deactivate ESDA Records Server
 Visualizer Client -->> User: show visualization
 deactivate Visualizer Client

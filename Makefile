@@ -32,6 +32,7 @@ esda-manual.%: $(sections) $(diagrams) references.bib
 	       --bibliography=references.bib \
 	       --filter pandoc-citeproc      \
 	       --csl chicago-author-date.csl \
+	       --mathjax                     \
 	       --output=$@ $(sections)
 
 04-api.md: esda_records_4.proto templates/records-api.mustache

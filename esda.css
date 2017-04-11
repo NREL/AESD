@@ -141,6 +141,10 @@ pre {
   white-space: pre;
   white-space: pre-wrap;
   word-wrap: break-word;
+  margin-left: 5em;
+  font-size: smaller;
+  line-height: 1.05em;
+//background-color: lightgray;
 }
 
 b, strong {
