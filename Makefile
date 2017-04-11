@@ -21,7 +21,15 @@ veryclean: clean
 
 
 esda-manual.%: $(sections) $(diagrams)
-	pandoc --standalone --smart --table-of-contents --toc-depth=2 --metadata date="$(today)" --output=$@ $(sections)
+	pandoc --standalone               \
+	       --smart                    \
+	       --columns 1000             \
+	       --number-sections          \
+	       --table-of-contents        \
+	       --toc-depth=2              \
+	       --css esda.css             \
+	       --metadata date="$(today)" \
+	       --output=$@ $(sections)
 
 04-api.md: esda_records_4.proto templates/records-api.mustache
 	$(PROTOC) --plugin=$(PROTOC_GEN_DOC) --doc_out=templates/records-api.mustache,$@:./ $<
