@@ -1,5 +1,7 @@
 # Technical Manual for the Energy System Design Architecture (ESDA)
 
-1.  [Overview](01-overview.md)
-1.  [ESDA Records API](02-api.md)
-1.  [Appendix: ESDA Records Version 4 Protocol Buffers](90-protobuf.md)
+1.  [Abstract](01-abstract.md)
+2.  [Overview](02-overview.md)
+3.  [Use Cases](03-cases.md)
+3.  [Records API](04-api.md)
+4.  [Appendix: Protocol Buffers](11-protobuf.md)
