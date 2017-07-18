@@ -40,7 +40,7 @@ docs/aesd-manual.%: $(sections) $(diagrams) references.bib
 	       --bibliography=references.bib \
 	       --filter pandoc-citeproc      \
 	       --csl chicago-author-date.csl \
-	       --mathjax                     \
+	       --self-contained              \
 	       --output=$@ $(sections)
 
 docs/aesd-slides.html: $(sections) $(diagrams) references.bib
