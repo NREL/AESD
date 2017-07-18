@@ -1,0 +1,1981 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Nicholas Brunhart-Lupo" />
+  <meta name="author" content="Brian Bush" />
+  <meta name="author" content="Kenny Gruchalla" />
+  <meta name="author" content="Michael Rossol National Renewable Energy Laboratory" />
+  <meta name="date" content="2017-07-18" />
+  <title>Advanced Energy System Design (AESD): Technical Manual for the Records API</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="aesd.css" type="text/css" />
+  <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_CHTML-full" type="text/javascript"></script>
+</head>
+<body>
+<div id="header">
+<h1 class="title">Advanced Energy System Design (AESD):<br />
+Technical Manual for the Records API</h1>
+<h2 class="author">Nicholas Brunhart-Lupo</h2>
+<h2 class="author">Brian Bush</h2>
+<h2 class="author">Kenny Gruchalla</h2>
+<h2 class="author">Michael Rossol<br />
+<em>National Renewable Energy Laboratory</em></h2>
+<h3 class="date">18 July 2017</h3>
+</div>
+<div id="TOC">
+<ul>
+<li><a href="#abstract"><span class="toc-section-number">1</span> Abstract</a></li>
+<li><a href="#overview"><span class="toc-section-number">2</span> Overview</a></li>
+<li><a href="#use-cases"><span class="toc-section-number">3</span> Use Cases</a><ul>
+<li><a href="#static-data"><span class="toc-section-number">3.1</span> Static Data</a></li>
+<li><a href="#dynamic-data"><span class="toc-section-number">3.2</span> Dynamic Data</a></li>
+<li><a href="#simulations"><span class="toc-section-number">3.3</span> Simulations</a></li>
+<li><a href="#bookmarks"><span class="toc-section-number">3.4</span> Bookmarks</a></li>
+<li><a href="#filtering"><span class="toc-section-number">3.5</span> Filtering</a></li>
+</ul></li>
+<li><a href="#records-api-version-4"><span class="toc-section-number">4</span> Records API, Version 4</a><ul>
+<li><a href="#message-groups"><span class="toc-section-number">4.1</span> Message Groups</a></li>
+<li><a href="#general-conventions"><span class="toc-section-number">4.2</span> General conventions</a></li>
+<li><a href="#messages"><span class="toc-section-number">4.3</span> Messages</a></li>
+<li><a href="#scalar-value-types"><span class="toc-section-number">4.4</span> Scalar Value Types</a></li>
+</ul></li>
+<li><a href="#appendices"><span class="toc-section-number">5</span> Appendices</a><ul>
+<li><a href="#protocol-buffers-for-records-api-version-4"><span class="toc-section-number">5.1</span> Protocol Buffers for Records API Version 4</a></li>
+</ul></li>
+<li><a href="#references"><span class="toc-section-number">6</span> References</a></li>
+</ul>
+</div>
+<h1 id="abstract"><span class="header-section-number">1</span> Abstract</h1>
+<p>The Records API (application program interface) for Advanced Energy System Design (AESD) enables software that serves multidimensional record-oriented data to interoperate with software than uses such data. In the context of the Records API, multidimensional data records are simply tuples of real numbers, integers, and character strings, where each data value is tagged by a variable name, according to a pre-defined schema, and each record is assigned a unique integer identifier. Conceptually, these records are isomorphic to rows in a relational database, JSON objects, or key-value maps. Records servers might supply static datasets, sensor measurements that periodically update as new telemetry become available, or the results of simulations as the simulations generate new output. Records client software might display or analyze the data, but in the case of simulations the client request the creation of new ensembles for specified input parameters. It is also possible to chain records clients and servers together so that a client consuming data from a server might transform that data and serve it to further clients.</p>
+<p>This minimalist API avoids imposing burdensome metadata, structural, or implementation requirements on developers by relying on open-source technologies that is readily available for common programming languages. In particular, the API has been designed to place the smallest possible burden on services that provide data. This document defines the message format for the Records API, a transport mechanism for communicating the data, and semantics for interpreting it. The message format is specified as Google Protocol Buffers <span class="citation">(Google Developers 2017b)</span> and the transport mechanism uses WebSockets <span class="citation">(Internet Engineering Task Force 2017)</span>. We discuss three major use cases for serving and consuming records data: (i) static data, (ii) dynamically augmented data, (iii) on-demand simulations, (iv) with filters, and (v) with bookmarks. Separate implementations of the API exist in C++, Haskell, JavaScript, Python, and R.</p>
+<h1 id="overview"><span class="header-section-number">2</span> Overview</h1>
+<p>Client-server communication in the Records API simply consists of clients sending <a href="#EsdaRecords.Request"><code>Request</code></a> messages to the server and servers asynchronously sending <a href="#EsdaRecords.Response"><code>Response</code></a> messages to the client. The <a href="#requests-and-responses">request and response messages</a> hold the specifics of the request or response and the responses are correlated with the requests, but it is important to note that multiple responses may occur for a single request, as when record data is chunked into multiple response, or that an error response may be sent at any time. The nested messages within <code>Request</code> and <code>Response</code> may in turn contain nested fields and messages providing further details. The table below shows the correspondence between requests and responses, while the figure following that shows the containment relationships between message types.</p>
+<table>
+<caption>Correlation between requests and responses.</caption>
+<thead>
+<tr class="header">
+<th>Request Field</th>
+<th>Response Field</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#EsdaRecords.RequestModelsMeta"><code>models_metadata</code></a></td>
+<td><a href="#EsdaRecords.ModelMetaList"><code>models</code></a> or <code>error</code></td>
+</tr>
+<tr class="even">
+<td><a href="#EsdaRecords.RequestRecordsData"><code>records_data</code></a></td>
+<td><a href="#EsdaRecords.RecordData"><code>data</code></a> or <code>error</code></td>
+</tr>
+<tr class="odd">
+<td><a href="#EsdaRecords.RequestBookmarkMeta"><code>bookmark_meta</code></a></td>
+<td><a href="#EsdaRecords.BookmarkMetaList"><code>bookmarks</code></a> or <code>error</code></td>
+</tr>
+<tr class="even">
+<td><a href="#EsdaRecords.RequestSaveBookmark"><code>save_bookmark</code></a></td>
+<td><a href="#EsdaRecords.BookmarkMetaList"><code>bookmarks</code></a> or <code>error</code></td>
+</tr>
+<tr class="odd">
+<td><a href="#EsdaRecords.RequestCancel"><code>cancel</code></a></td>
+<td>no response or <code>error</code></td>
+</tr>
+<tr class="even">
+<td><a href="#EsdaRecords.RequestWork"><code>work</code></a></td>
+<td><a href="#EsdaRecords.RecordData"><code>data</code></a> or <code>error</code></td>
+</tr>
+</tbody>
+</table>
+<div class="figure">
+<img src="records.mermaid.png" alt="Containment relationships between protocol buffer messages in the AESD Records API." />
+<p class="caption">Containment relationships between protocol buffer messages in the AESD Records API.</p>
+</div>
+<p><a href="#metadata">Metadata messages</a> describe “models”, which are just sources of data, and the variables they contain. <a href="#data-records">Data record messages</a> hold the data itself. Data records are simply tuples of real numbers, integers, and character strings, where each data value is tagged by a variable name, according to a pre-defined schema, and each record is assigned a unique integer identifier. Conceptually, these records are isomorphic to rows in a relational database, JSON objects, or key-value maps. For efficiency and compactness, <a href="#EsdaRecords.RecordData"><code>RecordData</code></a> may be provided in <a href="#EsdaRecords.RecordList">list format</a> or <a href="#EsdaRecords.RecordTable">tabular format</a>, with the latter format only obtained when the contents of the table all have the same data type. The data records may be provided <em>in toto</em> or filtered using <a href="#filtering">filter messages</a> so that only certain fields or records are returned. The API contains a small embedded language for <a href="#EsdaRecords.FilterExpression">filtering via set and value operations</a>. Sets of records may be <a href="#bookmarks">bookmarked</a> for sharing or later retrieval by (i) enumerating their unique record identifiers, (ii) defining a range of unique record identifiers, or (iii) specifying a filtering criterion.</p>
+<p>Servers that perform computations or simulations can receive input parameters via a <a href="#EsdaRecords.RequestWork"><code>RequestWork</code></a> message that contains those input parameters. After the server has completed its computations, it sends the results as <a href="#EsdaRecords.RecordData"><code>RecordData</code></a> messages.</p>
+<p>In general the response to a request for data records comes in <em>chunks</em> numbered in sequence, where each chunk has an identifier, <code>chunk_id</code>, and specifies the identifier of the next chunk, <code>next_chunk_id</code>. Thus, the chunks form a linked list. The sending of additional chunks can be cancelled using a <a href="#EsdaRecords.RequestCancel"><code>RequestCancel</code></a> message. If the <a href="#EsdaRecords.Request"><code>subscribe</code></a> flag is set when making a request, then the server will respond indefinitely with additional data as the data becomes available, until the subscription is <a href="#EsdaRecords.RequestCancel">cancelled</a>.</p>
+<h1 id="use-cases"><span class="header-section-number">3</span> Use Cases</h1>
+<p>In this section we outline some standard use cases for the Records API. UML Sequence Diagrams <span class="citation">(Fowler 2017)</span> illustrate the flow of messages and the messages themselves are printed in the text format output by the Google <code>protoc</code> tool <span class="citation">(Google Developers 2017a)</span>.</p>
+<h2 id="static-data"><span class="header-section-number">3.1</span> Static Data</h2>
+<p>The retrieval of static data records forms the simplest use case for the Records API. A user chooses a particular data source (a “model” in the parlance of the Records API) and then the data is retrieved and displayed. The visualization client software communicates with a Records server, which in turn accesses the static data. The figure below illustrates the process.</p>
+<div class="figure">
+<img src="static-data-rpc.mermaid.png" alt="Visualizing data from a static source using the AESD Records API." />
+<p class="caption">Visualizing data from a static source using the AESD Records API.</p>
+</div>
+<p>A <a href="#EsdaRecords.Request"><code>Request</code></a> without <code>model_id</code> specified requests the server to list all models:</p>
+<pre><code>version: 4
+id: 1
+models_metadata {
+}</code></pre>
+<p>The <a href="#EsdaRecords.Response"><code>Response</code></a> from the server provides metadata for all of the models:</p>
+<pre><code>version: 4
+id: 1
+models {
+  models {
+    model_id: &quot;example-model-1&quot;
+    model_name: &quot;Example Model #1&quot;
+    model_uri: &quot;http://esda.nrel.gov/examples/model-1&quot;
+    variables {
+      var_id: 0
+      var_name: &quot;Example Real Variable&quot;
+      type: REAL
+    }
+    variables {
+      var_id: 1
+      var_name: &quot;Example Integer Variable&quot;
+      type: INTEGER
+    }
+    variables {
+      var_id: 2
+      var_name: &quot;Example String Variable&quot;
+      type: STRING
+    }
+  models {
+    model_id: &quot;example-model-2&quot;
+    model_name: &quot;Example Model #2&quot;
+    model_uri: &quot;http://esda.nrel.gov/examples/model-2&quot;
+    variables {
+      var_id: 0
+      var_name: &quot;POSIX Epoch&quot;
+      type: INTEGER
+    }
+    variables {
+      var_id: 1
+      var_name: &quot;Measurement&quot;
+      type: REAL
+    }
+  }
+  models {
+    model_id: &quot;example-simulation-3&quot;
+    model_name: &quot;Example Simulation #3&quot;
+    model_uri: &quot;http://esda.nrel.gov/examples/simulation-3&quot;
+    variables {
+      var_id: 0
+      var_name: &quot;Input&quot;
+      type: REAL
+    }
+    variables {
+      var_id: 1
+      var_name: &quot;Time&quot;
+      type: REAL
+    }
+    variables {
+      var_id: 2
+      var_name: &quot;Value&quot;
+      type: REAL
+    }
+    inputs {
+      var_id: 0
+      interval {
+        first_value: 0
+        second_value: 100
+      }
+    }
+  }
+}</code></pre>
+<p>Note that the response above is tagged with the same <code>id</code> as the request: this allows the client to correlate responses with the particular requests it makes. Next the user might request three records from the first model:</p>
+<pre><code>version: 4
+id: 2
+records_data {
+  model_id: &quot;example-model-1&quot;
+  max_records: 3
+}</code></pre>
+<p>The record data might be returned as two chunks, where the first chunk is</p>
+<pre><code>version: 4
+id: 2
+chunk_id: 1
+next_chunk_id: 2
+data {
+  list {
+    records {
+      record_id: 10
+      variables {
+        var_id: 0
+        value: 10.5
+      }
+      variables {
+        var_id: 1
+        value: -5
+      }
+      variables {
+        var_id: 2
+        value: &quot;first&quot;
+      }
+    }
+    records {
+      record_id: 20
+      variables {
+        var_id: 0
+        value: 99.2
+      }
+      variables {
+        var_id: 1
+        value: 108
+      }
+      variables {
+        var_id: 2
+        value: &quot;second&quot;
+      }
+    }
+  }
+}</code></pre>
+<p>and the last chunk is:</p>
+<pre><code>version: 4
+id: 2
+chunk_id: 2
+next_chunk_id: 0
+data {
+  list {
+    records {
+      record_id: 30
+      variables {
+        var_id: 0
+        value: -15.7
+      }
+      variables {
+        var_id: 1
+        value: 30
+      }
+      variables {
+        var_id: 2
+        value: &quot;third&quot;
+      }
+    }
+  }
+}</code></pre>
+<h2 id="dynamic-data"><span class="header-section-number">3.2</span> Dynamic Data</h2>
+<p>As shown in the following figure retrieving data from a dynamic source proceeds quite similarly to retrieving data from a static source. The only essential difference is that the server repeatedly sends additional responses containing new data, until a request to cancel is sent:</p>
+<div class="figure">
+<img src="dynamic-data-rpc.mermaid.png" alt="Visualizing data from a dynamic source using the AESD Records API." />
+<p class="caption">Visualizing data from a dynamic source using the AESD Records API.</p>
+</div>
+<p>When requesting dynamic data, it is advisable to set the <code>subscribe</code> flag in the request for data:</p>
+<pre><code>version: 4
+id: 2
+subscribe: true
+records_data {
+  model_id: &quot;example-model-2&quot;
+}</code></pre>
+<p>The <a href="#EsdaRecords.RequestCancel"><code>RequestCancel</code></a> message is the <code>cancel</code> field <a href="#EsdaRecords.Request"><code>Request</code></a> and must include the <code>id</code> of the request to be cancelled:</p>
+<pre><code>version: 4
+cancel {
+  id: 2
+}</code></pre>
+<h2 id="simulations"><span class="header-section-number">3.3</span> Simulations</h2>
+<p>The model <code>Example Simulation #3</code> in the Static Data use case is a simulation model, as evidenced by the presence of the <code>inputs</code> field in its metadata. The following figure shows a typical interaction with a simulation-based model via the Records API.</p>
+<div class="figure">
+<img src="simulation-rpc.mermaid.png" alt="Steering and visualizing simulation results using the AESD Records API." />
+<p class="caption">Steering and visualizing simulation results using the AESD Records API.</p>
+</div>
+<p>The <a href="#EsdaRecords.RequestWork"><code>RequestWork</code></a> message, which is contained in the <code>work</code> field of a <a href="#EsdaRecords.Request"><code>Request</code></a>, specifies the input for a simulation to be run:</p>
+<pre><code>version: 4
+id: 3
+work {
+  model_id: &quot;example-simulation-3&quot;
+  inputs {
+    var_id: 0
+    value: 50
+  }
+}</code></pre>
+<p>The response to this message will be data for the result of the simulation.</p>
+<h2 id="bookmarks"><span class="header-section-number">3.4</span> Bookmarks</h2>
+<p>Once data from a model is loaded, it may be bookmarked. One simply supplies a description of the data to be bookmarked. Bookmarks can be listed and loaded, as shown in the following figure.</p>
+<div class="figure">
+<img src="bookmarking.mermaid.png" alt="Creating and retrieving a bookmark and its associated data." />
+<p class="caption">Creating and retrieving a bookmark and its associated data.</p>
+</div>
+<p>To create a bookmark for a specific list of records, simply supply their record identifiers as part of a <a href="#EsdaRecords.BoomarkMeta"><code>BookmarkMeta</code></a> message in the <code>save_bookmark</code> field of <a href="#EsdaRecords.Request"><code>Request</code></a>:</p>
+<pre><code>version: 4
+id: 4
+save_bookmark {
+  model_id: &quot;example-model-1&quot;
+  new_bookmark {
+    bookmark_name: &quot;Sample Bookmark&quot;
+    set {
+      record_ids: 10
+      record_ids: 30
+    }
+  }
+}</code></pre>
+<p>The response will be the same bookmark, but with the <code>bookmark_id</code> field added:</p>
+<pre><code>version: 4
+id: 4
+bookmarks {
+  bookmark_metas {
+    bookmark_id: &quot;bookmark-1&quot;
+    bookmark_name: &quot;Sample Bookmark&quot;
+    set {
+      record_ids: 10
+      record_ids: 30
+    }
+  }
+}</code></pre>
+<p>The user or another user can retrieve the records corresponding to the bookmark:</p>
+<pre><code>version: 4
+id: 5
+records_data {
+  model_id: &quot;example-model-1&quot;
+  bookmark_id: &quot;bookmark-1&quot;
+}</code></pre>
+<p>This will return precisely the bookmarked records:</p>
+<pre><code>version: 4
+id: 5
+data {
+  list {
+    records {
+      record_id: 10
+      variables {
+        var_id: 0
+        value: 10.5
+      }
+      variables {
+        var_id: 1
+        value: -5
+      }
+      variables {
+        var_id: 2
+        value: &quot;first&quot;
+      }
+    }
+    records {
+      record_id: 30
+      variables {
+        var_id: 0
+        value: -15.7
+      }
+      variables {
+        var_id: 1
+        value: 30
+      }
+      variables {
+        var_id: 2
+        value: &quot;third&quot;
+      }
+    }
+  }
+}</code></pre>
+<h2 id="filtering"><span class="header-section-number">3.5</span> Filtering</h2>
+<p>Filtering records can be used to select particular records for retrieval, via the <a href="#EsdaRecords.RequestRecordsData"><code>RequestRecordsData</code></a> message, or in defining bookmarks, via the <a href="#EsdaRecords.BookmarkMeta"><code>BookmarkMeta</code></a> message. The filtering of records is accomplished through expressions, <a href="#EsdaRecords.FilterExpression"><code>FilterExpression</code></a>, combining values for variables, <a href="#EsdaRecords.DomainMeta"><code>DomainMeta</code></a>, and the set operators not, union, and intersection, encoded in the messages <a href="#EsdaRecords.FilterNot"><code>FilterNot</code></a>, <a href="#EsdaRecords.FilterUnion"><code>FilterUnion</code></a>, and <a href="#EsdaRecords.FilterExpression"><code>FitlerIntersection</code></a>, respectively. For example, the expression <span class="math inline">\(x \le 20\)</span> would be expressed as the following <a href="#EsdaRecords.FilterExpression"><code>FilterExpression</code></a></p>
+<pre><code>filter_domain {
+  interval {
+    var_id: 0
+    last_value: 20
+  }
+}</code></pre>
+<p>provided that <span class="math inline">\(x\)</span> has <code>var_id = 0</code>. The expression <span class="math inline">\(( 10 \le x \le 20) \cup ( y \notin \{ 4, 7 \})\)</span> would be expressed as</p>
+<pre><code>filter_union {
+  filter_expressions {
+    filter_domain {
+      var_id: 0
+      first_value: 10
+      last_value: 20
+    }
+    filter_not {
+      filter_expression {
+        filter_domain {
+          var_id: 1
+          set {
+            elements: 4
+            elements: 7
+          }
+        
+      }
+    }
+  }
+}</code></pre>
+<p>provided that <span class="math inline">\(x\)</span> has <code>var_id = 0</code> and <span class="math inline">\(y\)</span> has <code>var_id = 1</code>.</p>
+<h1 id="records-api-version-4"><span class="header-section-number">4</span> Records API, Version 4</h1>
+<p>The AESD Records API consists of Google Protobuf 3 <span class="citation">(Google Developers 2017b)</span> messages used for requesting and providing data and metadata for record-oriented information. This section contains the complete specification for version 4 of the Records API. Clients send <code>Request</code> messages and servers send <code>Response</code> messages, typically transported via WebSockets <span class="citation">(Internet Engineering Task Force 2017)</span>.</p>
+<h2 id="message-groups"><span class="header-section-number">4.1</span> Message Groups</h2>
+<p>The message types in the Records API are organized into thematic groups below.</p>
+<h3 id="requests-and-responses"><span class="header-section-number">4.1.1</span> Requests and Responses</h3>
+<p><code>Request</code> messages are sent from client to server and <code>Response</code> messages are sent from server to client. Request messages contain a specific type of request and response messages contain a corresponding specific type of response.</p>
+<ul>
+<li><a href="#AesdRecords.Request">Request</a></li>
+<li><a href="#AesdRecords.RequestModelsMeta">RequestModelsMeta</a></li>
+<li><a href="#AesdRecords.RequestRecordsData">RequestRecordsData</a></li>
+<li><a href="#AesdRecords.RequestWork">RequestWork</a></li>
+<li><a href="#AesdRecords.RequestBoomarkMeta">RequestBoomarkMeta</a></li>
+<li><a href="#AesdRecords.RequestSaveBookmark">RequestSaveBookmark</a></li>
+<li><a href="#AesdRecords.RequestCancel">RequestCancel</a></li>
+<li><a href="#AesdRecords.Response">Response</a></li>
+</ul>
+<h3 id="metadata"><span class="header-section-number">4.1.2</span> Metadata</h3>
+<p>Metadata messages describe data sources (“models”) and variables.</p>
+<ul>
+<li><a href="#AesdRecords.ModelMeta">ModelMeta</a></li>
+<li><a href="#AesdRecords.ModelMetaList">ModelMetaList</a></li>
+<li><a href="#AesdRecords.DomainMeta">DomainMeta</a></li>
+<li><a href="#AesdRecords.VarMeta">VarMeta</a></li>
+<li><a href="#AesdRecords.VariableType">VariableType</a></li>
+<li><a href="#AesdRecords.VarSet">VarSet</a></li>
+<li><a href="#AesdRecords.VarInterval">VarInterval</a></li>
+</ul>
+<h3 id="data-records"><span class="header-section-number">4.1.3</span> Data Records</h3>
+<p>Data is represented as either lists of records or tables of them.</p>
+<ul>
+<li><a href="#AesdRecords.Record">Record</a></li>
+<li><a href="#AesdRecords.VarValue">VarValue</a></li>
+<li><a href="#AesdRecords.Value">Value</a></li>
+<li><a href="#AesdRecords.RecordData">RecordData</a></li>
+<li><a href="#AesdRecords.RecordList">RecordList</a></li>
+<li><a href="#AesdRecords.RecordTable">RecordTable</a></li>
+</ul>
+<h3 id="filtering-1"><span class="header-section-number">4.1.4</span> Filtering</h3>
+<p>Records can be filtered by logical operations on conditions on values of variables in the records.</p>
+<ul>
+<li><a href="#AesdRecords.FilterExpression">FilterExpression</a></li>
+<li><a href="#AesdRecords.FilterNot">FilterNot</a></li>
+<li><a href="#AesdRecords.FilterIntersection">FilterIntersection</a></li>
+<li><a href="#AesdRecords.FilterUnion">FilterUnion</a></li>
+<li><a href="#AesdRecords.DomainMeta">DomainMeta</a></li>
+</ul>
+<h3 id="bookmarks-1"><span class="header-section-number">4.1.5</span> Bookmarks</h3>
+<p>Bookmarks record particular sets or records or conditions on record data.</p>
+<ul>
+<li><a href="#AesdRecords.BookmarkMeta">BookmarkMeta</a></li>
+<li><a href="#AesdRecords.BookmarkMetaList">BookmarkMetaList</a></li>
+<li><a href="#AesdRecords.BookmarkIntervalContent">BookmarkIntervalContent</a></li>
+<li><a href="#AesdRecords.BookmarkSetContent">BookmarkSetContent</a></li>
+</ul>
+<h3 id="miscellaneous"><span class="header-section-number">4.1.6</span> Miscellaneous</h3>
+<p>The following messages wrap data types for the content of records.</p>
+<ul>
+<li><a href="#AesdRecords.DoubleList">DoubleList</a></li>
+<li><a href="#AesdRecords.IntegerList">IntegerList</a></li>
+<li><a href="#AesdRecords.StringList">StringList</a></li>
+<li><a href="#AesdRecords.OptionalInt32">OptionalInt32</a></li>
+<li><a href="#AesdRecords.OptionalUInt32">OptionalUInt32</a></li>
+<li><a href="#AesdRecords.OptionalString">OptionalString</a></li>
+</ul>
+<h2 id="general-conventions"><span class="header-section-number">4.2</span> General conventions</h2>
+<p>All fields are technically optional in ProtoBuf 3, but some fields may be required in each message type in order for the message to be semantically valid. In the following specifications for the messages, fields are annotated as <em>semantically required</em> or <em>semantically optional</em>. Also, the specification notes when field in the <a href="https://developers.google.com/protocol-buffers/docs/proto3#oneof">protobuf <code>oneof</code> construct</a> are required or mutually exclusive.</p>
+<p>Furthermore, one cannot determine whether an optional value has been set or not if it is just a value, as opposed to a message. That is not true for fields that are messages, where the absence of the field truly indicates that the value is absent, not just a default or unset value. The message <code>OptionalString</code>, for example, is used in this API to indicate whether a character string value is truly present. Thus <a href="#AesdRecords.RequestModelsMeta"><code>RequestModelsMeta</code></a> has a <code>model_id</code> field that indicates whether the request is for all models, when the field has not been set, or for a specific one, when the field has been set.</p>
+<p>Throughout this specification, the following types are used for identifiers: * <code>var_id</code> is <a href="#int32">int32</a> * <code>model_id</code> is <a href="#string">string</a> * <code>record_id</code> is <a href="#int64">int64</a></p>
+<p>This specification conforms to <a href="https://developers.google.com/protocol-buffers/docs/proto3">Protocol Buffers version 3</a>.</p>
+<h2 id="messages"><span class="header-section-number">4.3</span> Messages</h2>
+<h3 id="AesdRecords.BookmarkIntervalContent"><span class="header-section-number">4.3.1</span> BookmarkIntervalContent</h3>
+<p>A range of <a href="#AesdRecords.Record">record identifiers</a> can specify the content of a <a href="#AesdRecords.BookmarkMeta">bookmark</a>. Bookmark interval content provides a convenient means to bookmark a contiguous selection of records in a <a href="#AesdRecords.ModelMeta">model</a>.</p>
+<p>Both fields in this message are optional:</p>
+<ul>
+<li>If neither field is present, then the bookmark interval designates all records in the model.</li>
+<li>If only <code>first_record</code>is present, then the bookmark interval designates all records starting from that record identifier.</li>
+<li>If only <code>last_record</code> is present, then the bookmark interval designates all records ending at that record identifier. For a dynamic model, such a bookmark interval includes all “future” records.</li>
+<li>If both fields are present, then the bookmark interval designates all records between the two identifiers, inclusive.</li>
+</ul>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>first_record</td>
+<td><a href="#int64">int64</a></td>
+<td>optional</td>
+<td>[semantically optional] The identifier for the first record in the interval.</td>
+</tr>
+<tr class="even">
+<td>last_record</td>
+<td><a href="#int64">int64</a></td>
+<td>optional</td>
+<td>[semantically optional] The identifier for the last record in the interval.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.BookmarkMeta"><span class="header-section-number">4.3.2</span> BookmarkMeta</h3>
+<p>A bookmark is metadata defining a subset of records in a <a href="#AesdRecords.ModelMeta">model</a>.</p>
+<p>There are three alternatives to specifying a bookmark:</p>
+<ol style="list-style-type: decimal">
+<li><a href="#AesdRecords.BookmarkIntervalContent">Interval content</a> specifies a range of records in the bookmark.</li>
+<li><a href="#AesdRecords.BookmarkSetContent">Set content</a> specifies a list of records in the bookmark.</li>
+<li>A <a href="#AesdRecords.FilterExpression">filter expression</a> defines a set of logical conditions for determining whether a record is in the bookmark.</li>
+</ol>
+<p><em>Exactly one of <code>interval</code>, <code>set</code>, or <code>filter</code> must be specified in this message.</em></p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>bookmark_id</td>
+<td><a href="#string">string</a></td>
+<td>optional</td>
+<td>[semantically optional] When creating a new bookmark, this field must be empty: the server will create a unique identifier for the bookmark. This identifier uniquely identifies the bookmark <em>on the particular server</em>.</td>
+</tr>
+<tr class="even">
+<td>bookmark_name</td>
+<td><a href="#string">string</a></td>
+<td>optional</td>
+<td>[semantically required] A name for the bookmark, useful for displaying the bookmark to users. This need not be unique, although it is recommended to be so.</td>
+</tr>
+<tr class="odd">
+<td>interval</td>
+<td><a href="#AesdRecords.BookmarkIntervalContent">BookmarkIntervalContent</a></td>
+<td>optional</td>
+<td>The range of records in the bookmark.</td>
+</tr>
+<tr class="even">
+<td>set</td>
+<td><a href="#AesdRecords.BookmarkSetContent">BookmarkSetContent</a></td>
+<td>optional</td>
+<td>The list of records in the bookmark.</td>
+</tr>
+<tr class="odd">
+<td>filter</td>
+<td><a href="#AesdRecords.FilterExpression">FilterExpression</a></td>
+<td>optional</td>
+<td>Logical conditions for defining which records are in the bookmark.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.BookmarkMetaList"><span class="header-section-number">4.3.3</span> BookmarkMetaList</h3>
+<p>Bookmarks may be grouped into lists (sets).</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>bookmark_metas</td>
+<td><a href="#AesdRecords.BookmarkMeta">BookmarkMeta</a></td>
+<td>repeated</td>
+<td>[semantically optional] The bookmarks in the list.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.BookmarkSetContent"><span class="header-section-number">4.3.4</span> BookmarkSetContent</h3>
+<p>A list (set) of <a href="#AesdRecords.Record">record identifiers</a> can specify the contents of a <a href="#AesdRecords.BookmarkMeta">bookmark</a>. Bookmark set content provides a convenient means to bookmark a specific selection of non-continuous records in a <a href="#AesdRecords.ModelMeta">model</a>.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>record_ids</td>
+<td><a href="#int64">int64</a></td>
+<td>repeated</td>
+<td>[semantically optional] The list of record identifiers in the set.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.DomainMeta"><span class="header-section-number">4.3.5</span> DomainMeta</h3>
+<p>The domain (set of valid values) for a variable.</p>
+<p>There are two alternatives to specifying a domain:</p>
+<ol style="list-style-type: decimal">
+<li><a href="#AesdRecords.VarInterval">An interval</a> specifies a range of values in the domain.</li>
+<li><a href="#AesdRecords.VarSet">A set</a> specifies a list of values in the domain.</li>
+</ol>
+<p><em>Exactly one of <code>interval</code> or <code>set</code> must be specified in the message.</em></p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>var_id</td>
+<td><a href="#int32">int32</a></td>
+<td>optional</td>
+<td>[semantically required]</td>
+</tr>
+<tr class="even">
+<td>interval</td>
+<td><a href="#AesdRecords.VarInterval">VarInterval</a></td>
+<td>optional</td>
+<td>The interval of values in the domain.</td>
+</tr>
+<tr class="odd">
+<td>set</td>
+<td><a href="#AesdRecords.VarSet">VarSet</a></td>
+<td>optional</td>
+<td>The list of values in the domain.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.DoubleList"><span class="header-section-number">4.3.6</span> DoubleList</h3>
+<p>A list of real numbers.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>values</td>
+<td><a href="#double">double</a></td>
+<td>repeated</td>
+<td>[semantically required] The real numbers.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.FilterExpression"><span class="header-section-number">4.3.7</span> FilterExpression</h3>
+<p>A filtering expression is a composition of logical conditions on a <a href="#AesdRecords.Record">record</a>. It can be used to filter records. There are four alternatives to specifying a filter expression:</p>
+<ol style="list-style-type: decimal">
+<li>The <a href="#AesdRecords.FilterNot">logical negation</a> of another filtering expression.</li>
+<li>The <a href="#AesdRecords.FilterUnion">set union</a> of multiple filtering expressions.</li>
+<li>The <a href="#AesdRecords.FilterIntersection">set intersection</a> of multiple filtering expressions.</li>
+<li><a href="#AesdRecords.DomainMeta">Particular values</a> of variables in a record.</li>
+</ol>
+<p><em>Exactly one of <code>filter_not</code>, <code>filter_union</code>, <code>filter_intersection</code>, or <code>filter_domain</code> must be specified in this message.</em></p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>filter_not</td>
+<td><a href="#AesdRecords.FilterNot">FilterNot</a></td>
+<td>optional</td>
+<td>Logical negation of an expression.</td>
+</tr>
+<tr class="even">
+<td>filter_union</td>
+<td><a href="#AesdRecords.FilterUnion">FilterUnion</a></td>
+<td>optional</td>
+<td>Set union of expressions.</td>
+</tr>
+<tr class="odd">
+<td>filter_intersection</td>
+<td><a href="#AesdRecords.FilterIntersection">FilterIntersection</a></td>
+<td>optional</td>
+<td>Set intersection of expressions.</td>
+</tr>
+<tr class="even">
+<td>filter_domain</td>
+<td><a href="#AesdRecords.DomainMeta">DomainMeta</a></td>
+<td>optional</td>
+<td>Particular values of variables.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.FilterIntersection"><span class="header-section-number">4.3.8</span> FilterIntersection</h3>
+<p>Set intersection of filtering expressions. A record satisfies this expression if it satisfies all of <code>filter_expressions</code>.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>filter_expressions</td>
+<td><a href="#AesdRecords.FilterExpression">FilterExpression</a></td>
+<td>repeated</td>
+<td>[semantically required] The expressions to be intersected.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.FilterNot"><span class="header-section-number">4.3.9</span> FilterNot</h3>
+<p>Logically negate a filtering expression. A record satisfies this expression if it does not satisfy <code>filter_expression</code>.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>filter_expression</td>
+<td><a href="#AesdRecords.FilterExpression">FilterExpression</a></td>
+<td>optional</td>
+<td>[semantically required] The expression to be negated.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.FilterUnion"><span class="header-section-number">4.3.10</span> FilterUnion</h3>
+<p>Set union of filtering expressions. A record satisfies this expression if it satisfies any of <code>filter_expressions</code>.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>filter_expressions</td>
+<td><a href="#AesdRecords.FilterExpression">FilterExpression</a></td>
+<td>repeated</td>
+<td>[semantically required] The expressions to be unioned.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.IntegerList"><span class="header-section-number">4.3.11</span> IntegerList</h3>
+<p>A list of integers.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>values</td>
+<td><a href="#sint64">sint64</a></td>
+<td>repeated</td>
+<td>[semantically required] The integers.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.ModelMeta"><span class="header-section-number">4.3.12</span> ModelMeta</h3>
+<p>Metadata for a model.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model_id</td>
+<td><a href="#string">string</a></td>
+<td>optional</td>
+<td>[semantically required] The unique identifier for the model <em>on the particular server</em>.</td>
+</tr>
+<tr class="even">
+<td>model_name</td>
+<td><a href="#string">string</a></td>
+<td>optional</td>
+<td>[semantically required] A name for the model, useful for display the model to users. This need not be unique, although it is recommended to be so.</td>
+</tr>
+<tr class="odd">
+<td>model_uri</td>
+<td><a href="#string">string</a></td>
+<td>optional</td>
+<td>[semantically required] The unique URI for the model. Additional metadata may be obtained by dereferencing that URI.</td>
+</tr>
+<tr class="even">
+<td>variables</td>
+<td><a href="#AesdRecords.VarMeta">VarMeta</a></td>
+<td>repeated</td>
+<td>[semantically required] Metadata for the variables.</td>
+</tr>
+<tr class="odd">
+<td>inputs</td>
+<td><a href="#AesdRecords.DomainMeta">DomainMeta</a></td>
+<td>repeated</td>
+<td>[semantically optional] Metadata for input values to the model, if any.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.ModelMetaList"><span class="header-section-number">4.3.13</span> ModelMetaList</h3>
+<p>A list of metadata for models.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>models</td>
+<td><a href="#AesdRecords.ModelMeta">ModelMeta</a></td>
+<td>repeated</td>
+<td>[semantically optional] The metadata for the models.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.OptionalInt32"><span class="header-section-number">4.3.14</span> OptionalInt32</h3>
+<p>Wrapper for an optional signed integer.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>value</td>
+<td><a href="#int32">int32</a></td>
+<td>optional</td>
+<td>[semantically required] The signed integer value.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.OptionalString"><span class="header-section-number">4.3.15</span> OptionalString</h3>
+<p>Wrapper for an optional string.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>value</td>
+<td><a href="#string">string</a></td>
+<td>optional</td>
+<td>[semantically required] The character string value.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.OptionalUInt32"><span class="header-section-number">4.3.16</span> OptionalUInt32</h3>
+<p>Wrapper for an optional unsigned integer.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>value</td>
+<td><a href="#uint32">uint32</a></td>
+<td>optional</td>
+<td>[semantically required] The unsigned integer value.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.Record"><span class="header-section-number">4.3.17</span> Record</h3>
+<p>A record is a list of variables and their associated values.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>record_id</td>
+<td><a href="#int64">int64</a></td>
+<td>optional</td>
+<td>[semantically required] A unique identifier for the record.</td>
+</tr>
+<tr class="even">
+<td>variables</td>
+<td><a href="#AesdRecords.VarValue">VarValue</a></td>
+<td>repeated</td>
+<td>[semantically optional] The values for variables in the record.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.RecordData"><span class="header-section-number">4.3.18</span> RecordData</h3>
+<p>A collection or records.</p>
+<p>There are two alternatives to specifying record data:</p>
+<ol style="list-style-type: decimal">
+<li><a href="#AesdRecords.RecordList">A list</a> specifies a heterogeneously typed list.</li>
+<li><a href="#AesdRecords.RecordTable">A table</a> specifies a homogeneously typed table.</li>
+</ol>
+<p><em>Exactly one of <code>list</code> or <code>table</code> must be present in the message.</em></p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>list</td>
+<td><a href="#AesdRecords.RecordList">RecordList</a></td>
+<td>optional</td>
+<td>A heterogeneously typed list of records.</td>
+</tr>
+<tr class="even">
+<td>table</td>
+<td><a href="#AesdRecords.RecordTable">RecordTable</a></td>
+<td>optional</td>
+<td>A homogeneously typed table of records.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.RecordList"><span class="header-section-number">4.3.19</span> RecordList</h3>
+<p>A list of records. The list is heterogeneous in the sense that each variable may have a different type.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>records</td>
+<td><a href="#AesdRecords.Record">Record</a></td>
+<td>repeated</td>
+<td>[semantically optional] The list of records.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.RecordTable"><span class="header-section-number">4.3.20</span> RecordTable</h3>
+<p>A homogeneously typed table of records, where each variable has each type, with a row for each record and a column for each variable.</p>
+<p>This message represents the following table:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Record Identifier</th>
+<th><code>var_id[0]</code></th>
+<th><code>var_id[1]</code></th>
+<th>. . .</th>
+<th><code>var_id[N]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>rec_id[0]</code></td>
+<td><code>list[0][0]</code></td>
+<td><code>list[0][1]</code></td>
+<td>. . .</td>
+<td><code>list[0][N]</code></td>
+</tr>
+<tr class="even">
+<td><code>rec_id[1]</code></td>
+<td><code>list[1][0]</code></td>
+<td><code>list[1][1]</code></td>
+<td>. . .</td>
+<td><code>list[1][N]</code></td>
+</tr>
+<tr class="odd">
+<td>. . .</td>
+<td>. . .</td>
+<td>. . .</td>
+<td>. . .</td>
+<td>. . .</td>
+</tr>
+<tr class="even">
+<td><code>rec_id[M]</code></td>
+<td><code>list[M][0]</code></td>
+<td><code>list[M][1]</code></td>
+<td>. . .</td>
+<td><code>list[M][N]</code></td>
+</tr>
+</tbody>
+</table>
+<p>The underlying list is a <strong>single</strong> array, addressable using the following <a href="https://en.wikipedia.org/wiki/Row-_and_column-major_order">row-major index formula</a> list[row][var] = array[var + NY * row] where <code>NX</code> = length of <code>rec_ids</code> and <code>NY</code> = length of <code>var_ids</code>.</p>
+<p><em>Exacly one of <code>reals</code>, <code>integers</code>, or <code>strings</code> must be specified in the message.</em></p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>var_ids</td>
+<td><a href="#int32">int32</a></td>
+<td>repeated</td>
+<td>[semantically required] The identifiers of the variables (columns) in the table.</td>
+</tr>
+<tr class="even">
+<td>rec_ids</td>
+<td><a href="#int64">int64</a></td>
+<td>repeated</td>
+<td>[semantically required] The identifiers of the records (rows) in the table.</td>
+</tr>
+<tr class="odd">
+<td>reals</td>
+<td><a href="#AesdRecords.DoubleList">DoubleList</a></td>
+<td>optional</td>
+<td>The real numbers comprising the values of the variables, in <a href="https://en.wikipedia.org/wiki/Row-_and_column-major_order">row-major order</a>.</td>
+</tr>
+<tr class="even">
+<td>integers</td>
+<td><a href="#AesdRecords.IntegerList">IntegerList</a></td>
+<td>optional</td>
+<td>The integers comprising the values of the variables, in <a href="https://en.wikipedia.org/wiki/Row-_and_column-major_order">row-major order</a>.</td>
+</tr>
+<tr class="odd">
+<td>strings</td>
+<td><a href="#AesdRecords.StringList">StringList</a></td>
+<td>optional</td>
+<td>The character strings comprising the values of the variables, in <a href="https://en.wikipedia.org/wiki/Row-_and_column-major_order">row-major order</a>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.Request"><span class="header-section-number">4.3.21</span> Request</h3>
+<p>A request. There are six types of requests:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Request</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Metadata for model(s)</td>
+<td><a href="#AesdRecords.ModelMetaList">ModelMetaList</a></td>
+</tr>
+<tr class="even">
+<td>Data records</td>
+<td><a href="#AesdRecords.RecordData">RecordData</a></td>
+</tr>
+<tr class="odd">
+<td>Metadata for bookmark(s)</td>
+<td><a href="#AesdRecords.BookmarkMetaList">BookmarkMetaList</a></td>
+</tr>
+<tr class="even">
+<td>Saving a bookmark</td>
+<td><a href="#AesdRecords.BookmarkMetaList">BookmarkMetaList</a></td>
+</tr>
+<tr class="odd">
+<td>Canceling a previous request</td>
+<td>n/a</td>
+</tr>
+<tr class="even">
+<td>New work, such as a simulation</td>
+<td><a href="#AesdRecords.RecordData">RecordData</a></td>
+</tr>
+</tbody>
+</table>
+<p>*Exactly one of <code>models_metadata</code>, <code>records_data</code>, <code>bookmark_meta</code>, <code>save_bookmark</code>, <code>cancel</code>, or <code>work</code> must be specified in the message.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>version</td>
+<td><a href="#uint32">uint32</a></td>
+<td>optional</td>
+<td>[semantically required] The version number for the API. <em>This must be the number <strong>four</strong>.</em></td>
+</tr>
+<tr class="even">
+<td>id</td>
+<td><a href="#AesdRecords.OptionalUInt32">OptionalUInt32</a></td>
+<td>optional</td>
+<td>[semantically optional, but recommended] An identifier which will be used to tag responses, so that responses can be correlated with requests.</td>
+</tr>
+<tr class="odd">
+<td>subscribe</td>
+<td><a href="#bool">bool</a></td>
+<td>optional</td>
+<td>[semantically optional] Whether to continue receiving responses indefinitely, as new records become available. This is useful, for example, when a sensor is reporting measurements periodically or when simulations are reporting a series or results. Use <a href="#AesdRecords.RequestCancel">RequestCancel</a> to end the subscription.</td>
+</tr>
+<tr class="even">
+<td>models_metadata</td>
+<td><a href="#AesdRecords.RequestModelsMeta">RequestModelsMeta</a></td>
+<td>optional</td>
+<td>Request metadata for model(s).</td>
+</tr>
+<tr class="odd">
+<td>records_data</td>
+<td><a href="#AesdRecords.RequestRecordsData">RequestRecordsData</a></td>
+<td>optional</td>
+<td>Request data records.</td>
+</tr>
+<tr class="even">
+<td>bookmark_meta</td>
+<td><a href="#AesdRecords.RequestBookmarkMeta">RequestBookmarkMeta</a></td>
+<td>optional</td>
+<td>Request metadata for bookmark(s).</td>
+</tr>
+<tr class="odd">
+<td>save_bookmark</td>
+<td><a href="#AesdRecords.RequestSaveBookmark">RequestSaveBookmark</a></td>
+<td>optional</td>
+<td>Request save a new bookmark or update an existing one.</td>
+</tr>
+<tr class="even">
+<td>cancel</td>
+<td><a href="#AesdRecords.RequestCancel">RequestCancel</a></td>
+<td>optional</td>
+<td>Request cancel a previous request).</td>
+</tr>
+<tr class="odd">
+<td>work</td>
+<td><a href="#AesdRecords.RequestWork">RequestWork</a></td>
+<td>optional</td>
+<td>Request request work (e.g., simulation results).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.RequestBookmarkMeta"><span class="header-section-number">4.3.22</span> RequestBookmarkMeta</h3>
+<p>A request for one or more bookmarks for a <a href="#AesdRecords.ModelMeta">model</a>.</p>
+<p>The response to this request is <a href="#AesdRecords.MetaList">BookmarkMetaList</a></p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model_id</td>
+<td><a href="#string">string</a></td>
+<td>optional</td>
+<td>[semantically required] Which model for which to list bookmarks.</td>
+</tr>
+<tr class="even">
+<td>bookmark_id</td>
+<td><a href="#AesdRecords.OptionalString">OptionalString</a></td>
+<td>optional</td>
+<td>[semantically optional] If empty, list all bookmarks for the model. Otherwise, list just the bookmark metadata for this specific bookmark identifier.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.RequestCancel"><span class="header-section-number">4.3.23</span> RequestCancel</h3>
+<p>Cancel a previous request.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>id</td>
+<td><a href="#AesdRecords.OptionalUInt32">OptionalUInt32</a></td>
+<td>optional</td>
+<td>[semantically required] Which request to cancel.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.RequestModelsMeta"><span class="header-section-number">4.3.24</span> RequestModelsMeta</h3>
+<p>A request for metadata about model(s).</p>
+<p>The response to this request is <a href="#AesdRecords.ModelMetaList">ModelMetaList</a>.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model_id</td>
+<td><a href="#AesdRecords.OptionalString">OptionalString</a></td>
+<td>optional</td>
+<td>[semantically optional] If absent, the request is for metadata for all models. Otherwise the request is for the specifically identified model.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.RequestRecordsData"><span class="header-section-number">4.3.25</span> RequestRecordsData</h3>
+<p>Request record data for a model.</p>
+<p>There are three alternatives to requesting record data.</p>
+<ol style="list-style-type: decimal">
+<li>Request all records.</li>
+<li>Request records in <a href="#AesdRecords.BookmarkMeta">a bookmark</a>.</li>
+<li><a href="#AesdRecords.FilterExpression">Filter</a> records according to a criterion.</li>
+</ol>
+<p>The response to this request is <a href="#AesdRecords.RecordData">RecordData</a>.</p>
+<p><em>No more than on of <code>bookmark_id</code> or <code>expression</code> may be present in the message.</em></p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model_id</td>
+<td><a href="#string">string</a></td>
+<td>optional</td>
+<td>[semantically required] The identifier for the model.</td>
+</tr>
+<tr class="even">
+<td>max_records</td>
+<td><a href="#uint64">uint64</a></td>
+<td>optional</td>
+<td>[semantically optional] If specified, this is the maximum number of records to return. Otherwise all records are returned, although they may be returned as multiple responses, each with a chunk of records.</td>
+</tr>
+<tr class="odd">
+<td>var_ids</td>
+<td><a href="#int32">int32</a></td>
+<td>repeated</td>
+<td>[semantically optional] Which variables to include in the response. If this is not specified, all variables will be included.</td>
+</tr>
+<tr class="even">
+<td>bookmark_id</td>
+<td><a href="#string">string</a></td>
+<td>optional</td>
+<td>[semantically optional] Only respond with records in a specified bookmark.</td>
+</tr>
+<tr class="odd">
+<td>expression</td>
+<td><a href="#AesdRecords.FilterExpression">FilterExpression</a></td>
+<td>optional</td>
+<td>[semantically optional] Only respond with records matching a specified criterion.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.RequestSaveBookmark"><span class="header-section-number">4.3.26</span> RequestSaveBookmark</h3>
+<p>A request to create or update a bookmark.</p>
+<p>The response to this request is <a href="#AesdRecords.BookmarkMetaList">BookmarkMetaList</a>.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model_id</td>
+<td><a href="#string">string</a></td>
+<td>optional</td>
+<td>[semantically required] Which model for which to save the bookmark.</td>
+</tr>
+<tr class="even">
+<td>new_bookmark</td>
+<td><a href="#AesdRecords.BookmarkMeta">BookmarkMeta</a></td>
+<td>optional</td>
+<td>[semantically optional] If empty, create a new bookmark. (In which case, leave the <code>bookmark_id</code> empty, so that the server will create a unique identifier for the new bookmark.) Otherwise, update an existing bookmark.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.RequestWork"><span class="header-section-number">4.3.27</span> RequestWork</h3>
+<p>Request that the server compute new records based on input values.</p>
+<p>The response to this request is <a href="#AesdRecords.RecordData">RecordData</a>.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model_id</td>
+<td><a href="#string">string</a></td>
+<td>optional</td>
+<td>[semantically required] The identifier for the model.</td>
+</tr>
+<tr class="even">
+<td>inputs</td>
+<td><a href="#AesdRecords.VarValue">VarValue</a></td>
+<td>repeated</td>
+<td>[semantically optional] Which input variables to set to which values.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.Response"><span class="header-section-number">4.3.28</span> Response</h3>
+<p>A response to a request.</p>
+<p>Note that a server may send multiple responses to a single request, expressed as a linked list of chunks. It is strongly recommended that servers chunk by <code>record_id</code> so that each record is kept intact. A chunk may be empty.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>version</td>
+<td><a href="#uint32">uint32</a></td>
+<td>optional</td>
+<td>[semantically required] The version number for the API. <em>This must be the number <strong>four</strong>.</em></td>
+</tr>
+<tr class="even">
+<td>id</td>
+<td><a href="#AesdRecords.OptionalUInt32">OptionalUInt32</a></td>
+<td>optional</td>
+<td>[semantically optional] A response without an identifier is a notification. Otherwise, the response identifier matches the response identifier for the original request.</td>
+</tr>
+<tr class="odd">
+<td>chunk_id</td>
+<td><a href="#int32">int32</a></td>
+<td>optional</td>
+<td>[semantically optional, but recommended] The identifier for this chunk. It is recommended that chunks are number sequentially starting from one.</td>
+</tr>
+<tr class="even">
+<td>next_chunk_id</td>
+<td><a href="#int32">int32</a></td>
+<td>optional</td>
+<td>[semantically optional] The identifier of the next chunk, or zero if this is the last chunk.</td>
+</tr>
+<tr class="odd">
+<td>error</td>
+<td><a href="#string">string</a></td>
+<td>optional</td>
+<td>An error message.</td>
+</tr>
+<tr class="even">
+<td>models</td>
+<td><a href="#AesdRecords.ModelMetaList">ModelMetaList</a></td>
+<td>optional</td>
+<td>A list of model metadata.</td>
+</tr>
+<tr class="odd">
+<td>data</td>
+<td><a href="#AesdRecords.RecordData">RecordData</a></td>
+<td>optional</td>
+<td>A list of record data.</td>
+</tr>
+<tr class="even">
+<td>bookmarks</td>
+<td><a href="#AesdRecords.BookmarkMetaList">BookmarkMetaList</a></td>
+<td>optional</td>
+<td>A list of bookmark metadata.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.StringList"><span class="header-section-number">4.3.29</span> StringList</h3>
+<p>A list of character strings.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>values</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td>[semantically required] The character strings.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.Value"><span class="header-section-number">4.3.30</span> Value</h3>
+<p>Value that may be a real number, an integer, or a character string</p>
+<p><em>Exactly one of <code>real_value</code>, <code>integer_value</code>, or <code>string_value</code> must be specified in this message.</em></p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>real_value</td>
+<td><a href="#double">double</a></td>
+<td>optional</td>
+<td>The real number.</td>
+</tr>
+<tr class="even">
+<td>integer_value</td>
+<td><a href="#int64">int64</a></td>
+<td>optional</td>
+<td>The integer.</td>
+</tr>
+<tr class="odd">
+<td>string_value</td>
+<td><a href="#string">string</a></td>
+<td>optional</td>
+<td>The character string.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.VarInterval"><span class="header-section-number">4.3.31</span> VarInterval</h3>
+<p>A range of values of a <a href="#AesdRecords.VarMeta">variable</a>.</p>
+<p>Both fields in this message are optional:</p>
+<ul>
+<li>If neither field is present, then the interval designates all values in the domain.</li>
+<li>If only <code>first_value</code>is present, then the interval designates all values starting from that value.</li>
+<li>If only <code>last_value</code> is present, then the bookmark interval designates all values ending at that value.</li>
+<li>If both fields are present, then the interval designates all values between the two values, inclusive.</li>
+</ul>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>first_value</td>
+<td><a href="#AesdRecords.Value">Value</a></td>
+<td>optional</td>
+<td>[semantically optional] The first value in the interval.</td>
+</tr>
+<tr class="even">
+<td>last_value</td>
+<td><a href="#AesdRecords.Value">Value</a></td>
+<td>optional</td>
+<td>[semantically optional] The last value in the interval.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.VarMeta"><span class="header-section-number">4.3.32</span> VarMeta</h3>
+<p>Metadata for a variable.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>var_id</td>
+<td><a href="#int32">int32</a></td>
+<td>optional</td>
+<td>[semantically required] A integer identifying the variable.</td>
+</tr>
+<tr class="even">
+<td>var_name</td>
+<td><a href="#string">string</a></td>
+<td>optional</td>
+<td>[semantically required] The name of the variable.</td>
+</tr>
+<tr class="odd">
+<td>units</td>
+<td><a href="#string">string</a></td>
+<td>optional</td>
+<td>[semantically optional] The name of the unit of measure for values of the variable.</td>
+</tr>
+<tr class="even">
+<td>si</td>
+<td><a href="#sint32">sint32</a></td>
+<td>repeated</td>
+<td>[semantically optional] The unit of measure expressed as a list of the exponents for the eigth fundamental SI quantities [meter, kilogram, second, ampere, kelvin, mole, calenda, radian]. For example, the unit of acceleration <span class="math inline">\(m/s^2\)</span> would be express as <code>[1, 0, -2, 0, 0, 0, 0, 0]</code> because meters has an exponent of positive one and seconds has an exponent of negative two.</td>
+</tr>
+<tr class="odd">
+<td>scale</td>
+<td><a href="#double">double</a></td>
+<td>optional</td>
+<td>[semantically optional] An overall scale relative to the fundamental SI scale of the unit of measure. For instance, kilometers would have a scale 1000 because the fundamental unit of distance is meters.</td>
+</tr>
+<tr class="even">
+<td>type</td>
+<td><a href="#AesdRecords.VariableType">VariableType</a></td>
+<td>optional</td>
+<td>[semantically optional] The data type for values of the variable. The default type is real number.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.VarSet"><span class="header-section-number">4.3.33</span> VarSet</h3>
+<p>A set of values for a variable.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>elements</td>
+<td><a href="#AesdRecords.Value">Value</a></td>
+<td>repeated</td>
+<td>[semantically optional] The list of values in the set.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="AesdRecords.VarValue"><span class="header-section-number">4.3.34</span> VarValue</h3>
+<p>The value of a variable.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>var_id</td>
+<td><a href="#int32">int32</a></td>
+<td>optional</td>
+<td>[semantically required] The identifier for the variable.</td>
+</tr>
+<tr class="even">
+<td>value</td>
+<td><a href="#AesdRecords.Value">Value</a></td>
+<td>optional</td>
+<td>[semantically required] The value of the variable.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="variabletype"><span class="header-section-number">4.3.35</span> VariableType</h3>
+<p>The data type for a value.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Number</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>REAL</td>
+<td>0</td>
+<td>A real number.</td>
+</tr>
+<tr class="even">
+<td>INTEGER</td>
+<td>1</td>
+<td>An integer.</td>
+</tr>
+<tr class="odd">
+<td>STRING</td>
+<td>2</td>
+<td>A character string.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="scalar-value-types"><span class="header-section-number">4.4</span> Scalar Value Types</h2>
+<table>
+<thead>
+<tr class="header">
+<th>.proto Type</th>
+<th>Notes</th>
+<th>C++ Type</th>
+<th>Java Type</th>
+<th>Python Type</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>double</td>
+<td></td>
+<td>double</td>
+<td>double</td>
+<td>float</td>
+</tr>
+<tr class="even">
+<td>float</td>
+<td></td>
+<td>float</td>
+<td>float</td>
+<td>float</td>
+</tr>
+<tr class="odd">
+<td>int32</td>
+<td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead.</td>
+<td>int32</td>
+<td>int</td>
+<td>int</td>
+</tr>
+<tr class="even">
+<td>int64</td>
+<td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead.</td>
+<td>int64</td>
+<td>long</td>
+<td>int/long</td>
+</tr>
+<tr class="odd">
+<td>uint32</td>
+<td>Uses variable-length encoding.</td>
+<td>uint32</td>
+<td>int</td>
+<td>int/long</td>
+</tr>
+<tr class="even">
+<td>uint64</td>
+<td>Uses variable-length encoding.</td>
+<td>uint64</td>
+<td>long</td>
+<td>int/long</td>
+</tr>
+<tr class="odd">
+<td>sint32</td>
+<td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s.</td>
+<td>int32</td>
+<td>int</td>
+<td>int</td>
+</tr>
+<tr class="even">
+<td>sint64</td>
+<td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s.</td>
+<td>int64</td>
+<td>long</td>
+<td>int/long</td>
+</tr>
+<tr class="odd">
+<td>fixed32</td>
+<td>Always four bytes. More efficient than uint32 if values are often greater than 2^28.</td>
+<td>uint32</td>
+<td>int</td>
+<td>int</td>
+</tr>
+<tr class="even">
+<td>fixed64</td>
+<td>Always eight bytes. More efficient than uint64 if values are often greater than 2^56.</td>
+<td>uint64</td>
+<td>long</td>
+<td>int/long</td>
+</tr>
+<tr class="odd">
+<td>sfixed32</td>
+<td>Always four bytes.</td>
+<td>int32</td>
+<td>int</td>
+<td>int</td>
+</tr>
+<tr class="even">
+<td>sfixed64</td>
+<td>Always eight bytes.</td>
+<td>int64</td>
+<td>long</td>
+<td>int/long</td>
+</tr>
+<tr class="odd">
+<td>bool</td>
+<td></td>
+<td>bool</td>
+<td>boolean</td>
+<td>boolean</td>
+</tr>
+<tr class="even">
+<td>string</td>
+<td>A string must always contain UTF-8 encoded or 7-bit ASCII text.</td>
+<td>string</td>
+<td>String</td>
+<td>str/unicode</td>
+</tr>
+<tr class="odd">
+<td>bytes</td>
+<td>May contain any arbitrary sequence of bytes.</td>
+<td>string</td>
+<td>ByteString</td>
+<td>str</td>
+</tr>
+</tbody>
+</table>
+<!--
+# Implementations
+
+## C++
+
+## Haskell
+
+## JavaScript
+
+## Python
+
+## R
+-->
+<h1 id="appendices"><span class="header-section-number">5</span> Appendices</h1>
+<h2 id="protocol-buffers-for-records-api-version-4"><span class="header-section-number">5.1</span> Protocol Buffers for Records API Version 4</h2>
+<pre><code>syntax = &quot;proto3&quot;;
+package AesdRecords;
+
+option optimize_for = LITE_RUNTIME;
+
+message OptionalInt32 {
+    int32 value = 1; /// [semantically required]
+}
+
+message OptionalUInt32 {
+    uint32 value = 1; /// [semantically required]
+}
+
+message OptionalString {
+    string value = 1; /// [semantically required]
+}
+
+message Value {
+    oneof    value              /// [semantically required]
+    {
+      double real_value    = 1; 
+      int64  integer_value = 2; 
+      string string_value  = 3; 
+    }
+}
+
+message DoubleList {
+    repeated double values = 1; /// [semantically required]
+}
+
+message IntegerList {
+    repeated sint64 values = 1; /// [semantically required]
+}
+
+message StringList {
+    repeated string values = 1; /// [semantically required]
+}
+
+message BookmarkIntervalContent {
+    int64 first_record = 1; /// [semantically optional]
+    int64 last_record  = 2; /// [semantically optional]
+}
+
+message BookmarkSetContent {
+    repeated int64 record_ids = 1; /// [semantically optional]
+}
+
+message BookmarkMeta {
+    string                      bookmark_id   = 1; /// [semantically optional]
+    string                      bookmark_name = 2; /// [semantically required]
+    oneof                       content            /// [semantically required]
+    {
+        BookmarkIntervalContent interval      = 3; 
+        BookmarkSetContent      set           = 4; 
+        FilterExpression        filter        = 5; 
+    }
+}
+
+message BookmarkMetaList {
+    repeated BookmarkMeta bookmark_metas = 1; /// [semantically optional]
+}
+
+message RequestBookmarkMeta {
+    string         model_id    = 1; /// [semantically required]
+    OptionalString bookmark_id = 2; /// [semantically optional]
+}
+
+message RequestSaveBookmark {
+    string       model_id     = 1; /// [semantically required]
+    BookmarkMeta new_bookmark = 2; /// [semantically optional]
+}
+
+message FilterExpression {
+  oneof                expression               /// [semantically required]
+  {
+    FilterNot          filter_not          = 1; 
+    FilterUnion        filter_union        = 2; 
+    FilterIntersection filter_intersection = 3; 
+    DomainMeta         filter_domain       = 4; 
+  }
+}
+
+message FilterNot {
+  FilterExpression filter_expression = 1; /// [semantically required]
+}
+
+message FilterUnion {
+  repeated FilterExpression filter_expressions = 1; /// [semantically required]
+}
+
+message FilterIntersection {
+  repeated FilterExpression filter_expressions = 1; /// [semantically required]
+}
+
+enum VariableType
+{
+    REAL            = 0; 
+    INTEGER         = 1; 
+    STRING          = 2; 
+}
+
+message VarMeta {
+    int32           var_id   = 1; /// [semantically required]
+    string          var_name = 2; /// [semantically required]
+    string          units    = 3; /// [semantically optional]
+    repeated sint32 si       = 4; /// [semantically optional]
+    double          scale    = 5; /// [semantically optional]
+    VariableType    type     = 6; /// [semantically optional]
+}
+
+message ModelMeta {
+    string              model_id   = 1; /// [semantically required]
+    string              model_name = 2; /// [semantically required]
+    string              model_uri  = 3; /// [semantically required]
+    repeated VarMeta    variables  = 4; /// [semantically required]
+    repeated DomainMeta inputs     = 5; /// [semantically optional]
+}
+
+message ModelMetaList {
+    repeated ModelMeta models = 1; /// [semantically optional]
+}
+
+message RequestModelsMeta {
+    OptionalString model_id = 1; /// [semantically optional]
+}
+
+message VarInterval {
+    Value first_value = 1; /// [semantically optional]
+    Value last_value  = 2; /// [semantically optional]
+}
+
+message VarSet {
+    repeated Value elements = 1; /// [semantically optional]
+}
+
+message DomainMeta {
+    int32           var_id   = 1; /// [semantically required]
+    oneof           domain        /// [semantically required]
+    {
+        VarInterval interval = 2; 
+        VarSet      set      = 3; 
+    }
+}
+
+message RequestWork {
+    string model_id          = 1; /// [semantically required]
+    repeated VarValue inputs = 2; /// [semantically optional]
+}
+
+message VarValue {
+    int32 var_id = 1; /// [semantically required]
+    Value value  = 2; /// [semantically required]
+}
+
+message Record {
+    int64    record_id          = 1; /// [semantically required]
+    repeated VarValue variables = 2; /// [semantically optional]
+}
+
+message RecordList {
+    repeated Record records = 1; /// [semantically optional]
+}
+
+message RecordTable {
+    repeated int32  var_ids    = 1; /// [semantically required]
+    repeated int64  rec_ids    = 2; /// [semantically required]
+    oneof           list            /// [semantically required]
+    {
+        DoubleList  reals      = 3; 
+        IntegerList integers   = 4; 
+        StringList  strings    = 5; 
+    }
+}
+
+message RecordData {
+    oneof           style      /// [semantically required]
+    {
+        RecordList  list  = 1; 
+        RecordTable table = 2; 
+    }
+}
+
+message RequestRecordsData {
+    string               model_id    = 1; /// [semantically required]
+    uint64               max_records = 2; /// [semantically optional]
+    repeated int32       var_ids     = 3; /// [semantically optional]
+    oneof                filter           /// [semantically optional]
+    {
+        string           bookmark_id = 4; /// [semantically optional]
+        FilterExpression expression  = 5; /// [semantically optional]
+    }
+}
+
+message Response {
+    uint32               version       = 1; /// [semantically required]
+    OptionalUInt32       id            = 2; /// [semantically optional]
+    int32                chunk_id      = 3; /// [semantically optional, but recommended]
+    int32                next_chunk_id = 4; /// [semantically optional]
+    oneof                type               /// [semantically optional]
+    {
+        string           error         = 5; 
+        ModelMetaList    models        = 6; 
+        RecordData       data          = 7; 
+        BookmarkMetaList bookmarks     = 8; 
+    }
+}
+
+message RequestCancel {
+    OptionalUInt32 id = 1; /// [semantically required]
+}
+
+message Request {
+    uint32                  version         = 1; /// [semantically required]
+    OptionalUInt32          id              = 2; /// [semantically optional, but recommended]
+    bool                    subscribe       = 3; /// [semantically optional]
+    oneof                   type                 /// [semantically required]
+    {
+        RequestModelsMeta   models_metadata = 4; 
+        RequestRecordsData  records_data    = 5; 
+        RequestBookmarkMeta bookmark_meta   = 6; 
+        RequestSaveBookmark save_bookmark   = 7; 
+        RequestCancel       cancel          = 8; 
+        RequestWork         work            = 9; 
+    }
+}</code></pre>
+<h1 id="references"><span class="header-section-number">6</span> References</h1>
+<p> </p>
+<div id="refs" class="references">
+<div id="ref-fowleruml">
+<p>Fowler, Martin. 2017. “UML Distilled.” Accessed April 11. <a href="http://my.safaribooksonline.com/book/software-engineering-and-development/uml/0321193687/sequence-diagrams/ch04" class="uri">http://my.safaribooksonline.com/book/software-engineering-and-development/uml/0321193687/sequence-diagrams/ch04</a>.</p>
+</div>
+<div id="ref-protoc">
+<p>Google Developers. 2017a. “Protocol Buffers - Google’s Data Interchange Format.” Accessed April 11. <a href="https://github.com/google/protobuf/blob/master/README.md" class="uri">https://github.com/google/protobuf/blob/master/README.md</a>.</p>
+</div>
+<div id="ref-protobuf">
+<p>———. 2017b. “Protocol Buffers | Google Developers.” Accessed April 11. <a href="https://developers.google.com/protocol-buffers/" class="uri">https://developers.google.com/protocol-buffers/</a>.</p>
+</div>
+<div id="ref-websockets">
+<p>Internet Engineering Task Force. 2017. “RFC 6455 - the Websocket Protocol.” Accessed April 11. <a href="https://tools.ietf.org/html/rfc6455" class="uri">https://tools.ietf.org/html/rfc6455</a>.</p>
+</div>
+</div>
+</body>
+</html>

@@ -3,5 +3,4 @@ tmp/
 *.sw?
 ~$*
 node_modules/
-esda-manual.*
-esda-slides.html
+docs/aesd-slides.html
