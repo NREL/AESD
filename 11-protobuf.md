@@ -2,7 +2,7 @@
 ## Protocol Buffers for Records API Version 4
 
 	syntax = "proto3";
-	package EsdaRecords;
+	package AesdRecords;
 	
 	option optimize_for = LITE_RUNTIME;
 	

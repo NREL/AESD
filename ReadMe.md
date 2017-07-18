@@ -1,4 +1,4 @@
-# Technical Manual for the Energy System Design Architecture (ESDA)
+# Technical Manual for the Advanced Energy System Design (AESD) Architecture
 
 1.  [Abstract](01-abstract.md)
 2.  [Overview](02-overview.md)

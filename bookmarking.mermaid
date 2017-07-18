@@ -2,14 +2,14 @@ sequenceDiagram
 
 participant User
 participant Visualizer Client
-participant ESDA Records Server
+participant AESD Records Server
 
 User ->> Visualizer Client: select records to bookmark
 activate Visualizer Client
-Visualizer Client ->> ESDA Records Server: Request save_bookmark
-activate ESDA Records Server
-ESDA Records Server --x Visualizer Client: Response bookmarks
-deactivate ESDA Records Server
+Visualizer Client ->> AESD Records Server: Request save_bookmark
+activate AESD Records Server
+AESD Records Server --x Visualizer Client: Response bookmarks
+deactivate AESD Records Server
 Visualizer Client -->> User: report bookmark was saved
 deactivate Visualizer Client
 
@@ -17,23 +17,23 @@ opt later, in a separate session, or by a different user
 
   User ->> Visualizer Client: list bookmarks
   activate Visualizer Client
-  Visualizer Client ->> ESDA Records Server: Request bookmark_meta
-  activate ESDA Records Server
-  ESDA Records Server --x Visualizer Client: Response bookmarks
-  deactivate ESDA Records Server
+  Visualizer Client ->> AESD Records Server: Request bookmark_meta
+  activate AESD Records Server
+  AESD Records Server --x Visualizer Client: Response bookmarks
+  deactivate AESD Records Server
   Visualizer Client -->> User: display list of bookmarks
   deactivate Visualizer Client
 
   User ->> Visualizer Client: select a bookmark to highlight
   activate Visualizer Client
-  Visualizer Client ->> ESDA Records Server: Request records_data
-  activate ESDA Records Server
-  ESDA Records Server ->> Backend Supplying Data: get data from source
+  Visualizer Client ->> AESD Records Server: Request records_data
+  activate AESD Records Server
+  AESD Records Server ->> Backend Supplying Data: get data from source
   activate Backend Supplying Data
-  Backend Supplying Data -->> ESDA Records Server: all data from source
+  Backend Supplying Data -->> AESD Records Server: all data from source
   deactivate Backend Supplying Data
-  ESDA Records Server --x Visualizer Client: Response data
-  deactivate ESDA Records Server
+  AESD Records Server --x Visualizer Client: Response data
+  deactivate AESD Records Server
   Visualizer Client -->> User: highlight bookmarked records
   deactivate Visualizer Client
 

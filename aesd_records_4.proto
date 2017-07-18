@@ -1,7 +1,7 @@
 /**
  * # Records API, Version 4
  *
- * The ESDA Records API consists of Google Protobuf 3 [@protobuf] messages used for requesting and providing data and metadata for record-oriented information. This section contains the complete specification for version 4 of the Records API. Clients send `Request` messages and servers send `Response` messages, typically transported via WebSockets [@websockets].
+ * The AESD Records API consists of Google Protobuf 3 [@protobuf] messages used for requesting and providing data and metadata for record-oriented information. This section contains the complete specification for version 4 of the Records API. Clients send `Request` messages and servers send `Response` messages, typically transported via WebSockets [@websockets].
  * 
  * ## Message Groups
  *
@@ -11,73 +11,73 @@
  * 
  * `Request` messages are sent from client to server and `Response` messages are sent from server to client.  Request messages contain a specific type of request and response messages contain a corresponding specific type of response.
  *
- * *   [Request](#EsdaRecords.Request)
- * *   [RequestModelsMeta](#EsdaRecords.RequestModelsMeta)
- * *   [RequestRecordsData](#EsdaRecords.RequestRecordsData)
- * *   [RequestWork](#EsdaRecords.RequestWork)
- * *   [RequestBoomarkMeta](#EsdaRecords.RequestBoomarkMeta)
- * *   [RequestSaveBookmark](#EsdaRecords.RequestSaveBookmark)
- * *   [RequestCancel](#EsdaRecords.RequestCancel)
- * *   [Response](#EsdaRecords.Response)
+ * *   [Request](#AesdRecords.Request)
+ * *   [RequestModelsMeta](#AesdRecords.RequestModelsMeta)
+ * *   [RequestRecordsData](#AesdRecords.RequestRecordsData)
+ * *   [RequestWork](#AesdRecords.RequestWork)
+ * *   [RequestBoomarkMeta](#AesdRecords.RequestBoomarkMeta)
+ * *   [RequestSaveBookmark](#AesdRecords.RequestSaveBookmark)
+ * *   [RequestCancel](#AesdRecords.RequestCancel)
+ * *   [Response](#AesdRecords.Response)
  * 
  * ### Metadata
  * 
  * Metadata messages describe data sources ("models") and variables.
  *
- * *   [ModelMeta](#EsdaRecords.ModelMeta)
- * *   [ModelMetaList](#EsdaRecords.ModelMetaList)
- * *   [DomainMeta](#EsdaRecords.DomainMeta)
- * *   [VarMeta](#EsdaRecords.VarMeta)
- * *   [VariableType](#EsdaRecords.VariableType)
- * *   [VarSet](#EsdaRecords.VarSet)
- * *   [VarInterval](#EsdaRecords.VarInterval)
+ * *   [ModelMeta](#AesdRecords.ModelMeta)
+ * *   [ModelMetaList](#AesdRecords.ModelMetaList)
+ * *   [DomainMeta](#AesdRecords.DomainMeta)
+ * *   [VarMeta](#AesdRecords.VarMeta)
+ * *   [VariableType](#AesdRecords.VariableType)
+ * *   [VarSet](#AesdRecords.VarSet)
+ * *   [VarInterval](#AesdRecords.VarInterval)
  * 
  * ### Data Records
  * 
  * Data is represented as either lists of records or tables of them.
  *
- * *   [Record](#EsdaRecords.Record)
- * *   [VarValue](#EsdaRecords.VarValue)
- * *   [Value](#EsdaRecords.Value)
- * *   [RecordData](#EsdaRecords.RecordData)
- * *   [RecordList](#EsdaRecords.RecordList)
- * *   [RecordTable](#EsdaRecords.RecordTable)
+ * *   [Record](#AesdRecords.Record)
+ * *   [VarValue](#AesdRecords.VarValue)
+ * *   [Value](#AesdRecords.Value)
+ * *   [RecordData](#AesdRecords.RecordData)
+ * *   [RecordList](#AesdRecords.RecordList)
+ * *   [RecordTable](#AesdRecords.RecordTable)
  * 
  * ### Filtering
  *
  * Records can be filtered by logical operations on conditions on values of variables in the records.
  *
- * *   [FilterExpression](#EsdaRecords.FilterExpression)
- * *   [FilterNot](#EsdaRecords.FilterNot)
- * *   [FilterIntersection](#EsdaRecords.FilterIntersection)
- * *   [FilterUnion](#EsdaRecords.FilterUnion)
- * *   [DomainMeta](#EsdaRecords.DomainMeta)
+ * *   [FilterExpression](#AesdRecords.FilterExpression)
+ * *   [FilterNot](#AesdRecords.FilterNot)
+ * *   [FilterIntersection](#AesdRecords.FilterIntersection)
+ * *   [FilterUnion](#AesdRecords.FilterUnion)
+ * *   [DomainMeta](#AesdRecords.DomainMeta)
  * 
  * ### Bookmarks
  * 
  * Bookmarks record particular sets or records or conditions on record data.
  *
- * *   [BookmarkMeta](#EsdaRecords.BookmarkMeta)
- * *   [BookmarkMetaList](#EsdaRecords.BookmarkMetaList)
- * *   [BookmarkIntervalContent](#EsdaRecords.BookmarkIntervalContent)
- * *   [BookmarkSetContent](#EsdaRecords.BookmarkSetContent)
+ * *   [BookmarkMeta](#AesdRecords.BookmarkMeta)
+ * *   [BookmarkMetaList](#AesdRecords.BookmarkMetaList)
+ * *   [BookmarkIntervalContent](#AesdRecords.BookmarkIntervalContent)
+ * *   [BookmarkSetContent](#AesdRecords.BookmarkSetContent)
  * 
  * ### Miscellaneous
  * 
  * The following messages wrap data types for the content of records.
  *
- * *   [DoubleList](#EsdaRecords.DoubleList)
- * *   [IntegerList](#EsdaRecords.IntegerList)
- * *   [StringList](#EsdaRecords.StringList)
- * *   [OptionalInt32](#EsdaRecords.OptionalInt32)
- * *   [OptionalUInt32](#EsdaRecords.OptionalUInt32)
- * *   [OptionalString](#EsdaRecords.OptionalString)
+ * *   [DoubleList](#AesdRecords.DoubleList)
+ * *   [IntegerList](#AesdRecords.IntegerList)
+ * *   [StringList](#AesdRecords.StringList)
+ * *   [OptionalInt32](#AesdRecords.OptionalInt32)
+ * *   [OptionalUInt32](#AesdRecords.OptionalUInt32)
+ * *   [OptionalString](#AesdRecords.OptionalString)
  * 
  * ## General conventions
  *
  * All fields are technically optional in ProtoBuf 3, but some fields may be required in each message type in order for the message to be semantically valid.  In the following specifications for the messages, fields are annotated as *semantically required* or *semantically optional*.  Also, the specification notes when field in the [protobuf `oneof` construct](https://developers.google.com/protocol-buffers/docs/proto3#oneof) are required or mutually exclusive.
  *
- * Furthermore, one cannot determine whether an optional value has been set or not if it is just a value, as opposed to a message. That is not true for fields that are messages, where the absence of the field truly indicates that the value is absent, not just a default or unset value. The message `OptionalString`, for example, is used in this API to indicate whether a character string value is truly present. Thus [`RequestModelsMeta`](#EsdaRecords.RequestModelsMeta) has a `model_id` field that indicates whether the request is for all models, when the field has not been set, or for a specific one, when the field has been set.
+ * Furthermore, one cannot determine whether an optional value has been set or not if it is just a value, as opposed to a message. That is not true for fields that are messages, where the absence of the field truly indicates that the value is absent, not just a default or unset value. The message `OptionalString`, for example, is used in this API to indicate whether a character string value is truly present. Thus [`RequestModelsMeta`](#AesdRecords.RequestModelsMeta) has a `model_id` field that indicates whether the request is for all models, when the field has not been set, or for a specific one, when the field has been set.
  *
  * Throughout this specification, the following types are used for identifiers:
  * *  `var_id` is [int32](#int32)
@@ -87,7 +87,7 @@
  * This specification conforms to [Protocol Buffers version 3](https://developers.google.com/protocol-buffers/docs/proto3).
  */
 syntax = "proto3";
-package EsdaRecords;
+package AesdRecords;
 
 
 // This reduces linking requirements.
@@ -164,7 +164,7 @@ message StringList {
 
 
 /**
- * A range of [record identifiers](#EsdaRecords.Record) can specify the content of a [bookmark](#EsdaRecords.BookmarkMeta). Bookmark interval content provides a convenient means to boomark a contiguous selection of records in a [model](#EsdaRecords.ModelMeta).
+ * A range of [record identifiers](#AesdRecords.Record) can specify the content of a [bookmark](#AesdRecords.BookmarkMeta). Bookmark interval content provides a convenient means to bookmark a contiguous selection of records in a [model](#AesdRecords.ModelMeta).
  *
  * Both fields in this message are optional:
  *
@@ -180,7 +180,7 @@ message BookmarkIntervalContent {
 
 
 /**
- * A list (set) of [record identifiers](#EsdaRecords.Record) can specify the contents of a [bookmark](#EsdaRecords.BookmarkMeta). Bookmark set content provides a convenient means to bookmark a specific selection of non-continuous records in a [model](#EsdaRecords.ModelMeta).
+ * A list (set) of [record identifiers](#AesdRecords.Record) can specify the contents of a [bookmark](#AesdRecords.BookmarkMeta). Bookmark set content provides a convenient means to bookmark a specific selection of non-continuous records in a [model](#AesdRecords.ModelMeta).
  */
 message BookmarkSetContent {
     repeated int64 record_ids = 1; /// [semantically optional] The list of record identifiers in the set.
@@ -188,13 +188,13 @@ message BookmarkSetContent {
 
 
 /**
- * A bookmark is metadata defining a subset of records in a [model](#EsdaRecords.ModelMeta).
+ * A bookmark is metadata defining a subset of records in a [model](#AesdRecords.ModelMeta).
  *
  * There are three alternatives to specifying a bookmark:
  *
- * 1.  [Interval content](#EsdaRecords.BookmarkIntervalContent) specifies a range of records in the bookmark.
- * 2.  [Set content](#EsdaRecords.BookmarkSetContent) specifies a list of records in the bookmark.
- * 3.  A [filter expression](#EsdaRecords.FilterExpression) defines a set of logical conditions for determining whether a record is in the bookmrk.
+ * 1.  [Interval content](#AesdRecords.BookmarkIntervalContent) specifies a range of records in the bookmark.
+ * 2.  [Set content](#AesdRecords.BookmarkSetContent) specifies a list of records in the bookmark.
+ * 3.  A [filter expression](#AesdRecords.FilterExpression) defines a set of logical conditions for determining whether a record is in the bookmark.
  *
  * *Exactly one of `interval`, `set`, or `filter` must be specified in this message.*
  */
@@ -219,9 +219,9 @@ message BookmarkMetaList {
 
 
 /**
- * A request for one or more bookmarks for a [model](#EsdaRecords.ModelMeta).
+ * A request for one or more bookmarks for a [model](#AesdRecords.ModelMeta).
  *
- * The response to this request is [BookmarkMetaList](#EsdaRecords.MetaList)
+ * The response to this request is [BookmarkMetaList](#AesdRecords.MetaList)
  */
 message RequestBookmarkMeta {
     string         model_id    = 1; /// [semantically required] Which model for which to list bookmarks.
@@ -232,7 +232,7 @@ message RequestBookmarkMeta {
 /**
  * A request to create or update a bookmark.
  *
- * The response to this request is [BookmarkMetaList](#EsdaRecords.BookmarkMetaList).
+ * The response to this request is [BookmarkMetaList](#AesdRecords.BookmarkMetaList).
  */
 message RequestSaveBookmark {
     string       model_id     = 1; /// [semantically required] Which model for which to save the bookmark.
@@ -244,13 +244,13 @@ message RequestSaveBookmark {
 
 
 /**
- * A filtering expression is a composition of logical conditions on a [record](#EsdaRecords.Record). It can be used to filter records.
+ * A filtering expression is a composition of logical conditions on a [record](#AesdRecords.Record). It can be used to filter records.
  * There are four alternatives to specifying a filter expression:
  *
- * 1.  The [logical negation](#EsdaRecords.FilterNot) of another filtering expression.
- * 2.  The [set union](#EsdaRecords.FilterUnion) of multiple filtering expressions.
- * 3.  The [set intersection](#EsdaRecords.FilterIntersection) of multiple filtering expressions.
- * 4.  [Particular values](#EsdaRecords.DomainMeta) of variables in a record.
+ * 1.  The [logical negation](#AesdRecords.FilterNot) of another filtering expression.
+ * 2.  The [set union](#AesdRecords.FilterUnion) of multiple filtering expressions.
+ * 3.  The [set intersection](#AesdRecords.FilterIntersection) of multiple filtering expressions.
+ * 4.  [Particular values](#AesdRecords.DomainMeta) of variables in a record.
  *
  * *Exactly one of `filter_not`, `filter_union`, `filter_intersection`, or `filter_domain` must be specified in this message.*
  */
@@ -266,7 +266,7 @@ message FilterExpression {
 
 
 /**
- * Logically negate a filtering expression. A record satifies this expression if it does not satisfy `filter_expression`.
+ * Logically negate a filtering expression. A record satisfies this expression if it does not satisfy `filter_expression`.
  */
 message FilterNot {
   FilterExpression filter_expression = 1; /// [semantically required] The expression to be negated.
@@ -274,7 +274,7 @@ message FilterNot {
 
 
 /**
- * Set union of filtering expressions. A record satisfies this expression if if satisfies any of `filter_expressions`.
+ * Set union of filtering expressions. A record satisfies this expression if it satisfies any of `filter_expressions`.
  */
 message FilterUnion {
   repeated FilterExpression filter_expressions = 1; /// [semantically required] The expressions to be unioned.
@@ -342,7 +342,7 @@ message ModelMetaList {
 /**
  * A request for metadata about model(s).
  *
- * The response to this request is [ModelMetaList](#EsdaRecords.ModelMetaList).
+ * The response to this request is [ModelMetaList](#AesdRecords.ModelMetaList).
  */
 message RequestModelsMeta {
     OptionalString model_id = 1; /// [semantically optional] If absent, the request is for metadata for all models. Otherwise the request is for the specifically identified model.
@@ -353,7 +353,7 @@ message RequestModelsMeta {
 
 
 /**
- * A range of values of a [variable](#EsdaRecords.VarMeta).
+ * A range of values of a [variable](#AesdRecords.VarMeta).
  *
  * Both fields in this message are optional:
  *
@@ -381,8 +381,8 @@ message VarSet {
  *
  * There are two alternatives to specifying a domain:
  *
- * 1.  [An interval](#EsdaRecords.VarInterval) specifies a range of values in the domain.
- * 2.  [A set](#EsdaRecords.VarSet) specifies a list of values in the domain.
+ * 1.  [An interval](#AesdRecords.VarInterval) specifies a range of values in the domain.
+ * 2.  [A set](#AesdRecords.VarSet) specifies a list of values in the domain.
  *
  * *Exactly one of `interval` or `set` must be specified in the message.*
  */
@@ -402,7 +402,7 @@ message DomainMeta {
 /**
  * Request that the server compute new records based on input values.
  *
- * The response to this request is [RecordData](#EsdaRecords.RecordData).
+ * The response to this request is [RecordData](#AesdRecords.RecordData).
  */
 message RequestWork {
     string model_id          = 1; /// [semantically required] The identifier for the model.
@@ -485,10 +485,10 @@ message RecordTable {
  *
  * There are two alternatives to specifying record data:
  *
- * 1.  [A list](#EsdaRecords.RecordList) specifies a heterogeneously typee list.
- * 2.  [A table](#EsdaRecords.RecordTable) specifies a homogeneously typed table.
+ * 1.  [A list](#AesdRecords.RecordList) specifies a heterogeneously typed list.
+ * 2.  [A table](#AesdRecords.RecordTable) specifies a homogeneously typed table.
  *
- *  *Exactly one of `list` or `table` must be present in the messsage.*
+ *  *Exactly one of `list` or `table` must be present in the message.*
  */
 message RecordData {
     oneof           style      /// [semantically required] The collection of records. *Exactly one of `list` or `table` must be present in the messsage.*
@@ -505,10 +505,10 @@ message RecordData {
  * There are three alternatives to requesting record data.
  *
  * 1.  Request all records.
- * 2.  Request records in [a bookmark](#EsdaRecords.BookmarkMeta).
- * 3.  [Filter](#EsdaRecords.FilterExpression) records according to a criterion.
+ * 2.  Request records in [a bookmark](#AesdRecords.BookmarkMeta).
+ * 3.  [Filter](#AesdRecords.FilterExpression) records according to a criterion.
  *
- * The response to this request is [RecordData](#EsdaRecords.RecordData).
+ * The response to this request is [RecordData](#AesdRecords.RecordData).
  *
  * *No more than on of `bookmark_id` or `expression` may be present in the message.*
  */
@@ -563,19 +563,19 @@ message RequestCancel {
  *
  * | Request                        | Response                                          |
  * |--------------------------------|---------------------------------------------------|
- * | Metadata for model(s)          | [ModelMetaList](#EsdaRecords.ModelMetaList)       |
- * | Data records                   | [RecordData](#EsdaRecords.RecordData)             |
- * | Metadata for bookmark(s)       | [BookmarkMetaList](#EsdaRecords.BookmarkMetaList) |
- * | Saving a bookmark              | [BookmarkMetaList](#EsdaRecords.BookmarkMetaList) |
+ * | Metadata for model(s)          | [ModelMetaList](#AesdRecords.ModelMetaList)       |
+ * | Data records                   | [RecordData](#AesdRecords.RecordData)             |
+ * | Metadata for bookmark(s)       | [BookmarkMetaList](#AesdRecords.BookmarkMetaList) |
+ * | Saving a bookmark              | [BookmarkMetaList](#AesdRecords.BookmarkMetaList) |
  * | Canceling a previous request   | n/a                                               |
- * | New work, such as a simulation | [RecordData](#EsdaRecords.RecordData)             |
+ * | New work, such as a simulation | [RecordData](#AesdRecords.RecordData)             |
  *
  * *Exactly one of `models_metadata`, `records_data`, `bookmark_meta`, `save_bookmark`, `cancel`, or `work` must be specified in the message.
  */
 message Request {
     uint32                  version         = 1; /// [semantically required] The version number for the API. *This must be the number **four**.*
     OptionalUInt32          id              = 2; /// [semantically optional, but recommended] An identifier which will be used to tag responses, so that responses can be correlated with requests.
-    bool                    subscribe       = 3; /// [semantically optional] Whether to continue receiving responses indefinitely, as new records become available. This is useful, for example, when a sensor is reporting measurements periodically or when simulations are reporting a series or results. Use [RequestCancel](#EsdaRecords.RequestCancel) to end the subscription.
+    bool                    subscribe       = 3; /// [semantically optional] Whether to continue receiving responses indefinitely, as new records become available. This is useful, for example, when a sensor is reporting measurements periodically or when simulations are reporting a series or results. Use [RequestCancel](#AesdRecords.RequestCancel) to end the subscription.
     oneof                   type                 /// [semantically required] The details of the request. *Exactly one of `models_metadata`, `records_data`, `bookmark_meta`, `save_bookmark`, `cancel`, or `work` must be specified in the message.
     {
         RequestModelsMeta   models_metadata = 4; /// Request metadata for model(s).

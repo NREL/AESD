@@ -19,23 +19,23 @@ sections:=$(shell ls -1 [0-9][0-9]-*.md | sort)
 diagrams:=$(shell ls -1 *.mermaid | sed -e 's/$$/.png/')
 
 
-all: esda-manual.pdf esda-manual.docx esda-manual.html
+all: aesd-manual.pdf aesd-manual.docx aesd-manual.html
 
 clean:
-	-rm esda-manual.{pdf,docx,html} esda-slides.html $(diagrams)
+	-rm aesd-manual.{pdf,docx,html} aesd-slides.html $(diagrams)
 
 veryclean: clean
 	touch --date="1970-01-01" 04-api.md 11-protobuf.md
 
 
-esda-manual.%: $(sections) $(diagrams) references.bib
+aesd-manual.%: $(sections) $(diagrams) references.bib
 	pandoc --standalone                  \
 	       --smart                       \
 	       --columns 1000                \
 	       --number-sections             \
 	       --table-of-contents           \
 	       --toc-depth=2                 \
-	       --css esda.css                \
+	       --css aesd.css                \
 	       --metadata date="$(today)"    \
 	       --bibliography=references.bib \
 	       --filter pandoc-citeproc      \
@@ -43,7 +43,7 @@ esda-manual.%: $(sections) $(diagrams) references.bib
 	       --mathjax                     \
 	       --output=$@ $(sections)
 
-esda-slides.html: $(sections) $(diagrams) references.bib
+aesd-slides.html: $(sections) $(diagrams) references.bib
 	pandoc --self-contained                 \
 	       --smart                          \
 	       --metadata date="$(today)"       \
@@ -54,10 +54,10 @@ esda-slides.html: $(sections) $(diagrams) references.bib
 	       --slide-level=2                  \
 	       --output $@ $(sections) 
 
-04-api.md: esda_records_4.proto templates/records-api.mustache
+04-api.md: aesd_records_4.proto templates/records-api.mustache
 	$(PROTOC) --plugin=$(PROTOC_GEN_DOC) --doc_out=templates/records-api.mustache,$@:./ $<
 
-11-protobuf.md: esda_records_4.proto
+11-protobuf.md: aesd_records_4.proto
 	sed -e '1i# Appendices\n## Protocol Buffers for Records API Version 4\n' -e '/^\//d ; /^ \*/d ; s/\/\/\/ [^[].*// ; s/\(\/\/\/ \[[^]]*\]\).*/\1/ ; s/^/\t/' $< | uniq > $@
 
 timestamp:

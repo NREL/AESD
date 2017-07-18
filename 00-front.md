@@ -1,4 +1,4 @@
-% Energy System Design Architecture:\
+% Advanced Energy System Design (AESD):\
   Technical Manual for the Records API
 % Nicholas Brunhart-Lupo; Brian Bush; Kenny Gruchalla; Michael Rossol\
   *National Renewable Energy Laboratory*

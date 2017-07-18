@@ -7,7 +7,7 @@ In this section we outline some standard use cases for the Records API. UML Sequ
 
 The retrieval of static data records forms the simplest use case for the Records API. A user chooses a particular data source (a "model" in the parlance of the Records API) and then the data is retrieved and displayed. The visualization client software communicates with a Records server, which in turn accesses the static data. The figure below illustrates the process.
 
-![Visualizing data from a static source using the ESDA Records API.](static-data-rpc.mermaid.png)
+![Visualizing data from a static source using the AESD Records API.](static-data-rpc.mermaid.png)
 
 
 A [`Request`](#EsdaRecords.Request) without `model_id` specified requests the server to list all models:
@@ -166,7 +166,7 @@ and the last chunk is:
 
 As shown in the following figure retrieving data from a dynamic source proceeds quite similarly to retrieving data from a static source.  The only essential difference is that the server repeatedly sends additional responses containing new data, until a request to cancel is sent:
 
-![Visualizing data from a dynamic source using the ESDA Records API.](dynamic-data-rpc.mermaid.png)
+![Visualizing data from a dynamic source using the AESD Records API.](dynamic-data-rpc.mermaid.png)
 
 When requesting dynamic data, it is advisable to set the `subscribe` flag in the request for data:
 
@@ -189,7 +189,7 @@ The [`RequestCancel`](#EsdaRecords.RequestCancel) message is the `cancel` field 
 
 The model `Example Simulation #3` in the Static Data use case is a simulation model, as evidenced by the presence of the `inputs` field in its metadata. The following figure shows a typical interaction with a simulation-based model via the Records API.
 
-![Steering and visualizing simulation results using the ESDA Records API.](simulation-rpc.mermaid.png)
+![Steering and visualizing simulation results using the AESD Records API.](simulation-rpc.mermaid.png)
 
 The [`RequestWork`](#EsdaRecords.RequestWork) message, which is contained in the `work` field of a [`Request`](#EsdaRecords.Request), specifies the input for a simulation to be run:
 
