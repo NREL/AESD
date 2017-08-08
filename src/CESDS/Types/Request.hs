@@ -62,7 +62,7 @@ import CESDS.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>))
 import Control.Lens.Lens (Lens', lens)
 import Data.Maybe (fromJust, fromMaybe)
-import Data.ProtocolBuffers (Decode, Encode, Message, Optional, Repeated, Required, Value, getField, putField)
+import Data.ProtocolBuffers (Decode, Encode, Message, Optional, Packed, Repeated, Required, Value, getField, putField)
 import Data.Word (Word32, Word64)
 import GHC.Generics (Generic)
 
@@ -190,7 +190,7 @@ data LoadRecordsData =
   {
     modelIdentifier'     :: Required 1 (Value   ModelIdentifier   )
   , maxRecords'          :: Optional 2 (Value   Word64            )
-  , variableIdentifiers' :: Repeated 3 (Value   VariableIdentifier)
+  , variableIdentifiers' :: Packed   3 (Value   VariableIdentifier)
   , bookmarkIdentifier'  :: Optional 4 (Value   BookmarkIdentifier)
   , filterExpression'    :: Optional 5 (Message FilterExpression  )
   }
