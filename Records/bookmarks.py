@@ -138,6 +138,7 @@ def save_bookmark(model_id, name, content, request_id, version=4):
     request = proto.Request()
     request.version = version
     request.id.value = request_id
+    request.save_bookmark.model_id = model_id
     new_bookmark = request.save_bookmark.new_bookmark
     new_bookmark.bookmark_name = name
     if isinstance(content, tuple):
