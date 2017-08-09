@@ -147,7 +147,7 @@ last record'
         new_bookmark.interval.first_record = content[0]
         new_bookmark.interval.last_record = content[1]
     elif isinstance(content, list):
-        new_bookmark.set.record_ids.extent(content)
+        new_bookmark.set.record_ids.extend(content)
     else:
         # INCOMPLETE need filter expression parsers to pass filter
         raise ProtoError('Cannot parse bookmark content!')
