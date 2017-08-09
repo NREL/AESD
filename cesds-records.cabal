@@ -1,5 +1,5 @@
 name         : cesds-records
-version      : 0.4.4.2
+version      : 0.4.4.3
 synopsis     : CESDS Records
 description  :
   Implementation of CESDS Records API, include a skeletal server and client.
