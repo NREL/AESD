@@ -144,8 +144,12 @@ def save_bookmark(model_id, name, content, request_id, version=4):
     if isinstance(content, tuple):
         assert len(content) == 2, 'Interval can only have a first and \
 last record'
-        new_bookmark.interval.first_record = content[0]
-        new_bookmark.interval.last_record = content[1]
+        if content[0] is not None:
+            new_bookmark.interval.first_record = content[0]
+
+        if content[1] is not None:
+            new_bookmark.interval.last_record = content[1]
+
     elif isinstance(content, list):
         new_bookmark.set.record_ids.extend(content)
     else:
