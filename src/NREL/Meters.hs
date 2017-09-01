@@ -37,7 +37,7 @@ import Data.Tuple (swap)
 import GHC.Generics (Generic)
 import Network.URI (URI, parseURI)
 
-import qualified Data.Text as T (cons, pack, splitAt, tail, unpack)
+import qualified Data.Text as T (break, cons, pack, tail, unpack)
 
 
 newtype Tags = Tags {unTags :: [Pair]}
@@ -85,7 +85,7 @@ instance ToJSON URI where
 
 
 meters :: Site -> [(Text, Text)]
-meters Site{..} = map (swap . (T.cons '@' *** T.tail) . T.splitAt 17) siteMeters
+meters Site{..} = map (swap . (T.cons '@' *** T.tail) . T.break (== ' ')) siteMeters
 
 
 siteModels :: Site -> [ModelMeta]
