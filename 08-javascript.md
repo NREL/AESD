@@ -1,7 +1,7 @@
-## JavaScript
+## JavaScript Client Library and Web-Based Browser
 
 The client library for JavaScript relies on a few simple functions to interact with an AESD server.
-Full documentation for the JavaScript client library is a available at <<http://github.com/NREL/aesd/lib/javascript>>.  The figure below shows the user interface of the general purpose AESD records browser using this JavaScript library.
+Full documentation for the JavaScript client library is a available at <<http://github.com/NREL/AESD/lib/javascript>>.  The figure below shows the user interface of the general purpose AESD records browser using this JavaScript library.
 
 ![User interface for AESD records browswer.](javascript-browser.png)
 
