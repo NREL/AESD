@@ -13,7 +13,7 @@ from .models import (request_model_metadata, handle_models_response)
 from . import records_def_4_pb2 as proto
 import websockets
 
-__all__ = ['on_response', 'send_request', 'CESDS']
+__all__ = ['on_response', 'send_request', 'Records']
 
 
 async def on_response(websocket, request_id):
@@ -77,16 +77,16 @@ async def send_request(url, request, timeout=60):
     return response
 
 
-class CESDS(object):
+class Records(object):
     """
-    CESDS Records class to handle communication with servers
+    Records class to handle communication with servers
     """
     currentID = 0
     version = 4
 
     def __init__(self, server_url, timeout=60):
         """
-        CESDS class instance creates an asyncio event loop
+        Records class instance creates an asyncio event loop
         Parameters
         ----------
         server_url : 'string'

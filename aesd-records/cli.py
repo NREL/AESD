@@ -1,7 +1,7 @@
 import click
 import os
 import pickle
-from .records import CESDS
+from .records import Records
 
 
 @click.group()
@@ -19,7 +19,7 @@ def cli():
 @click.option('--file_out', default=None,
               help='File path to save results')
 def request_model_metadata(server_url, model_id, timeout, file_out):
-    with CESDS(server_url, timeout=timeout) as request:
+    with Records(server_url, timeout=timeout) as request:
         models = request.get_model_info(model_id)
 
         if file_out is not None:
@@ -47,7 +47,7 @@ def request_model_metadata(server_url, model_id, timeout, file_out):
               help='File path to save results')
 def request_records_data(server_url, model_id, max_records, variable_ids,
                          bookmark_id, timeout, file_out):
-    with CESDS(server_url, timeout=timeout) as request:
+    with Records(server_url, timeout=timeout) as request:
         data = request.get_data(model_id, max_records=max_records,
                                 variable_ids=variable_ids,
                                 bookmark_id=bookmark_id)
@@ -73,7 +73,7 @@ def request_records_data(server_url, model_id, max_records, variable_ids,
               help='File path to save results')
 def request_bookmark_meta(server_url, model_id, bookmark_id, timeout,
                           file_out):
-    with CESDS(server_url, timeout=timeout) as request:
+    with Records(server_url, timeout=timeout) as request:
         bookmarks = request.get_bookmark_info(model_id, bookmark_id)
 
         if file_out is not None:
@@ -97,7 +97,7 @@ tuple is a bookmark interval', type=(list, tuple))
               help='File path to save results')
 def save_bookmark(server_url, model_id, name, content, timeout,
                   file_out):
-    with CESDS(server_url, timeout=timeout) as request:
+    with Records(server_url, timeout=timeout) as request:
         new_bookmark = request.save_bookmark(model_id, name, content)
 
         if file_out is not None:
@@ -119,7 +119,7 @@ def save_bookmark(server_url, model_id, name, content, timeout,
 @click.option('--file_out', default=None,
               help='File path to save results')
 def request_work(server_url, model_id, inputs, timeout, file_out):
-    with CESDS(server_url, timeout=timeout) as request:
+    with Records(server_url, timeout=timeout) as request:
         work = request.do_work(model_id, inputs)
 
         if file_out is not None:

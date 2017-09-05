@@ -1,1 +1,1 @@
-The Python client for version 3 of the CESDS Records API will be stored here.
+The Python client for version 3 of the AESD Records API will be stored here.
