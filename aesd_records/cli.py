@@ -128,10 +128,3 @@ def request_work(server_url, model_id, inputs, timeout, file_out):
             pickle.dump(work, open(file_out, 'rb'))
 
         print(work)
-
-
-if __name__ == '__main__':
-    try:
-        cli()
-    except Exception:
-        raise
