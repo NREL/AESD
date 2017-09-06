@@ -13,7 +13,7 @@ Client-server communication in the Records API simply consists of clients sendin
 
 Table: Correlation between requests and responses.
 
-![Containment relationships between protocol buffer messages in the AESD Records API.](records.mermaid.png)
+![Containment relationships between protocol buffer messages in the Records API.](records.mermaid.png)
 
 [Metadata messages](#metadata) describe "models", which are just sources of data, and the variables they contain. [Data record messages](#data-records) hold the data itself. Data records are simply tuples of real numbers, integers, and character strings, where each data value is tagged by a variable name, according to a pre-defined schema, and each record is assigned a unique integer identifier. Conceptually, these records are isomorphic to rows in a relational database, JSON objects, or key-value maps. For efficiency and compactness, [`RecordData`](#EsdaRecords.RecordData) may be provided in [list format](#EsdaRecords.RecordList) or [tabular format](#EsdaRecords.RecordTable), with the latter format only obtained when the contents of the table all have the same data type. The data records may be provided *in toto* or filtered using [filter messages](#filtering) so that only certain fields or records are returned. The API contains a small embedded language for [filtering via set and value operations](#EsdaRecords.FilterExpression). Sets of records may be [bookmarked](#bookmarks) for sharing or later retrieval by (i) enumerating their unique record identifiers, (ii) defining a range of unique record identifiers, or (iii) specifying a filtering criterion.
 

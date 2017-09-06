@@ -1,11 +1,11 @@
-## Haskell
+## Haskell Client and Server Library and Applications
 
-Both client and server applications in Haskell are available for the AESD Records API.  Full documentation resides at <<https://github.com/NREL/AESD/lib/haskell>>.
+Both client and server applications in Haskell are available for the Records API.  Full documentation resides at <<https://github.com/NREL/AESD/lib/haskell>>.
 
 
 ### Client Library
 
-The client library described below provides the basic functions for interacting with any AESD Records server.
+The client library described below provides the basic functions for interacting with any Records API server.
 
 
 #### Types
@@ -93,7 +93,7 @@ Save a bookmark.
 
 ### Server Library
 
-The server library provides two options for implementing a AESD Records server.  The `CESDS.Records.Server` module provides a main entry point `serverMain`, a type class `ModelManager`, and a monad `ServiceM` that implement skeletal server which handles all of the WebSocket communication and Protocol Buffer serialization: an implementer need only create an instance of `ModelManager`.  Furthermore, the `CESDS.Records.Server.Manager` module provides such an instance `InMemoryManager` of the type class `ModelManger` to handle in-memory caching of data and on-disk persistence of bookmarks: here, an implementer just calls the function `makeInMemoryManager` and provides several functions that retrieve content:
+The server library provides two options for implementing a Records APIserver.  The `AESD.Records.Server` module provides a main entry point `serverMain`, a type class `ModelManager`, and a monad `ServiceM` that implement skeletal server which handles all of the WebSocket communication and Protocol Buffer serialization: an implementer need only create an instance of `ModelManager`.  Furthermore, the `AESD.Records.Server.Manager` module provides such an instance `InMemoryManager` of the type class `ModelManger` to handle in-memory caching of data and on-disk persistence of bookmarks: here, an implementer just calls the function `makeInMemoryManager` and provides several functions that retrieve content:
 
 **`makeInMemoryManager`**
 
@@ -133,7 +133,7 @@ Table: Command-line arguments for serving TSV files.
 
 #### Database Queries
 
-The AESD Records servers have been implemented for the most common database backends.  Each server takes a single command-line argument specifying a YAML [@yaml] configuration file with the parametes in the table below.
+The Records API servers have been implemented for the most common database backends.  Each server takes a single command-line argument specifying a YAML [@yaml] configuration file with the parametes in the table below.
 
 | Parameter   | Description                                | PostgreSQL                 | MySQL                      | SQLite3           | ODBC                       |
 |-------------|--------------------------------------------|----------------------------|----------------------------|-------------------|----------------------------|
@@ -144,7 +144,7 @@ The AESD Records servers have been implemented for the most common database back
 | chunkSize   | number of records return in each chunk     | optional                   | optional                   | optional          | optional                   |
 | database    | database connection information            | required connection string | required connection string | required filename | required connection string |
 
-Table: Parameters for database backends serving AESD Records.
+Table: Parameters for database backends serving the Records API.
 
 
 #### Haystack Sensor Measurements and the "Internet of Things"
@@ -153,14 +153,14 @@ Furthermore, a server for Project Haystack [@haystack] data feeds, typically sen
 
 	aesd-haystack-server <configuration> <host> <port> <startTime> <persistence> <chunkSize>
 
-| Parameter     | Description                                                   |
-|---------------|---------------------------------------------------------------|
-| configuration | YAML configuration file for accessing the Haystack service    |
-| host          | host address to which to bind the service                     |
-| port          | port to which to bind the service                             |
-| startTime     | earliest time to serve, specified in seconds of the UTC Epoch |
-| peristience   | filename for bookmark data                                    |
-| chunkSize     | number of records return in each chunk                        |
+| Parameter     | Description                                                     |
+|---------------|-----------------------------------------------------------------|
+| configuration | YAML configuration file for accessing the Haystack service      |
+| host          | host address to which to bind the service                       |
+| port          | port to which to bind the service                               |
+| startTime     | earliest time to serve, specified in seconds of the POSIX Epoch |
+| peristience   | filename for bookmark data                                      |
+| chunkSize     | number of records return in each chunk                          |
 
 Table: Command-line arguments for serving Haystack data feeds.
 
@@ -185,17 +185,17 @@ The parameters in the YAML configuration file like the one below and are describ
 	               - 1dca834e-69a3e57e NWTC Alstom Turbine Electricity Meter Turbine-Alstom kW Demand Reverse
 	               - 1dca834e-f56e11f0 NWTC Alstom Turbine Electricity Meter Turbine-Alstom kWh Delivered Forward
 
-| Parameter      | Description                                                                                                      | Required? |
-|----------------|------------------------------------------------------------------------------------------------------------------|-----------|
-| server         | hostname and port for the Haystack server                                                                        | required  |
-| root           | path to the Haystack REST service                                                                                | required  |
-| authorization  | the username and password for accessing the Haystack REST service                                                | optional  |
-| secure         | whether to use HTTPS instead of HTTP                                                                             | optional  |
-| timezone       | timezone information: minutes offset from UTC, whether to use daylight savings time, and the geographic location | required  |
-| siteIdentifier | identifier for the AESD server                                                                                   | required  |
-| siteURI        | URI for the AESD server metadata                                                                                 | required  |
-| siteName       | name of the AESD server                                                                                          | required  |
-| siteTags       | key-value pairs tagging the server with additional information                                                   | optional  |
-| siteMeters     | list of meters to expose on the AESD server: the Haystack ID is followed by a space and textual description      | required  |
+| Parameter      | Description                                                                                                        | Required? |
+|----------------|--------------------------------------------------------------------------------------------------------------------|-----------|
+| server         | hostname and port for the Haystack server                                                                          | required  |
+| root           | path to the Haystack REST service                                                                                  | required  |
+| authorization  | the username and password for accessing the Haystack REST service                                                  | optional  |
+| secure         | whether to use HTTPS instead of HTTP                                                                               | optional  |
+| timezone       | timezone information: minutes offset from UTC, whether to use daylight savings time, and the geographic location   | required  |
+| siteIdentifier | identifier for the Records API server                                                                              | required  |
+| siteURI        | URI for the Records API server metadata                                                                            | required  |
+| siteName       | name of the Records API server                                                                                     | required  |
+| siteTags       | key-value pairs tagging the server with additional information                                                     | optional  |
+| siteMeters     | list of meters to expose on the Records API server: the Haystack ID is followed by a space and textual description | required  |
 
-Table: YAML configuration parameters for Haystack-based AESD Records servers.
+Table: YAML configuration parameters for Haystack-based Records API servers.

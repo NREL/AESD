@@ -1,7 +1,7 @@
 
 # Records API, Version 4
 
-The AESD Records API consists of Google Protobuf 3 [@protobuf] messages used for requesting and providing data and metadata for record-oriented information. This section contains the complete specification for version 4 of the Records API. Clients send `Request` messages and servers send `Response` messages, typically transported via WebSockets [@websockets].
+The Records API consists of Google Protobuf 3 [@protobuf] messages used for requesting and providing data and metadata for record-oriented information. This section contains the complete specification for version 4 of the Records API. Clients send `Request` messages and servers send `Response` messages, typically transported via WebSockets [@websockets].
 
 ## Message Groups
 

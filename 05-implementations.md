@@ -1,6 +1,6 @@
 # Implementations
 
-This section provides an overview of the variety of libraries and applications implementing the AESD Records API (see the table below).  In particular, pre-built applications are available for serving text-based data sources, database queries, and sensor data feeds.  Application Container Images (ACIs) [@aci] of each have been packed for use with the rkt container engine [@rkt].
+This section provides an overview of the variety of libraries and applications implementing the Records API (see the table below).  In particular, pre-built applications are available for serving text-based data sources, database queries, and sensor data feeds.  Application Container Images (ACIs) [@aci] of each have been packed for use with the rkt container engine [@rkt].
 
 | Client or Server? | Library or Application?  | Data Source | Implementation Language | Computing Platforms | URL                                         |
 |-------------------|--------------------------|-------------|-------------------------|---------------------|---------------------------------------------|
@@ -17,4 +17,4 @@ This section provides an overview of the variety of libraries and applications i
 | client            | library                  | any         | Python                  | any                 | https://github.com/NREL/AESD/lib/python     |
 | client            | library                  | any         | R                       | any                 | https://github.nrel.gov/d-star/r-records    |
 
-Table: Available client and server applications and libraries for AESD Records.
+Table: Available client and server applications and libraries for the Records API.
