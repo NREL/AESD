@@ -8,124 +8,104 @@ Both client and server applications in Haskell are available for the AESD Record
 
 #### Types
 
-	data State
+
+**`data State`**
 
 State information for a client.
 
 
 #### Entry Point
 
-	clientMain
 
-Arguments
-
-| Type                              | Descrption                        |
-|-----------------------------------|-----------------------------------|
-| :: String                         | The WebSocket host address.       |
-| -> Int                            | The WebSocket port number.        |
-| -> String                         | The WebSocket path.               |
-| -> (State -> IO ())               | Customize the client.             |
-| -> IO ()                          | Action for running the client.    |
+**`clientMain`**
 
 Run a client.
 
-	close :: State -> IO ()
+| Argument Type       | Descrption                     |
+|---------------------|--------------------------------|
+| :: String           | The WebSocket host address.    |
+| -> Int              | The WebSocket port number.     |
+| -> String           | The WebSocket path.            |
+| -> (State -> IO ()) | Customize the client.          |
+| -> IO ()            | Action for running the client. |
+
+
+**`close`**
 
 Close a client.
 
+| Argument Type | Descrption                     |
+|---------------|--------------------------------|
+| :: State      | The state of the client.       |
+|  -> IO ()     | Action for closing the client. |
 
 
-SERVER REQUESTS
+#### Server Requests
 
 
-fetchModels
-
-Arguments
-
-+-----------------------------------+-----------------------------------+
-| :: State                          | The state of the client.          |
-+-----------------------------------+-----------------------------------+
-| -> IO (Either String [ModelMeta]) | Action returning either an error  |
-|                                   | or the models.                    |
-+-----------------------------------+-----------------------------------+
+**`fetchModels`**
 
 Fetch model metadata.
 
-fetchRecords
+| Argument Type                     | Descrption                                      |
+|-----------------------------------|-------------------------------------------------|
+| :: State                          | The state of the client.                        |
+| -> IO (Either String [ModelMeta]) | Action returning either an error or the models. |
 
-Arguments
 
-+-----------------------------------+-----------------------------------+
-| :: State                          | The state of the client.          |
-+-----------------------------------+-----------------------------------+
-| -> ModelIdentifier                | The model identifier.             |
-+-----------------------------------+-----------------------------------+
-| -> Maybe Int                      | The maximum number of records to  |
-|                                   | request.                          |
-+-----------------------------------+-----------------------------------+
-| -> IO (Either String              | Action returning either an error  |
-| [RecordContent])                  | or the records.                   |
-+-----------------------------------+-----------------------------------+
+**`fetchRecords`**
 
 Fetch records from the server.
 
-fetchBookmarks
+| Argument Type                         | Descrption                                       |
+|---------------------------------------|--------------------------------------------------|
+| :: State                              | The state of the client.                         |
+| -> ModelIdentifier                    | The model identifier.                            |
+| -> Maybe Int                          | The maximum number of records to request.        |
+| -> IO (Either String [RecordContent]) | Action returning either an error or the records. |
 
-Arguments
 
-+-----------------------------------+-----------------------------------+
-| :: State                          | The state of the client.          |
-+-----------------------------------+-----------------------------------+
-| -> ModelIdentifier                | The model identifier.             |
-+-----------------------------------+-----------------------------------+
-| -> Maybe BookmarkIdentifier       | The bookmark identifier, or all   |
-|                                   | bookmarks.                        |
-+-----------------------------------+-----------------------------------+
-| -> IO (Either String              | Action returning either an error  |
-| [BookmarkMeta])                   | or the bookmark(s).               |
-+-----------------------------------+-----------------------------------+
+**`fetchBookmarks`**
 
 Fetch bookmark(s).
 
-storeBookmark
+| Argument Type                        | Descrption                                           |
+|--------------------------------------|------------------------------------------------------|
+| :: State                             | The state of the client.                             |
+| -> ModelIdentifier                   | The model identifier.                                |
+| -> Maybe BookmarkIdentifier          | The bookmark identifier, or all bookmarks.           |
+| -> IO (Either String [BookmarkMeta]) | Action returning either an error or the bookmark(s). |
 
-Arguments
 
-+-----------------------------------+-----------------------------------+
-| :: State                          | The state of the client.          |
-+-----------------------------------+-----------------------------------+
-| -> ModelIdentifier                | The model identifier.             |
-+-----------------------------------+-----------------------------------+
-| -> BookmarkMeta                   | The bookmark metadata.            |
-+-----------------------------------+-----------------------------------+
-| -> IO (Either String              | Action returning eithre an error  |
-| BookmarkMeta)                     | or the bookmark.                  |
-+-----------------------------------+-----------------------------------+
+**`storeBookmark`**
 
 Save a bookmark.
 
-Produced by Haddock version 2.16.1
+| Argument Type                      | Descrption                                        |
+|------------------------------------|---------------------------------------------------|
+| :: State                           | The state of the client.                          |
+| -> ModelIdentifier                 | The model identifier.                             |
+| -> BookmarkMeta                    | The bookmark metadata.                            |
+| -> IO (Either String BookmarkMeta) | Action returning eithre an error or the bookmark. |
 
 
 ### Server Library
 
 The server library provides two options for implementing a AESD Records server.  The `CESDS.Records.Server` module provides a main entry point `serverMain`, a type class `ModelManager`, and a monad `ServiceM` that implement skeletal server which handles all of the WebSocket communication and Protocol Buffer serialization: an implementer need only create an instance of `ModelManager`.  Furthermore, the `CESDS.Records.Server.Manager` module provides such an instance `InMemoryManager` of the type class `ModelManger` to handle in-memory caching of data and on-disk persistence of bookmarks: here, an implementer just calls the function `makeInMemoryManager` and provides several functions that retrieve content:
 
-makeInMemoryManager
+**`makeInMemoryManager`**
 
-:: Maybe FilePath	
-The name of the journal file.
--> a	
-The initial state.
--> (a -> IO ([ModelMeta], a))	
-Handle listing models.
--> (a -> ModelMeta -> IO ([RecordContent], a))	
-Handle loading record data.
--> (a -> ModelMeta -> [VarValue] -> IO ([RecordContent], a))	
-Handle performing work.
--> IO (InMemoryManager a)	
-Action constructing the manager.
 Construct an in-memory model manager.
+
+| Argument Type                                                | Descrption                       |
+|--------------------------------------------------------------|----------------------------------|
+| :: Maybe FilePath	                                       | The name of the journal file.    |
+| -> a	                                                       | The initial state.               |
+| -> (a -> IO ([ModelMeta], a))	                               | Handle listing models.           |
+| -> (a -> ModelMeta -> IO ([RecordContent], a))	       | Handle loading record data.      |
+| -> (a -> ModelMeta -> [VarValue] -> IO ([RecordContent], a)) | Handle performing work.          |
+| -> IO (InMemoryManager a)	                               | Action constructing the manager. |
+
 
 ### Server Backends
 
