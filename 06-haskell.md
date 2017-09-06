@@ -110,3 +110,49 @@ Construct an in-memory model manager.
 ### Server Backends
 
 
+#### Tab-Separate-Value Files
+
+	cesds-file-server <host> <port> <directory> <persistence> <chunkSize>
+
+| Parameter   | Description                            |
+|-------------|----------------------------------------|
+| host        | host address to bind to                |
+| port        | port to bind to                        |
+| directory   | directory with TSV files to be served  |
+| peristience | filename for bookmark data             |
+| chunkSize   | number of records return in each chunk |
+
+
+#### Database Queries
+
+| Parameter   | Description                                | PostgreSQL                 | MySQL                      | SQLite3           | ODBC                       |
+|-------------|--------------------------------------------|----------------------------|----------------------------|-------------------|----------------------------|
+| host        | host address to which to bind the service  | required                   | required                   | required          | required                   |
+| port        | port to which to bind the service          | required                   | required                   | required          | required                   |
+| directory   | directory with queries to be served        | required                   | required                   | required          | required                   |
+| peristience | filename for bookmark data                 | optional                   | optional                   | optional          | optional                   |
+| chunkSize   | number of records return in each chunk     | optional                   | optional                   | optional          | optional                   |
+| database    | database connection information            | required connection string | required connection string | required filename | required connection string |
+
+
+#### Haystack Sensor Measurements
+
+
+	siteAccess     :
+	  server       : xv11skys01.nrel.gov
+	  root         : /api/nrel_wt_V7
+	  authorization: ["bbush",<<INSERT PASSWORD HERE>>]
+	  secure       : false
+	  timeZone     : [-360, true, Denver]
+	siteIdentifier : NWTCv4
+	siteURI        : http://aesd.nrel.gov/records/v4/nwtc/
+	siteName       : NREL NWTC
+	siteDescription: Sensors from NREL National Wind Technology Center
+	siteTags       :
+	               ! 'DC.source'     : https://xv11skys01.nrel.gov/proj/nrel_wt_v7
+	               ! 'DC.creator'    : Brian W Bush <brian.bush@nrel.gov>
+	               ! 'DC.description': NREL NWTC sensors
+	siteMeters     :
+	               - 1dca834e-c6af46d6 NWTC Alstom Turbine Electricity Meter Turbine-Alstom kW Demand Forward
+	               - 1dca834e-69a3e57e NWTC Alstom Turbine Electricity Meter Turbine-Alstom kW Demand Reverse
+	               - 1dca834e-f56e11f0 NWTC Alstom Turbine Electricity Meter Turbine-Alstom kWh Delivered Forward
