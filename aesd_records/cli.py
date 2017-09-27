@@ -90,7 +90,7 @@ def request_bookmark_meta(server_url, model_id, bookmark_id, timeout,
               help='Id of model where new bookmark is being saved')
 @click.option('--name', help='Name of new bookmark')
 @click.option('--content', help='Contents of bookmark: list is a bookmark set, \
-tuple is a bookmark interval', type=(list, tuple))
+tuple is a bookmark interval', type=(list, tuple)) # TODO: Update
 @click.option('--timeout', default=60,
               help='timeout in sec for communication with server', type=int)
 @click.option('--file_out', default=None,

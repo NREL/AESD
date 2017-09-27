@@ -13,6 +13,7 @@ __all__ = ['request_bookmark_meta', 'from_bookmark_meta',
 def request_bookmark_meta(model_id, bookmark_id, request_id, version=4):
     """
     Create request for bookmark bookmark_meta
+
     Parameters
     ----------
     model_id : 'string'
@@ -45,6 +46,7 @@ def request_bookmark_meta(model_id, bookmark_id, request_id, version=4):
 def from_bookmark_meta(bookmark_meta):
     """
     Unpacks proto BookmarkMeta message to dictionary
+
     Parameters
     ----------
     bookmark_meta : 'proto.BookmarkMeta'
@@ -78,6 +80,7 @@ def from_bookmark_meta(bookmark_meta):
 def from_bookmark_meta_list(bookmarks):
     """
     Unpacks proto BookmarkMetaList message to list of dictionaries
+
     Parameters
     ----------
     bookmarks : 'proto.BookmarkMetaList'
@@ -94,6 +97,7 @@ def from_bookmark_meta_list(bookmarks):
 def handle_bookmark_response(response):
     """
     Extract bookmark metadata from each server response message
+
     Parameters
     ----------
     response : 'list'
@@ -111,19 +115,70 @@ def handle_bookmark_response(response):
     return bookmark_metadata
 
 
+def bookmark_interval(first=None, last=None):
+    """
+    Create BookmarkIntervalContent message
+
+    Parameters
+    ----------
+    first : 'float'
+        First value for bookmark interval
+    last : 'float'
+        Last value for bookmark interval
+
+    Returns
+    -------
+    request : 'proto.BookmarkIntervalContent'
+        proto BookmarkIntervalContent message from first to last
+    """
+    content = proto.BookmarkIntervalContent()
+    if first is not None and last is not None:
+        assert first < last, '{:} must be < {:}'.format(first, last)
+
+    if first is not None:
+        content.first_record = first
+
+    if last is not None:
+        content.last_record = last
+
+    return content
+
+
+def bookmark_set(*values):
+    """
+    Create BookmarkSetContent message
+
+    Parameters
+    ----------
+    *values : 'float'
+        Values to be included in bookmark set
+
+    Returns
+    -------
+    request : 'proto.BookmarkSetContent'
+        proto BookmarkSetContent message containing values
+    """
+    content = proto.BookmarkSetContent()
+    content.record_ids.extend(values)
+
+    return content
+
+
 def save_bookmark(model_id, name, content, request_id, version=4):
     """
     Create request for bookmark bookmark_meta
+
     Parameters
     ----------
     model_id : 'string'
         Id of model for which to requst bookmark_meta
     name : 'string'
         Name for new bookmark
-    content : 'list'|'tuple'
+    content : 'proto.BookmarkSetContent' |
+              'proto.BookmarkIntervalContent' |
+              'proto.FilterExpression'
         Contents of bookmark
-        list is a bookmark set
-        tuple is a bookmark interval
+        either an interval, set, or filter
     request_id : 'int'
         Unique request id
     version : 'int'
@@ -141,19 +196,14 @@ def save_bookmark(model_id, name, content, request_id, version=4):
     request.save_bookmark.model_id = model_id
     new_bookmark = request.save_bookmark.new_bookmark
     new_bookmark.bookmark_name = name
-    if isinstance(content, tuple):
-        assert len(content) == 2, 'Interval can only have a first and \
-last record'
-        if content[0] is not None:
-            new_bookmark.interval.first_record = content[0]
-
-        if content[1] is not None:
-            new_bookmark.interval.last_record = content[1]
-
-    elif isinstance(content, list):
-        new_bookmark.set.record_ids.extend(content)
+    content_type = type(content).__name__
+    if content_type == proto.BookmarkIntervalContent.__name__:
+        new_bookmark.interval.MergeFrom(content)
+    elif content_type == proto.BookmarkSetContent.__name__:
+        new_bookmark.set.MergeFrom(content)
+    elif content_type == proto.FilterExpression.__name__:
+        new_bookmark.filter.MergeFrom(content)
     else:
-        # INCOMPLETE need filter expression parsers to pass filter
         raise ProtoError('Cannot parse bookmark content!')
 
     return request

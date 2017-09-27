@@ -19,6 +19,7 @@ __all__ = ['on_response', 'send_request', 'Records']
 async def on_response(websocket, request_id):
     """
     Extracts responses to request with request_id
+
     Parameters
     ----------
     websocket : 'websocket instance'
@@ -53,6 +54,7 @@ async def on_response(websocket, request_id):
 async def send_request(url, request, timeout=60):
     """
     Send request to server and compile response
+
     Parameters
     ----------
     url : 'string'
@@ -87,6 +89,7 @@ class Records(object):
     def __init__(self, server_url, timeout=60):
         """
         Records class instance creates an asyncio event loop
+
         Parameters
         ----------
         server_url : 'string'
@@ -109,22 +112,12 @@ class Records(object):
     def __enter__(self):
             """
             Enter method to allow use of with
-            Parameters
-            ----------
-
-            Returns
-            ---------
             """
             return self
 
     def __exit__(self, type, value, traceback):
         """
         Closes event_loop on exit from with
-        Parameters
-        ----------
-
-        Returns
-        ---------
         """
         if type is not None:
             raise
@@ -132,6 +125,7 @@ class Records(object):
     def new_server(self, server_url):
         """
         Change server url to which websocket will connnect
+
         Parameters
         ----------
         server_url : 'string'
@@ -148,11 +142,6 @@ class Records(object):
     def next_ID(self):
         """
         update currentID and return new unique request_ID
-        Parameters
-        ----------
-
-        Returns
-        ---------
         """
         self.currentID += 1
         return self.currentID
@@ -160,6 +149,7 @@ class Records(object):
     def send(self, request):
         """
         Closes event_loop
+
         Parameters
         ----------
         request : 'proto.request'
@@ -191,6 +181,7 @@ class Records(object):
     def get_model_info(self, model_id):
         """
         Sends request of model metadata and extracts response
+
         Parameters
         ----------
         model_id : 'string'
@@ -220,6 +211,7 @@ class Records(object):
                  bookmark_id=None):
         """
         Sends request of model metadata and extracts response
+
         Parameters
         ----------
         model_id : 'string'
@@ -235,7 +227,7 @@ class Records(object):
 
         Returns
         -------
-        data : 'pd.DataFrame'
+        data : 'pandas.DataFrame'
             Concatinated data from each response message
             Variable ids replaced with names from model_info
         """
@@ -257,6 +249,7 @@ class Records(object):
     def get_bookmark_info(self, model_id, bookmark_id):
         """
         Sends request of model metadata and extracts response
+
         Parameters
         ----------
         model_id : 'string'
@@ -287,6 +280,7 @@ class Records(object):
     def save_bookmark(self, model_id, name, content):
         """
         Sends request to save new bookmark
+
         Parameters
         ----------
         model_id : 'string'
@@ -320,6 +314,7 @@ class Records(object):
     def do_work(self, model_id, inputs):
         """
         Sends request of model metadata and extracts response
+
         Parameters
         ----------
         model_id : 'string'
@@ -329,7 +324,7 @@ class Records(object):
 
         Returns
         -------
-        data : 'pd.DataFrame'
+        data : 'pandas.DataFrame'
             Concatinated data from each response message
             Variable ids replaced with names from model_info
         """

@@ -19,6 +19,7 @@ def request_records_data(model_id, request_id, max_records=1000,
                          variable_ids=None, bookmark_id=None, version=4):
     """
     Create request for records data
+
     Parameters
     ----------
     model_id : 'string'
@@ -62,6 +63,7 @@ def request_records_data(model_id, request_id, max_records=1000,
 def from_record_data(record_data):
     """
     Create request for records data
+
     Parameters
     ----------
     records_data : 'proto.data'
@@ -69,7 +71,7 @@ def from_record_data(record_data):
 
     Returns
     -------
-    'ndarray' or 'pd.DataFrame'
+    'ndarray' or 'pandas.DataFrame'
         Return records_data as either and ndarray or pd.DataFrame
     """
     style = record_data.WhichOneof('style')
@@ -84,6 +86,7 @@ def from_record_data(record_data):
 def from_record_list(record_list):
     """
     Extract record data from RecordList
+
     Parameters
     ----------
     record_list : 'proto.RecordList'
@@ -91,7 +94,7 @@ def from_record_list(record_list):
 
     Returns
     -------
-    'pd.DataFrame'
+    'pandas.DataFrame'
         DataFrame with record_ids as indexes and var_ids as columns
     """
     record_rows = []
@@ -106,6 +109,7 @@ def from_record_list(record_list):
 def from_record(record):
     """
     Extract variable id and value from Record
+
     Parameters
     ----------
     record_list : 'proto.Record'
@@ -122,6 +126,7 @@ def from_record(record):
 def from_value(value):
     """
     Extract variable value from VarValue
+
     Parameters
     ----------
     value : 'proto.VarValue'
@@ -129,7 +134,7 @@ def from_value(value):
 
     Returns
     -------
-    'float', 'int', or 'string'
+    'float' | 'int' | 'string'
         variable value
     """
     value_type = value.WhichOneof('value')
@@ -146,6 +151,7 @@ def from_value(value):
 def from_record_table(record_table):
     """
     Extract record data from RecordTable
+
     Parameters
     ----------
     record_table : 'proto.RecordTable'
@@ -153,7 +159,7 @@ def from_record_table(record_table):
 
     Returns
     -------
-    'ndarray' or 'pd.DataFrame'
+    'ndarray' or 'pandas.DataFrame'
         array or pd.DataFrame of data rec_ids x var_ids in shape
     """
     var_ids = record_table.var_ids
@@ -167,6 +173,7 @@ def from_record_table(record_table):
 def from_list(record_table):
     """
     Extract record data from RecordTable list
+
     Parameters
     ----------
     record_table : 'proto.RecordTable'
@@ -191,6 +198,7 @@ def from_list(record_table):
 def empty_data_chunk(records_data):
     """
     Check to see if data chunk is empty
+
     Parameters
     ----------
     records_data : 'proto.data'
@@ -217,6 +225,7 @@ def empty_data_chunk(records_data):
 def handle_data_response(response):
     """
     Extracts records_data from each server response message
+
     Parameters
     ----------
     response : 'list'
@@ -224,7 +233,7 @@ def handle_data_response(response):
 
     Returns
     -------
-    'pd.DataFrame'
+    'pandas.DataFrame'
         Concatinated data from each response message
     """
     records_data = []
@@ -239,6 +248,7 @@ def handle_data_response(response):
 def request_work(model_id, inputs, request_id, version=4):
     """
     Create request for records data
+
     Parameters
     ----------
     model_id : 'string'
@@ -273,6 +283,7 @@ def request_work(model_id, inputs, request_id, version=4):
 def set_var_value(var_id, value):
     """
     set proto.VarValue message
+
     Parameters
     ----------
     var_id : 'int'

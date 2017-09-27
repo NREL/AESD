@@ -13,6 +13,7 @@ __all__ = ['request_model_metadata', 'from_model', 'from_variable',
 def request_model_metadata(model_id, request_id, version=4):
     """
     Create request for model models_metadata
+
     Parameters
     ----------
     model_id : 'string'
@@ -42,6 +43,7 @@ def request_model_metadata(model_id, request_id, version=4):
 def from_model(model):
     """
     Unpacks proto ModelsMeta message to dictionary
+
     Parameters
     ----------
     model : 'proto.ModelsMeta'
@@ -69,6 +71,7 @@ def from_model(model):
 def from_variable(variable):
     """
     Unpacks proto VarMeta message to dictionary
+
     Parameters
     ----------
     variable : 'proto.VarMeta'
@@ -90,6 +93,7 @@ def from_variable(variable):
 def from_domain_meta(input):
     """
     Unpacks proto DomainMeta message to dictionary
+
     Parameters
     ----------
     input : 'proto.DomainMeta'
@@ -117,6 +121,7 @@ def from_domain_meta(input):
 def from_models_metadata(models):
     """
     Extract metadata for each model in ModelsMetaList
+
     Parameters
     ----------
     models : 'proto.ModelsMetaList'
@@ -133,6 +138,7 @@ def from_models_metadata(models):
 def handle_models_response(response):
     """
     Extract model metadata from each server response message
+
     Parameters
     ----------
     response : 'list'
