@@ -125,7 +125,7 @@ Serving tab-separated-value (TSV) files is a simple as placing the TSV files in 
 | host        | host address to which to bind the service |
 | port        | port to which to bind the service         |
 | directory   | directory with TSV files to be served     |
-| peristence  | filename for bookmark data                |
+| persistence | filename for bookmark data                |
 | chunkSize   | number of records return in each chunk    |
 
 Table: Command-line arguments for serving TSV files.
@@ -140,7 +140,7 @@ The Records API servers have been implemented for the most common database backe
 | host        | host address to which to bind the service  | required                   | required                   | required          | required                   |
 | port        | port to which to bind the service          | required                   | required                   | required          | required                   |
 | directory   | directory with queries to be served        | required                   | required                   | required          | required                   |
-| peristence  | filename for bookmark data                 | optional                   | optional                   | optional          | optional                   |
+| persistence | filename for bookmark data                 | optional                   | optional                   | optional          | optional                   |
 | chunkSize   | number of records return in each chunk     | optional                   | optional                   | optional          | optional                   |
 | database    | database connection information            | required connection string | required connection string | required filename | required connection string |
 
@@ -159,7 +159,7 @@ Furthermore, a server for Project Haystack [@haystack] data feeds, typically sen
 | host          | host address to which to bind the service                       |
 | port          | port to which to bind the service                               |
 | startTime     | earliest time to serve, specified in seconds of the POSIX Epoch |
-| peristence    | filename for bookmark data                                      |
+| persistence   | filename for bookmark data                                      |
 | chunkSize     | number of records return in each chunk                          |
 
 Table: Command-line arguments for serving Haystack data feeds.
