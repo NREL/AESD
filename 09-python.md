@@ -1,6 +1,6 @@
 ## Python Client Library
 
-Full documentation for the Python client library is a available at <<http://github.com/NREL/AESD/lib/python>>.
+Full documentation for the Python client library is available at <<http://github.com/NREL/AESD/lib/python>>.
 
 ### Client API
 
@@ -66,7 +66,7 @@ Full documentation for the Python client library is a available at <<http://gith
 	Returns
 	-------
 	data : 'pd.DataFrame'
-	    Concatinated data from each response message
+	    Concatenated data from each response message
 	    Variable ids replaced with names from model_info
 
 **`do_work(self, model_id, inputs)`**
@@ -82,7 +82,7 @@ Full documentation for the Python client library is a available at <<http://gith
 	Returns
 	-------
 	data : 'pd.DataFrame'
-	    Concatinated data from each response message
+	    Concatenated data from each response message
 	    Variable ids replaced with names from model_info
 
 **`get_bookmark_info(self, model_id, bookmark_id)`**
@@ -126,4 +126,4 @@ Full documentation for the Python client library is a available at <<http://gith
 
 The figure below shows example usage of the Python Records API client.
 
-![Example Python session using the Records API](python-session.png)
+![Example of a Python session using the Records API](python-session.png)

@@ -5,7 +5,7 @@ In this section we outline some standard use cases for the Records API. UML Sequ
 
 ## Static Data
 
-The retrieval of static data records forms the simplest use case for the Records API. A user chooses a particular data source (a "model" in the parlance of the Records API) and then the data is retrieved and displayed. The visualization client software communicates with a Records server, which in turn accesses the static data. The figure below illustrates the process.
+The retrieval of static data records forms the simplest use case for the Records API. A user chooses a particular data source (a "model" in the parlance of the Records API) and then the data are retrieved and displayed. The visualization client software communicates with a Records server, which in turn accesses the static data. The figure below illustrates the process.
 
 ![Visualizing data from a static source using the Records API.](static-data-rpc.mermaid.png)
 
@@ -164,7 +164,7 @@ and the last chunk is:
 
 ## Dynamic Data
 
-As shown in the following figure retrieving data from a dynamic source proceeds quite similarly to retrieving data from a static source.  The only essential difference is that the server repeatedly sends additional responses containing new data, until a request to cancel is sent:
+As shown in the following figure retrieving data from a dynamic source proceeds quite similarly to retrieving data from a static source.  The only essential difference is that the server repeatedly sends additional responses containing new data, until a request to cancel is sent.
 
 ![Visualizing data from a dynamic source using the Records API.](dynamic-data-rpc.mermaid.png)
 
@@ -293,7 +293,7 @@ This will return precisely the bookmarked records:
 
 ## Filtering
 
-Filtering records can be used to select particular records for retrieval, via the [`RequestRecordsData`](#EsdaRecords.RequestRecordsData) message, or in defining bookmarks, via the [`BookmarkMeta`](#EsdaRecords.BookmarkMeta) message. The filtering of records is accomplished through expressions, [`FilterExpression`](#EsdaRecords.FilterExpression), combining values for variables, [`DomainMeta`](#EsdaRecords.DomainMeta), and the set operators not, union, and intersection, encoded in the messages [`FilterNot`](#EsdaRecords.FilterNot), [`FilterUnion`](#EsdaRecords.FilterUnion), and [`FitlerIntersection`](#EsdaRecords.FilterExpression), respectively. For example, the expression $x \le 20$ would be expressed as the following [`FilterExpression`](#EsdaRecords.FilterExpression)
+Filtering records can be used to select particular records for retrieval, via the [`RequestRecordsData`](#EsdaRecords.RequestRecordsData) message, or in defining bookmarks, via the [`BookmarkMeta`](#EsdaRecords.BookmarkMeta) message. Filtering of records is accomplished through expressions, [`FilterExpression`](#EsdaRecords.FilterExpression), combining values for variables, [`DomainMeta`](#EsdaRecords.DomainMeta), and the set operators not, union, and intersection, encoded in the messages [`FilterNot`](#EsdaRecords.FilterNot), [`FilterUnion`](#EsdaRecords.FilterUnion), and [`FitlerIntersection`](#EsdaRecords.FilterExpression), respectively. For example, the expression $x \le 20$ would be expressed as the following [`FilterExpression`](#EsdaRecords.FilterExpression)
 
 	filter_domain {
 	  interval {

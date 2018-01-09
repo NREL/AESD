@@ -93,7 +93,7 @@ Save a bookmark.
 
 ### Server Library
 
-The server library provides two options for implementing a Records APIserver.  The `AESD.Records.Server` module provides a main entry point `serverMain`, a type class `ModelManager`, and a monad `ServiceM` that implement skeletal server which handles all of the WebSocket communication and Protocol Buffer serialization: an implementer need only create an instance of `ModelManager`.  Furthermore, the `AESD.Records.Server.Manager` module provides such an instance `InMemoryManager` of the type class `ModelManger` to handle in-memory caching of data and on-disk persistence of bookmarks: here, an implementer just calls the function `makeInMemoryManager` and provides several functions that retrieve content:
+The server library provides two options for implementing a Records APIserver.  The `AESD.Records.Server` module provides a main entry point `serverMain`, a type class `ModelManager`, and a monad `ServiceM` that implement a skeletal server which handles all of the WebSocket communication and Protocol Buffer serialization; an implementer need only create an instance of `ModelManager`.  Furthermore, the `AESD.Records.Server.Manager` module provides such an instance `InMemoryManager` of the type class `ModelManger` to handle in-memory caching of data and on-disk persistence of bookmarks; here, an implementer just calls the function `makeInMemoryManager` and provides several functions that retrieve content:
 
 **`makeInMemoryManager`**
 
@@ -116,7 +116,7 @@ As previously mentioned, prebuilt servers have been implemented for standard typ
 
 #### Tab-Separate-Value Files
 
-Serving tab-separated-value (TSV) files is a simple as placing the TSV files in a directory and starting a server at the command line, which the arguments specified in the table below:
+Serving tab-separated-value (TSV) files is a simple as placing the TSV files in a directory and starting a server at the command line, with the arguments specified in the table below:
 
 	aesd-file-server <host> <port> <directory> <persistence> <chunkSize>
 
@@ -125,7 +125,7 @@ Serving tab-separated-value (TSV) files is a simple as placing the TSV files in 
 | host        | host address to which to bind the service |
 | port        | port to which to bind the service         |
 | directory   | directory with TSV files to be served     |
-| peristience | filename for bookmark data                |
+| peristence  | filename for bookmark data                |
 | chunkSize   | number of records return in each chunk    |
 
 Table: Command-line arguments for serving TSV files.
@@ -140,7 +140,7 @@ The Records API servers have been implemented for the most common database backe
 | host        | host address to which to bind the service  | required                   | required                   | required          | required                   |
 | port        | port to which to bind the service          | required                   | required                   | required          | required                   |
 | directory   | directory with queries to be served        | required                   | required                   | required          | required                   |
-| peristience | filename for bookmark data                 | optional                   | optional                   | optional          | optional                   |
+| peristence  | filename for bookmark data                 | optional                   | optional                   | optional          | optional                   |
 | chunkSize   | number of records return in each chunk     | optional                   | optional                   | optional          | optional                   |
 | database    | database connection information            | required connection string | required connection string | required filename | required connection string |
 
@@ -159,7 +159,7 @@ Furthermore, a server for Project Haystack [@haystack] data feeds, typically sen
 | host          | host address to which to bind the service                       |
 | port          | port to which to bind the service                               |
 | startTime     | earliest time to serve, specified in seconds of the POSIX Epoch |
-| peristience   | filename for bookmark data                                      |
+| peristence    | filename for bookmark data                                      |
 | chunkSize     | number of records return in each chunk                          |
 
 Table: Command-line arguments for serving Haystack data feeds.

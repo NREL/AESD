@@ -1,7 +1,7 @@
 
 # Records API, Version 4
 
-The Records API consists of Google Protobuf 3 [@protobuf] messages used for requesting and providing data and metadata for record-oriented information. This section contains the complete specification for version 4 of the Records API. Clients send `Request` messages and servers send `Response` messages, typically transported via WebSockets [@websockets].
+The AESD Records API consists of Google Protobuf 3 [@protobuf] messages used to request and provid data and metadata for record-oriented information. This section contains the complete specification for version 4 of the Records API. Clients send `Request` messages and servers send `Response` messages, typically transported via WebSockets [@websockets].
 
 ## Message Groups
 
@@ -34,7 +34,7 @@ Metadata messages describe data sources ("models") and variables.
 
 ### Data Records
 
-Data is represented as either lists of records or tables of them.
+Data are represented as either lists of records or tables of them.
 
 *   [Record](#AesdRecords.Record)
 *   [VarValue](#AesdRecords.VarValue)
@@ -45,7 +45,7 @@ Data is represented as either lists of records or tables of them.
 
 ### Filtering
 
-Records can be filtered by logical operations on conditions on values of variables in the records.
+Records can be filtered by logical operations on conditions for values of variables in the records.
 
 *   [FilterExpression](#AesdRecords.FilterExpression)
 *   [FilterNot](#AesdRecords.FilterNot)
@@ -55,7 +55,7 @@ Records can be filtered by logical operations on conditions on values of variabl
 
 ### Bookmarks
 
-Bookmarks record particular sets or records or conditions on record data.
+Bookmarks record particular sets or records or conditions for record data.
 
 *   [BookmarkMeta](#AesdRecords.BookmarkMeta)
 *   [BookmarkMetaList](#AesdRecords.BookmarkMetaList)
@@ -73,7 +73,7 @@ The following messages wrap data types for the content of records.
 *   [OptionalUInt32](#AesdRecords.OptionalUInt32)
 *   [OptionalString](#AesdRecords.OptionalString)
 
-## General conventions
+## General Conventions
 
 All fields are technically optional in ProtoBuf 3, but some fields may be required in each message type in order for the message to be semantically valid.  In the following specifications for the messages, fields are annotated as *semantically required* or *semantically optional*.  Also, the specification notes when field in the [protobuf `oneof` construct](https://developers.google.com/protocol-buffers/docs/proto3#oneof) are required or mutually exclusive.
 
@@ -95,10 +95,10 @@ A range of [record identifiers](#AesdRecords.Record) can specify the content of 
 
 Both fields in this message are optional:
 
-*   If neither field is present, then the bookmark interval designates all records in the model.
-*   If only `first_record`is present, then the bookmark interval designates all records starting from that record identifier.
-*   If only `last_record` is present, then the bookmark interval designates all records ending at that record identifier. For a dynamic model, such a bookmark interval includes all "future" records.
-*   If both fields are present, then the bookmark interval designates all records between the two identifiers, inclusive.
+*   If neither field is present, the bookmark interval designates all records in the model.
+*   If only `first_record`is present, the bookmark interval designates all records starting from that record identifier.
+*   If only `last_record` is present, the bookmark interval designates all records ending at that record identifier. For a dynamic model, such a bookmark interval includes all "future" records.
+*   If both fields are present, the bookmark interval designates all records between the two identifiers, inclusively.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -122,7 +122,7 @@ There are three alternatives to specifying a bookmark:
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | bookmark_id | [string](#string) | optional | [semantically optional] When creating a new bookmark, this field must be empty: the server will create a unique identifier for the bookmark. This identifier uniquely identifies the bookmark *on the particular server*. |
-| bookmark_name | [string](#string) | optional | [semantically required] A name for the bookmark, useful for displaying the bookmark to users. This need not be unique, although it is recommended to be so. |
+| bookmark_name | [string](#string) | optional | [semantically required] A name for the bookmark, which is useful for displaying the bookmark to users. This need not be unique, although it is recommended to be so. |
 | interval | [BookmarkIntervalContent](#AesdRecords.BookmarkIntervalContent) | optional | The range of records in the bookmark. |
 | set | [BookmarkSetContent](#AesdRecords.BookmarkSetContent) | optional | The list of records in the bookmark. |
 | filter | [FilterExpression](#AesdRecords.FilterExpression) | optional | Logical conditions for defining which records are in the bookmark. |
@@ -141,7 +141,7 @@ Bookmarks may be grouped into lists (sets).
 
 ### BookmarkSetContent {#AesdRecords.BookmarkSetContent}
 
-A list (set) of [record identifiers](#AesdRecords.Record) can specify the contents of a [bookmark](#AesdRecords.BookmarkMeta). Bookmark set content provides a convenient means to bookmark a specific selection of non-continuous records in a [model](#AesdRecords.ModelMeta).
+A list (set) of [record identifiers](#AesdRecords.Record) can specify the contents of a [bookmark](#AesdRecords.BookmarkMeta). Bookmark-set content provides a convenient means to bookmark a specific selection of non-continuous records in a [model](#AesdRecords.ModelMeta).
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -201,7 +201,7 @@ There are four alternatives to specifying a filter expression:
 
 ### FilterIntersection {#AesdRecords.FilterIntersection}
 
-Set intersection of filtering expressions. A record satisfies this expression if it satisfies all of `filter_expressions`.
+Set intersection of filtering expressions. A record satisfies this expression if it satisfies all `filter_expressions`.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -225,7 +225,7 @@ Set union of filtering expressions. A record satisfies this expression if it sat
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| filter_expressions | [FilterExpression](#AesdRecords.FilterExpression) | repeated | [semantically required] The expressions to be unioned. |
+| filter_expressions | [FilterExpression](#AesdRecords.FilterExpression) | repeated | [semantically required] The expressions to be "unioned". |
 
 
 
@@ -306,7 +306,7 @@ A record is a list of variables and their associated values.
 
 ### RecordData {#AesdRecords.RecordData}
 
-A collection or records.
+A collection of records.
 
 There are two alternatives to specifying record data:
 
@@ -379,14 +379,14 @@ A request. There are six types of requests:
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | version | [uint32](#uint32) | optional | [semantically required] The version number for the API. *This must be the number **four**.* |
-| id | [OptionalUInt32](#AesdRecords.OptionalUInt32) | optional | [semantically optional, but recommended] An identifier which will be used to tag responses, so that responses can be correlated with requests. |
+| id | [OptionalUInt32](#AesdRecords.OptionalUInt32) | optional | [semantically optional, but recommended] An identifier that will be used to tag responses, so that responses can be correlated with requests. |
 | subscribe | [bool](#bool) | optional | [semantically optional] Whether to continue receiving responses indefinitely, as new records become available. This is useful, for example, when a sensor is reporting measurements periodically or when simulations are reporting a series or results. Use [RequestCancel](#AesdRecords.RequestCancel) to end the subscription. |
 | models_metadata | [RequestModelsMeta](#AesdRecords.RequestModelsMeta) | optional | Request metadata for model(s). |
 | records_data | [RequestRecordsData](#AesdRecords.RequestRecordsData) | optional | Request data records. |
 | bookmark_meta | [RequestBookmarkMeta](#AesdRecords.RequestBookmarkMeta) | optional | Request metadata for bookmark(s). |
 | save_bookmark | [RequestSaveBookmark](#AesdRecords.RequestSaveBookmark) | optional | Request save a new bookmark or update an existing one. |
 | cancel | [RequestCancel](#AesdRecords.RequestCancel) | optional | Request cancel a previous request). |
-| work | [RequestWork](#AesdRecords.RequestWork) | optional | Request request work (e.g., simulation results). |
+| work | [RequestWork](#AesdRecords.RequestWork) | optional | Request work (e.g., simulation results). |
 
 
 
@@ -485,7 +485,7 @@ Note that a server may send multiple responses to a single request, expressed as
 | ----- | ---- | ----- | ----------- |
 | version | [uint32](#uint32) | optional | [semantically required] The version number for the API. *This must be the number **four**.* |
 | id | [OptionalUInt32](#AesdRecords.OptionalUInt32) | optional | [semantically optional] A response without an identifier is a notification. Otherwise, the response identifier matches the response identifier for the original request. |
-| chunk_id | [int32](#int32) | optional | [semantically optional, but recommended] The identifier for this chunk. It is recommended that chunks are number sequentially starting from one. |
+| chunk_id | [int32](#int32) | optional | [semantically optional, but recommended] The identifier for this chunk. It is recommended that chunks are number sequentially starting from then number one. |
 | next_chunk_id | [int32](#int32) | optional | [semantically optional] The identifier of the next chunk, or zero if this is the last chunk. |
 | error | [string](#string) | optional | An error message. |
 | models | [ModelMetaList](#AesdRecords.ModelMetaList) | optional | A list of model metadata. |
@@ -524,10 +524,10 @@ A range of values of a [variable](#AesdRecords.VarMeta).
 
 Both fields in this message are optional:
 
-*   If neither field is present, then the interval designates all values in the domain.
-*   If only `first_value`is present, then the interval designates all values starting from that value.
-*   If only `last_value` is present, then the bookmark interval designates all values ending at that value.
-*   If both fields are present, then the interval designates all values between the two values, inclusive.
+*   If neither field is present, the interval designates all values in the domain.
+*   If only `first_value`is present, the interval designates all values starting from that value.
+*   If only `last_value` is present, the bookmark interval designates all values ending at that value.
+*   If both fields are present, the interval designates all values between the two values, inclusive.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -542,11 +542,11 @@ Metadata for a variable.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| var_id | [int32](#int32) | optional | [semantically required] A integer identifying the variable. |
+| var_id | [int32](#int32) | optional | [semantically required] An integer identifying the variable. |
 | var_name | [string](#string) | optional | [semantically required] The name of the variable. |
 | units | [string](#string) | optional | [semantically optional] The name of the unit of measure for values of the variable. |
-| si | [sint32](#sint32) | repeated | [semantically optional] The unit of measure expressed as a list of the exponents for the eigth fundamental SI quantities [meter, kilogram, second, ampere, kelvin, mole, calenda, radian]. For example, the unit of acceleration $m/s^2$ would be express as `[1, 0, -2, 0, 0, 0, 0, 0]` because meters has an exponent of positive one and seconds has an exponent of negative two. |
-| scale | [double](#double) | optional | [semantically optional] An overall scale relative to the fundamental SI scale of the unit of measure. For instance, kilometers would have a scale 1000 because the fundamental unit of distance is meters. |
+| si | [sint32](#sint32) | repeated | [semantically optional] The unit of measure expressed as a list of the exponents for the eight fundamental SI quantities [meter, kilogram, second, ampere, kelvin, mole, calenda, radian]. For example, the unit of acceleration $m/s^2$ would be express as `[1, 0, -2, 0, 0, 0, 0, 0]` because meters has an exponent of positive one and seconds has an exponent of negative two. |
+| scale | [double](#double) | optional | [semantically optional] An overall scale relative to the fundamental SI scale of the unit of measure. For instance, kilometers would have a scale of 1000 because the fundamental unit of distance is meters. |
 | type | [VariableType](#AesdRecords.VariableType) | optional | [semantically optional] The data type for values of the variable. The default type is real number. |
 
 

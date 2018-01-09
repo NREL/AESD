@@ -1,4 +1,4 @@
-# Appendices
+# Appendix
 ## Protocol Buffers for Records API Version 4
 
 	syntax = "proto3";

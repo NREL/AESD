@@ -28,7 +28,7 @@
 | rkt                     | a containger engine [@rkt]                                       |
 | SQLite3                 | a database server product                                        |
 | TSV                     | tab-separate-value file                                          |
-| URI                     | Universal Resource Identifier                                    |
+| URI                     | uniform resource identifier                                      |
 | UTC                     | Coordinate Universal Time                                        |
 | WebSockets              | a communication protocol                                         |
 | YAML                    | YAML Ain't Markup Language                                       |
