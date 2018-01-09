@@ -228,7 +228,7 @@ class Records(object):
         Returns
         -------
         data : 'pandas.DataFrame'
-            Concatinated data from each response message
+            Concatenated data from each response message
             Variable ids replaced with names from model_info
         """
         request_id = self.next_ID
@@ -325,7 +325,7 @@ class Records(object):
         Returns
         -------
         data : 'pandas.DataFrame'
-            Concatinated data from each response message
+            Concatenated data from each response message
             Variable ids replaced with names from model_info
         """
         request_id = self.next_ID

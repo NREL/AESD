@@ -234,7 +234,7 @@ def handle_data_response(response):
     Returns
     -------
     'pandas.DataFrame'
-        Concatinated data from each response message
+        Concatenated data from each response message
     """
     records_data = []
     for message in response:
