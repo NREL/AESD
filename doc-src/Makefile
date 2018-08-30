@@ -19,16 +19,16 @@ sections:=$(shell ls -1 [0-9][0-9]-*.md | sort)
 diagrams:=$(shell ls -1 *.mermaid | sed -e 's/$$/.png/')
 
 
-all: docs/aesd-manual.pdf docs/aesd-manual.docx docs/aesd-manual.html
+all: ../docs/aesd-manual.pdf ../docs/aesd-manual.docx ../docs/aesd-manual.html
 
 clean:
-	-rm docs/aesd-manual.{pdf,docx,html} docs/aesd-slides.html $(diagrams)
+	-rm ../docs/aesd-manual.{pdf,docx,html} ../docs/aesd-slides.html $(diagrams)
 
 veryclean: clean
 	touch --date="1970-01-01" 04-api.md 11-protobuf.md
 
 
-docs/aesd-manual.%: $(sections) $(diagrams) references.bib
+../docs/aesd-manual.%: $(sections) $(diagrams) references.bib
 	pandoc --standalone                  \
 	       --smart                       \
 	       --columns 1000                \
@@ -43,7 +43,7 @@ docs/aesd-manual.%: $(sections) $(diagrams) references.bib
 	       --self-contained              \
 	       --output=$@ $(sections)
 
-docs/aesd-slides.html: $(sections) $(diagrams) references.bib
+../docs/aesd-slides.html: $(sections) $(diagrams) references.bib
 	pandoc --self-contained                 \
 	       --smart                          \
 	       --metadata date="$(today)"       \
