@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -14,7 +14,7 @@ Types for data values.
 {-# LANGUAGE DataKinds     #-}
 
 
-module CESDS.Types.Value (
+module AESD.Types.Value (
 -- * Data values
   DataValue
 , realValue
@@ -114,7 +114,7 @@ stringValue x =
 
 -- | Apply a function to a value.
 --
--- >>> import CESDS.Types.Value (onDataValue, realValue)
+-- >>> import AESD.Types.Value (onDataValue, realValue)
 -- >>>
 -- >>> let x = realValue 42
 -- >>> onDataValue (("real value = " ++) . show) (("integer value = " ++) . show) ("string value = " ++ ) "unknown value" x

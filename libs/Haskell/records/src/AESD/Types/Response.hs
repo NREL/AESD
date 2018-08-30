@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -10,8 +10,8 @@ Types for responses from a server.
 
 Typically, one might construct a response as follows:
 
->>> import CESDS.Types.Bookmark (makeSet)
->>> import CESDS.Types.Response (bookmarkMetasResponse, chunkIdentifier, identifier)
+>>> import AESD.Types.Bookmark (makeSet)
+>>> import AESD.Types.Response (bookmarkMetasResponse, chunkIdentifier, identifier)
 >>> import Control.Lens ((&), (.~), (^.))
 >>>
 >>> let b = makeSet (Just "42") "sample set bookmark" [1066, 1812, 1939]
@@ -23,7 +23,7 @@ Typically, one might construct a response as follows:
 {-# LANGUAGE DataKinds     #-}
 
 
-module CESDS.Types.Response (
+module AESD.Types.Response (
 -- * Responses
   Response
 , version
@@ -40,12 +40,12 @@ module CESDS.Types.Response (
 ) where
 
 
-import CESDS.Types (VersionIdentifier, currentVersion)
-import CESDS.Types.Bookmark (BookmarkMeta, BookmarkMetas, bookmarks, makeBookmarks)
-import CESDS.Types.Internal (OptionalUInt32, makeUint32, uint32)
-import CESDS.Types.Model (ModelMeta, ModelMetas, makeModels, models)
-import CESDS.Types.Record (RecordContent, RecordData, makeRecordData, recordData)
-import CESDS.Types.Request (RequestIdentifier)
+import AESD.Types (VersionIdentifier, currentVersion)
+import AESD.Types.Bookmark (BookmarkMeta, BookmarkMetas, bookmarks, makeBookmarks)
+import AESD.Types.Internal (OptionalUInt32, makeUint32, uint32)
+import AESD.Types.Model (ModelMeta, ModelMetas, makeModels, models)
+import AESD.Types.Record (RecordContent, RecordData, makeRecordData, recordData)
+import AESD.Types.Request (RequestIdentifier)
 import Control.Applicative ((<|>))
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens (Lens', lens)

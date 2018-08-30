@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -16,11 +16,11 @@ module Main (
 ) where
 
 
-import CESDS.Types.Bookmark as Bookmark (identifier, name, makeSet)
-import CESDS.Types.Model as Model (identifier, varMeta)
-import CESDS.Records.Client (clientMain, fetchBookmarks, fetchModels, fetchRecords, storeBookmark)
-import CESDS.Types.Record (onRecordContent)
-import CESDS.Types.Variable as Variable (identifier, name)
+import AESD.Types.Bookmark as Bookmark (identifier, name, makeSet)
+import AESD.Types.Model as Model (identifier, varMeta)
+import AESD.Records.Client (clientMain, fetchBookmarks, fetchModels, fetchRecords, storeBookmark)
+import AESD.Types.Record (onRecordContent)
+import AESD.Types.Variable as Variable (identifier, name)
 import Data.List (intercalate)
 import Data.Maybe (fromJust)
 import System.Environment (getArgs)

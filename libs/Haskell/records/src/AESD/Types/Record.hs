@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -15,7 +15,7 @@ Types for records of data.
 {-# LANGUAGE RecordWildCards #-}
 
 
-module CESDS.Types.Record (
+module AESD.Types.Record (
 -- * Values of variables
   VarValue
 , makeVarValue
@@ -33,9 +33,9 @@ module CESDS.Types.Record (
 ) where
 
 
-import CESDS.Types.Internal (Doubles, Integers, Strings, integers, makeIntegers, makeReals, makeStrings, reals, strings)
-import CESDS.Types.Value (DataValue, realValue, integerValue, onDataValue, onDataValues, sameVarTypes, stringValue)
-import CESDS.Types.Variable (VariableIdentifier)
+import AESD.Types.Internal (Doubles, Integers, Strings, integers, makeIntegers, makeReals, makeStrings, reals, strings)
+import AESD.Types.Value (DataValue, realValue, integerValue, onDataValue, onDataValues, sameVarTypes, stringValue)
+import AESD.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>))
 import Control.Arrow (second)
 import Control.Lens.Getter ((^.))
@@ -274,7 +274,7 @@ recordData x =
 --
 -- For example:
 --
--- import CESDS.Types.Value (integerValue, realValue, stringValue)
+-- import AESD.Types.Value (integerValue, realValue, stringValue)
 -- >>> let rs = [(1, [(0, realValue 10), (1, integerValue 20), (2, stringValue "thirty")])]
 -- >>> onRecordContent show show id "NA" rs
 -- [(1,[(0,"10.0"),(1,"20"),(2,"thirty")])]

@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -15,7 +15,7 @@ Support for managing models in memory.
 {-# LANGUAGE TupleSections   #-}
 
 
-module CESDS.Records.Server.Manager ( -- FIXME: Should we export less?
+module AESD.Records.Server.Manager ( -- FIXME: Should we export less?
 -- * Manager
   InMemoryManager
 , makeInMemoryManager
@@ -31,11 +31,11 @@ module CESDS.Records.Server.Manager ( -- FIXME: Should we export less?
 ) where
 
 
-import CESDS.Records.Server (ModelManager(..), ServiceM, fromService, modifyService, modifyService')
-import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta, filterWithBookmark, identifier, setIdentifier)
-import CESDS.Types.Filter (filterRecords)
-import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
-import CESDS.Types.Record (RecordContent, VarValue, filterVariables)
+import AESD.Records.Server (ModelManager(..), ServiceM, fromService, modifyService, modifyService')
+import AESD.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta, filterWithBookmark, identifier, setIdentifier)
+import AESD.Types.Filter (filterRecords)
+import AESD.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
+import AESD.Types.Record (RecordContent, VarValue, filterVariables)
 import Control.Arrow ((&&&), second)
 import Control.Concurrent.MVar (newMVar, modifyMVar)
 import Control.Lens.Getter ((^.))

@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -10,7 +10,7 @@ Support for file-based serving of records.
 -}
 
 
-module CESDS.Records.Server.File (
+module AESD.Records.Server.File (
 -- * Metadata
   buildVarMetas
 , buildVarMeta
@@ -19,9 +19,9 @@ module CESDS.Records.Server.File (
 ) where
 
 
-import CESDS.Types.Record (RecordContent)
-import CESDS.Types.Value (VarType(..), castVarType, commonVarTypes)
-import CESDS.Types.Variable (VariableIdentifier, VarMeta, VarUnits(unitName), makeVarMeta, units, varType)
+import AESD.Types.Record (RecordContent)
+import AESD.Types.Value (VarType(..), castVarType, commonVarTypes)
+import AESD.Types.Variable (VariableIdentifier, VarMeta, VarUnits(unitName), makeVarMeta, units, varType)
 import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))
 import Data.Default (def)

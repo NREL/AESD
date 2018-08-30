@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -18,7 +18,7 @@ Internal types, mostly for encoding as protocol buffers.
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
-module CESDS.Types.Internal (
+module AESD.Types.Internal (
 -- * Signed integers
   OptionalInt32
 , makeInt32

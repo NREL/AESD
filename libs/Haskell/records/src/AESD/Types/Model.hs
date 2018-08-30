@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -14,7 +14,7 @@ Types for model metadata.
 {-# LANGUAGE DeriveGeneric #-}
 
 
-module CESDS.Types.Model (
+module AESD.Types.Model (
 -- * Model metadata
   ModelIdentifier
 , ModelMeta
@@ -31,9 +31,9 @@ module CESDS.Types.Model (
 ) where
 
 
-import CESDS.Types.Domain (DomainMeta)
-import CESDS.Types.Internal ()
-import CESDS.Types.Variable (VarMeta)
+import AESD.Types.Domain (DomainMeta)
+import AESD.Types.Internal ()
+import AESD.Types.Variable (VarMeta)
 import Data.ProtocolBuffers (Decode, Encode, Message, Repeated, Required, Value, getField, putField)
 import GHC.Generics (Generic)
 

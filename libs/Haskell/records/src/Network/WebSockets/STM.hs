@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2017 National Renewable Energy Laboratory
+Copyright   :  (c) 2018 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -45,7 +45,7 @@ import Network.WebSockets (Connection, ConnectionException, WebSocketsData, rece
 
 -- | Whether to write debugging messages.
 debug :: Bool
-#ifdef CESDS_VERBOSE
+#ifdef AESD_VERBOSE
 debug = True
 #else
 debug = False

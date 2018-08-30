@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -16,7 +16,7 @@ Use 'makeInterval', 'makeSet', or 'makeFilter' to construct a bookmark, and 'ide
 {-# LANGUAGE DeriveGeneric #-}
 
 
-module CESDS.Types.Bookmark (
+module AESD.Types.Bookmark (
 -- * Bookmarks
   BookmarkIdentifier
 , BookmarkMeta
@@ -35,9 +35,9 @@ module CESDS.Types.Bookmark (
 ) where
 
 
-import CESDS.Types.Filter (Filter, FilterExpression, filterRecords, fromExpression, toExpression)
-import CESDS.Types.Internal ()
-import CESDS.Types.Record (RecordContent, RecordIdentifier)
+import AESD.Types.Filter (Filter, FilterExpression, filterRecords, fromExpression, toExpression)
+import AESD.Types.Internal ()
+import AESD.Types.Record (RecordContent, RecordIdentifier)
 import Control.Applicative ((<|>), liftA2)
 import Control.Arrow ((&&&))
 import Data.List (nub)
@@ -157,7 +157,7 @@ name = getField . name'
 --
 -- For example:
 --
--- >>> import CESDS.Types.Bookmark (makeSet, onBookmarkMeta)
+-- >>> import AESD.Types.Bookmark (makeSet, onBookmarkMeta)
 -- >>>
 -- >>> let b = makeSet (Just "42") "sample set bookmark" [1066, 1812, 1939]
 -- >>> onBookmarkMeta (const "interval") (const "set") (const "filter") "unknown" b

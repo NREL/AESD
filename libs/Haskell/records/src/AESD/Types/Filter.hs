@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -15,7 +15,7 @@ Types for filters on variables.
 {-# LANGUAGE RecordWildCards #-}
 
 
-module CESDS.Types.Filter (
+module AESD.Types.Filter (
 -- * Filter trees
   Filter(..)
 , filterRecord
@@ -27,11 +27,11 @@ module CESDS.Types.Filter (
 ) where
 
 
-import CESDS.Types.Domain (DomainMeta, filterInterval, filterSet, makeInterval, makeSet, onDomainMeta)
-import CESDS.Types.Internal ()
-import CESDS.Types.Record (RecordContent)
-import CESDS.Types.Value (DataValue)
-import CESDS.Types.Variable (VariableIdentifier)
+import AESD.Types.Domain (DomainMeta, filterInterval, filterSet, makeInterval, makeSet, onDomainMeta)
+import AESD.Types.Internal ()
+import AESD.Types.Record (RecordContent)
+import AESD.Types.Value (DataValue)
+import AESD.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>))
 import Data.Maybe (fromMaybe)
 import Data.ProtocolBuffers (Decode, Encode, Message, Optional, Repeated, Required, getField, putField)

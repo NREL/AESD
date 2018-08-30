@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -14,7 +14,7 @@ A skeletal implementation of a client.
 {-# LANGUAGE TupleSections   #-}
 
 
-module CESDS.Records.Client (
+module AESD.Records.Client (
 -- * Types
   State
 -- * Entry point
@@ -28,12 +28,12 @@ module CESDS.Records.Client (
 ) where
 
 
-import CESDS.Records.Server.Manager (Cache, ContentStatus(..), contentStatus, modelMeta, recordContent)
-import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta)
-import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
-import CESDS.Types.Record (RecordContent)
-import CESDS.Types.Request as Request (Request, RequestIdentifier, identifier, loadBookmarkMeta, loadModelsMeta, loadRecordsData, saveBookmarkMeta)
-import CESDS.Types.Response as Response (Response, identifier, nextChunkIdentifier, onResponse)
+import AESD.Records.Server.Manager (Cache, ContentStatus(..), contentStatus, modelMeta, recordContent)
+import AESD.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta)
+import AESD.Types.Model as Model (ModelIdentifier, ModelMeta, identifier)
+import AESD.Types.Record (RecordContent)
+import AESD.Types.Request as Request (Request, RequestIdentifier, identifier, loadBookmarkMeta, loadModelsMeta, loadRecordsData, saveBookmarkMeta)
+import AESD.Types.Response as Response (Response, identifier, nextChunkIdentifier, onResponse)
 import Control.Concurrent.Util (makeCounter)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens ((&))

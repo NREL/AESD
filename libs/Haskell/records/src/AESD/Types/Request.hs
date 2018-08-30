@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -15,7 +15,7 @@ Types for making requests to servers.  The following requests are supported: 'Lo
 {-# LANGUAGE RecordWildCards #-}
 
 
-module CESDS.Types.Request (
+module AESD.Types.Request (
 -- * Requests
   RequestIdentifier
 , Request
@@ -52,13 +52,13 @@ module CESDS.Types.Request (
 ) where
 
 
-import CESDS.Types (VersionIdentifier, currentVersion)
-import CESDS.Types.Bookmark (BookmarkIdentifier, BookmarkMeta)
-import CESDS.Types.Filter (Filter, FilterExpression, fromExpression, toExpression)
-import CESDS.Types.Internal (OptionalUInt32, OptionalString, makeString, makeUint32, string, uint32)
-import CESDS.Types.Model (ModelIdentifier)
-import CESDS.Types.Record (VarValue)
-import CESDS.Types.Variable (VariableIdentifier)
+import AESD.Types (VersionIdentifier, currentVersion)
+import AESD.Types.Bookmark (BookmarkIdentifier, BookmarkMeta)
+import AESD.Types.Filter (Filter, FilterExpression, fromExpression, toExpression)
+import AESD.Types.Internal (OptionalUInt32, OptionalString, makeString, makeUint32, string, uint32)
+import AESD.Types.Model (ModelIdentifier)
+import AESD.Types.Record (VarValue)
+import AESD.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>))
 import Control.Lens.Lens (Lens', lens)
 import Data.Maybe (fromJust, fromMaybe)

@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -19,11 +19,11 @@ module Main (
 ) where
 
 
-import CESDS.Records.Server (serverMain)
-import CESDS.Records.Server.Manager (makeInMemoryManager)
-import CESDS.Types.Model (makeModelMeta)
-import CESDS.Types.Value (realValue)
-import CESDS.Types.Variable (makeVarMeta)
+import AESD.Records.Server (serverMain)
+import AESD.Records.Server.Manager (makeInMemoryManager)
+import AESD.Types.Model (makeModelMeta)
+import AESD.Types.Value (realValue)
+import AESD.Types.Variable (makeVarMeta)
 import Control.Arrow (second)
 import Data.List.Split (chunksOf)
 import Data.UUID (toString)

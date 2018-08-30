@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -16,7 +16,7 @@ Use 'makeInterval' or 'makeSet' to construct a domain, and 'variable' or 'onDoma
 {-# LANGUAGE DataKinds     #-}
 
 
-module CESDS.Types.Domain (
+module AESD.Types.Domain (
 -- * Variable domains
   DomainMeta
 , makeInterval
@@ -31,10 +31,10 @@ module CESDS.Types.Domain (
 ) where
 
 
-import CESDS.Types.Internal ()
-import CESDS.Types.Record (RecordContent)
-import CESDS.Types.Value (DataValue)
-import CESDS.Types.Variable (VariableIdentifier)
+import AESD.Types.Internal ()
+import AESD.Types.Record (RecordContent)
+import AESD.Types.Value (DataValue)
+import AESD.Types.Variable (VariableIdentifier)
 import Control.Applicative ((<|>), liftA2)
 import Control.Arrow ((&&&))
 import Data.Maybe (fromMaybe, isJust)
@@ -115,8 +115,8 @@ variable = getField . variable'
 --
 -- For example:
 --
--- >>> import CESDS.Types.Domain (onDomainMeta)
--- >>> import CESDS.Types.Value (realValue)
+-- >>> import AESD.Types.Domain (onDomainMeta)
+-- >>> import AESD.Types.Value (realValue)
 -- >>>
 -- >>> let d = makeSet 42 $ realValue <$> [1066, 1812, 1939]
 -- >>> onDomainMeta (const $ const "interval") (const $ const "set") "unknown" d

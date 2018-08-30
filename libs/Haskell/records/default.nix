@@ -3,8 +3,8 @@
 , regex-posix, split, stdenv, stm, uuid, websockets
 }:
 mkDerivation {
-  pname = "cesds-records";
-  version = "0.4.4.3";
+  pname = "aesd-records";
+  version = "0.4.4.4";
   src = ./.;
   isLibrary = true;
   isExecutable = true;
@@ -16,7 +16,7 @@ mkDerivation {
     base bytestring cereal containers data-default directory filepath
     lens mtl protobuf raft random regex-posix split stm uuid websockets
   ];
-  homepage = "https://github.nrel.gov/haskell/cesds-records";
-  description = "CESDS Records";
+  homepage = "https://github.com/NREL/AESD/libs/Haskell/aesd-records";
+  description = "AESD Records";
   license = stdenv.lib.licenses.mit;
 }

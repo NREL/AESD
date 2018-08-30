@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -14,7 +14,7 @@ A skeletal implementation of a server.
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 
-module CESDS.Records.Server (
+module AESD.Records.Server (
 -- * Entry ponts
   serverMain
 , ModelManager(..)
@@ -30,13 +30,13 @@ module CESDS.Records.Server (
 ) where
 
 
-import CESDS.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta)
-import CESDS.Types.Filter (Filter)
-import CESDS.Types.Model as Model (ModelIdentifier, ModelMeta)
-import CESDS.Types.Record (RecordContent, VarValue)
-import CESDS.Types.Request as Request (Request, identifier, onLoadBookmarkMeta, onCancel, onLoadModelsMeta, onLoadRecordsData', onRequest, onSaveBookmarkMeta, onWork)
-import CESDS.Types.Response as Response (Response, bookmarkMetasResponse, chunkIdentifier, errorResponse, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
-import CESDS.Types.Variable as Variable (VariableIdentifier)
+import AESD.Types.Bookmark as Bookmark (BookmarkIdentifier, BookmarkMeta)
+import AESD.Types.Filter (Filter)
+import AESD.Types.Model as Model (ModelIdentifier, ModelMeta)
+import AESD.Types.Record (RecordContent, VarValue)
+import AESD.Types.Request as Request (Request, identifier, onLoadBookmarkMeta, onCancel, onLoadModelsMeta, onLoadRecordsData', onRequest, onSaveBookmarkMeta, onWork)
+import AESD.Types.Response as Response (Response, bookmarkMetasResponse, chunkIdentifier, errorResponse, identifier, modelMetasResponse, nextChunkIdentifier, recordsResponse)
+import AESD.Types.Variable as Variable (VariableIdentifier)
 import Control.Concurrent (forkIO)
 import Control.Concurrent.STM (atomically)
 import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVar, readTVarIO, writeTVar)
@@ -52,12 +52,12 @@ import Data.Set as S (delete, empty, insert, member)
 import Network.WebSockets (acceptRequest, runServer)
 import Network.WebSockets.STM (Communicator, launch, send, start, waitToStop)
 
-#ifdef CESDS_THROTTLE
+#ifdef AESD_THROTTLE
 import Control.Concurrent (threadDelay)
 
 {-# INLINE pause #-}
 pause :: IO ()
-pause = threadDelay $ CESDS_THROTTLE * 1000
+pause = threadDelay $ AESD_THROTTLE * 1000
 
 #else
 

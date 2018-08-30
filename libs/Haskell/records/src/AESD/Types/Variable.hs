@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -10,8 +10,8 @@ Types for variables.
 
 For example, one can create variable metadata as follows:
 
->>> import CESDS.Types.Value (VarType(..))
->>> import CESDS.Types.Variable (VarUnits(..), makeVarMeta, units, varType)
+>>> import AESD.Types.Value (VarType(..))
+>>> import AESD.Types.Variable (VarUnits(..), makeVarMeta, units, varType)
 >>>
 >>> let x = makeVarMeta 0 "a variable" & varType .~ IntegerVar & units .~ def {unitName = Just "hour", timeExponent = 1, scale = 3600}
 -}
@@ -22,7 +22,7 @@ For example, one can create variable metadata as follows:
 {-# LANGUAGE RecordWildCards #-}
 
 
-module CESDS.Types.Variable (
+module AESD.Types.Variable (
 -- * Variables
   VariableIdentifier
 , VarMeta
@@ -36,8 +36,8 @@ module CESDS.Types.Variable (
 ) where
 
 
-import CESDS.Types.Internal ()
-import CESDS.Types.Value (VarType(RealVar))
+import AESD.Types.Internal ()
+import AESD.Types.Value (VarType(RealVar))
 import Control.Lens.Lens (Lens', lens)
 import Data.Default (Default(def))
 import Data.Int (Int32)
