@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Logging &#8212; AESDpy</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="AESDpy" href="index.html" />
+    <link rel="prev" title="aesdpy.filters" href="aesdpy/filters.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="logging">
+<h1>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h1>
+<p>Logging is disabled by default. To enable . . .</p>
+<p>. . . to console</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">aesdpy</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
+    <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+    <span class="n">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> [</span><span class="si">%(levelname)s</span><span class="s1">] </span><span class="si">%(name)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="n">datefmt</span><span class="o">=</span><span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y %H:%M:%S&#39;</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">server</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;http://1lv11lamb01.nrel.gov:8090&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>. . . to file</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">aesdpy</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
+    <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+    <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;aesdpy.log&#39;</span><span class="p">,</span>
+    <span class="n">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> [</span><span class="si">%(levelname)s</span><span class="s1">] </span><span class="si">%(name)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="n">datefmt</span><span class="o">=</span><span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y %H:%M:%S&#39;</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">server</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;http://1lv11lamb01.nrel.gov:8090&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="section" id="example-output">
+<h2>Example output<a class="headerlink" href="#example-output" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="successful-request">
+<h3>successful request<a class="headerlink" href="#successful-request" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><div class="highlight-shell"><div class="highlight"><pre><span></span>10/15/2015 12:43:25 <span class="o">[</span>INFO<span class="o">]</span> requests.packages.urllib3.connectionpool: Starting new HTTP connection <span class="o">(</span>1<span class="o">)</span>: 1lv11lamb01.nrel.gov
+10/15/2015 12:43:25 <span class="o">[</span>DEBUG<span class="o">]</span> requests.packages.urllib3.connectionpool: <span class="s2">&quot;GET / HTTP/1.1&quot;</span> <span class="m">200</span> None
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="failed-request">
+<h3>failed request<a class="headerlink" href="#failed-request" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><div class="highlight-shell"><div class="highlight"><pre><span></span>10/26/1985 01:21:00 <span class="o">[</span>INFO<span class="o">]</span> requests.packages.urllib3.connectionpool: Starting new HTTP connection <span class="o">(</span>1<span class="o">)</span>: 1lv11lamb01.nrel.gov
+10/26/1985 01:21:00 <span class="o">[</span>DEBUG<span class="o">]</span> requests.packages.urllib3.connectionpool: <span class="s2">&quot;POST / HTTP/1.1&quot;</span> <span class="m">400</span> None
+10/26/1985 01:21:00 <span class="o">[</span>ERROR<span class="o">]</span> aesdpy.servers:  POST http://1lv11lamb01.nrel.gov:8090/command <span class="m">400</span> - invalid request
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">AESDpy</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="aesdpy.html">Modules</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Logging</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#example-output">Example output</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="aesdpy/filters.html" title="previous chapter"><code class="docutils literal"><span class="pre">aesdpy.filters</span></code></a></li>
+  </ul></li>
+</ul>
+</div><h3>AESD Clients</h3>
+<ul>
+  <li class="toctree-l1">
+    <a href="https://github.nrel.gov/bbugbee/aesdR" target="blank">aesdR</a>
+  </li>
+  <li class="toctree-l1">
+    <a href="https://github.nrel.gov/nwunder2/aesdpy" target="blank">aesdpy</a>
+  </li>
+</ul>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/logging.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
