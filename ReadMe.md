@@ -4,6 +4,9 @@ Advanced Energy System Design (AESD) Records API
 
 Visit NREL's [home page for Advanced Energy System Design (AESD)](https://www.nrel.gov/technical-assistance/advanced-energy-systems-design.html).
 
+*   [Documentation](#documentation)
+*   [Software](#software)
+
 
 Abstract
 --------
@@ -24,4 +27,4 @@ Software
 --------
 
 *   Haskell
-    *   Core library: [aesd-records](libs/Haskell/records/]]
+    *   Core library: [aesd-records](libs/Haskell/records/)
