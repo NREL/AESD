@@ -9,8 +9,6 @@ let
             overrides = haskellPackagesNew: haskellPackagesOld: rec {
               cesds-records =
                 haskellPackagesNew.callPackage ./default.nix { };
-              raft =
-                haskellPackagesNew.callPackage /home/bbush/Projects/Deploy/raft/default.nix {};
             };
           };
         };
