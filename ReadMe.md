@@ -37,4 +37,4 @@ Software
     *   [client library](libs/JavaScript/)
 *   Python
     *   [client library](libs/Python/)
-    *   [API documentation](https://github.com/NREL/AESD/docs/python/index.html)
+    *   [API documentation](https://github.com/NREL/AESD/docs/python/aesd-records.html)
