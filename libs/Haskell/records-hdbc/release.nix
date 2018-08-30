@@ -7,9 +7,9 @@ let
         packages = pkgs.haskell.packages // {
           "${compiler}" = pkgs.haskell.packages."${compiler}".override {
             overrides = haskellPackagesNew: haskellPackagesOld: rec {
-              cesds-records-hdbc =
+              aesd-records-hdbc =
                 haskellPackagesNew.callPackage ./default.nix { };
-              cesds-records =
+              aesd-records =
                 haskellPackagesNew.callPackage ../records/default.nix { };
             };
           };
@@ -22,5 +22,5 @@ let
 
 in
   {
-   cesds-records-hdbc = pkgs.haskell.packages.${compiler}.cesds-records-hdbc;
+   aesd-records-hdbc = pkgs.haskell.packages.${compiler}.aesd-records-hdbc;
   }

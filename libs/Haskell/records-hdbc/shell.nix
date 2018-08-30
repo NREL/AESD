@@ -1,1 +1,1 @@
-((import ./release.nix) {}).cesds-records-hdbc.env
+((import ./release.nix) {}).aesd-records-hdbc.env

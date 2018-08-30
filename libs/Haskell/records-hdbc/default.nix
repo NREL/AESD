@@ -1,21 +1,21 @@
-{ mkDerivation, aeson, base, cesds-records, data-default, directory
+{ mkDerivation, aeson, base, aesd-records, data-default, directory
 , filepath, HDBC, HDBC-mysql, HDBC-odbc, HDBC-postgresql
 , HDBC-sqlite3, stdenv, uuid, yaml
 }:
 mkDerivation {
-  pname = "cesds-records-hdbc";
-  version = "0.4.1.2";
+  pname = "aesd-records-hdbc";
+  version = "0.4.1.3";
   src = ./.;
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    base cesds-records data-default directory filepath HDBC uuid
+    base aesd-records data-default directory filepath HDBC uuid
   ];
   executableHaskellDepends = [
-    aeson base cesds-records data-default directory filepath HDBC
+    aeson base aesd-records data-default directory filepath HDBC
     HDBC-mysql HDBC-odbc HDBC-postgresql HDBC-sqlite3 uuid yaml
   ];
-  homepage = "https://github.nrel.gov/haskell/cesds-records-hdbc";
-  description = "Database support for CESDS records API";
+  homepage = "https://github.nrel.gov/haskell/aesd-records-hdbc";
+  description = "Database support for AESD records API";
   license = stdenv.lib.licenses.mit;
 }

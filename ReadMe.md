@@ -28,3 +28,4 @@ Software
 
 *   Haskell
     *   Core library: [aesd-records](libs/Haskell/records/)
+    *   HDBC support: [aesd-records-hdbc](libs/Haskell/records-hdbc/)

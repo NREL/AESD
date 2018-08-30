@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2017 National Renewable Energy Laboratory
+Copyright   :  (c) 2017-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -20,7 +20,7 @@ module Main (
 ) where
 
 
-import CESDS.Records.Server.HDBC (hdbcMain)
+import AESD.Records.Server.HDBC (hdbcMain)
 import Control.Exception (bracket)
 import Data.Aeson.Types (FromJSON(..), ToJSON(..))
 import Data.Yaml (decodeFile)

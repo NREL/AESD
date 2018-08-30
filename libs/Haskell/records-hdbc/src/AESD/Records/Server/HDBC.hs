@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2017 National Renewable Energy Laboratory
+Copyright   :  (c) 2017-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -15,7 +15,7 @@ Support serving of records from databases.
 {-# LANGUAGE TupleSections    #-}
 
 
-module CESDS.Records.Server.HDBC (
+module AESD.Records.Server.HDBC (
 -- * Entry point
   hdbcMain
 -- * Metadata
@@ -26,13 +26,13 @@ module CESDS.Records.Server.HDBC (
 ) where
 
 
-import CESDS.Records.Server (serverMain)
-import CESDS.Records.Server.File (buildVarMeta)
-import CESDS.Records.Server.Manager (makeInMemoryManager)
-import CESDS.Types.Model as Model (makeModelMeta, name)
-import CESDS.Types.Record (RecordContent)
-import CESDS.Types.Value (DataValue, VarType(..), integerValue, realValue, stringValue)
-import CESDS.Types.Variable (VarMeta)
+import AESD.Records.Server (serverMain)
+import AESD.Records.Server.File (buildVarMeta)
+import AESD.Records.Server.Manager (makeInMemoryManager)
+import AESD.Types.Model as Model (makeModelMeta, name)
+import AESD.Types.Record (RecordContent)
+import AESD.Types.Value (DataValue, VarType(..), integerValue, realValue, stringValue)
+import AESD.Types.Variable (VarMeta)
 import Control.Monad (void)
 import Data.Default (def)
 import Data.List (isSuffixOf)

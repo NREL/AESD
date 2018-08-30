@@ -1,10 +1,10 @@
-name         : cesds-records-hdbc
-version      : 0.4.1.2
-synopsis     : Database support for CESDS records API.
+name         : aesd-records-hdbc
+version      : 0.4.1.3
+synopsis     : Database support for AESD records API.
 description  :
-  The package provides HDBC support for PostgreSQL, SQLite3, MySQL, and ODBC support for the CESDS records API.
+  The package provides HDBC support for PostgreSQL, SQLite3, MySQL, and ODBC support for the AESD records API.
   .
-  The executable program /cesds-postgresql-server/ takes a single argument, which is a configuration file in YAML or JSON format, is a server for PostgreSQL.  See <https://www.postgresql.org/docs/8.1/static/libpq.html#LIBPQ-CONNECT> for documentation of the connection string.
+  The executable program /aesd-postgresql-server/ takes a single argument, which is a configuration file in YAML or JSON format, is a server for PostgreSQL.  See <https://www.postgresql.org/docs/8.1/static/libpq.html#LIBPQ-CONNECT> for documentation of the connection string.
   .
   @
   host        : \<\<WebSocket host address\>\>
@@ -15,7 +15,7 @@ description  :
   database    : \<\<PostgreSQL connection information\>\>
   @
   .
-  The executable program /cesds-mysql-server/ takes a single argument, which is a configuration file in YAML or JSON format, is a server for MySQL.  See <https://hackage.haskell.org/package/HDBC-mysql-0.7.1.0/docs/Database-HDBC-MySQL.html> for documentation of the connection string.
+  The executable program /aesd-mysql-server/ takes a single argument, which is a configuration file in YAML or JSON format, is a server for MySQL.  See <https://hackage.haskell.org/package/HDBC-mysql-0.7.1.0/docs/Database-HDBC-MySQL.html> for documentation of the connection string.
   .
   @
   host        : \<\<WebSocket host address\>\>
@@ -26,7 +26,7 @@ description  :
   database    : \<\<MySQL connection information\>\>
   @
   .
-  The executable program /cesds-sqlite3-server/ takes a single argument, which is a configuration file in YAML or JSON format, is a server for SQLite3.
+  The executable program /aesd-sqlite3-server/ takes a single argument, which is a configuration file in YAML or JSON format, is a server for SQLite3.
   .
   @
   host        : \<\<WebSocket host address\>\>
@@ -37,7 +37,7 @@ description  :
   database    : \<\<Path to database file\>\>
   @
   .
-  The executable program /cesds-odbc-server/ takes a single argument, which is a configuration file in YAML or JSON format, is a server for ODBC.  See <http://msdn2.microsoft.com/en-us/library/ms715433(VS.85).aspx> for documentation of the connection string.
+  The executable program /aesd-odbc-server/ takes a single argument, which is a configuration file in YAML or JSON format, is a server for ODBC.  See <http://msdn2.microsoft.com/en-us/library/ms715433(VS.85).aspx> for documentation of the connection string.
   .
   @
   host        : \<\<WebSocket host address\>\>
@@ -47,24 +47,25 @@ description  :
   chunkSize   : \<\<optional number of records per chunk\>\>
   database    : \<\<ODBC connection information\>\>
   @
-license      : AllRightsReserved
+license      : MIT
 license-file : LICENSE
 author       : Brian W Bush <brian.bush@nrel.gov>
 maintainer   : Brian W Bush <brian.bush@nrel.gov>
-copyright    : (c) 2017 National Renewable Energy Laboratory
+copyright    : (c) 2017 Alliance for Sustainable Energy LLC
 category     : Network
 build-type   : Simple
 cabal-version: >= 1.10
 
 stability    : Stable
-homepage     : https://github.nrel.gov/haskell/cesds-records-hdbc
-bug-reports  : https://github.nrel.gov/haskell/cesds-records-hdbc/issues/
+homepage     : https://github.com/NREL/AESD/libs/Haskell/records-hdbc
+bug-reports  : https://github.com/NREL/AESD/issues/
 
 extra-source-files:  ReadMe.md
 
 source-repository head
-  type: git
-  location: https://github.nrel.gov/haskell/cesds-records-hdbc.git
+  type    : git
+  location: https://github.com/NREL/AESD.git
+  subdir  : libs/Haskell/records-hdbc
 
 flag PostgreSQL
   description     : Compile records server for PostgreSQL.
@@ -84,28 +85,28 @@ flag ODBC
  
 library
   hs-source-dirs  : src
-  exposed-modules : CESDS.Records.Server.HDBC
+  exposed-modules : AESD.Records.Server.HDBC
   build-depends   : base >=4.8 && <4.9
-                  , cesds-records
-                  , data-default
-                  , directory
-                  , filepath
-                  , HDBC == 2.4.0.1
-                  , uuid
-  default-language: Haskell2010
-  ghc-options     : -Wall -O2
-
-executable cesds-postgresql-server
-  hs-source-dirs  : src
-  main-is         : MainPostgreSQL.hs
-  build-depends   : base
-                  , aeson
-                  , cesds-records
+                  , aesd-records
                   , data-default
                   , directory
                   , filepath
                   , HDBC
-                  , HDBC-postgresql == 2.3.2.4
+                  , uuid
+  default-language: Haskell2010
+  ghc-options     : -Wall -O2
+
+executable aesd-postgresql-server
+  hs-source-dirs  : src
+  main-is         : MainPostgreSQL.hs
+  build-depends   : base
+                  , aeson
+                  , aesd-records
+                  , data-default
+                  , directory
+                  , filepath
+                  , HDBC
+                  , HDBC-postgresql
                   , uuid
                   , yaml
   if flag(PostgreSQL)
@@ -115,17 +116,17 @@ executable cesds-postgresql-server
   default-language: Haskell2010        
   ghc-options     : -Wall -O2 -threaded -rtsopts
 
-executable cesds-sqlite3-server
+executable aesd-sqlite3-server
   hs-source-dirs  : src
   main-is         : MainSQLite3.hs
   build-depends   : base
                   , aeson
-                  , cesds-records
+                  , aesd-records
                   , data-default
                   , directory
                   , filepath
                   , HDBC
-                  , HDBC-sqlite3 == 2.3.3.1
+                  , HDBC-sqlite3
                   , uuid
                   , yaml
   if flag(SQLite3)
@@ -135,17 +136,17 @@ executable cesds-sqlite3-server
   default-language: Haskell2010        
   ghc-options     : -Wall -O2 -threaded -rtsopts
 
-executable cesds-mysql-server
+executable aesd-mysql-server
   hs-source-dirs  : src
   main-is         : MainMySQL.hs
   build-depends   : base
                   , aeson
-                  , cesds-records
+                  , aesd-records
                   , data-default
                   , directory
                   , filepath
                   , HDBC
-                  , HDBC-mysql == 0.7.1.0
+                  , HDBC-mysql
                   , uuid
                   , yaml
   if flag(MySQL)
@@ -155,17 +156,17 @@ executable cesds-mysql-server
   default-language: Haskell2010        
   ghc-options     : -Wall -O2 -threaded -rtsopts
 
-executable cesds-odbc-server
+executable aesd-odbc-server
   hs-source-dirs  : src
   main-is         : MainODBC.hs
   build-depends   : base
                   , aeson
-                  , cesds-records
+                  , aesd-records
                   , data-default
                   , directory
                   , filepath
                   , HDBC
-                  , HDBC-odbc == 2.5.0.1
+                  , HDBC-odbc
                   , uuid
                   , yaml
   if flag(ODBC)
