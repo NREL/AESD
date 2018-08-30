@@ -1,0 +1,28 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>aesd-records-hdbc-0.4.1.3: Database support for AESD records API.</title><link href="ocean.css" rel="stylesheet" type="text/css" title="Ocean" /><script src="haddock-util.js" type="text/javascript"></script><script type="text/javascript">//<![CDATA[
+window.onload = function () {pageLoad();};
+//]]>
+</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">aesd-records-hdbc-0.4.1.3: Database support for AESD records API.</p></div><div id="content"><div id="description"><h1>aesd-records-hdbc-0.4.1.3: Database support for AESD records API.</h1><div class="doc"><p>The package provides HDBC support for PostgreSQL, SQLite3, MySQL, and ODBC support for the AESD records API.</p><p>The executable program <em>aesd-postgresql-server</em> takes a single argument, which is a configuration file in YAML or JSON format, is a server for PostgreSQL.  See <a href="https://www.postgresql.org/docs/8.1/static/libpq.html#LIBPQ-CONNECT">https://www.postgresql.org/docs/8.1/static/libpq.html#LIBPQ-CONNECT</a> for documentation of the connection string.</p><pre>host        : &lt;&lt;WebSocket host address&gt;&gt;
+port        : &lt;&lt;WebSocket port number&gt;&gt;
+directory   : &lt;&lt;path to directory containing SQL SELECT queries&gt;&gt;
+persistence : &lt;&lt;optional path to journal file for persisting bookmarks&gt;&gt;
+chunkSize   : &lt;&lt;optional number of records per chunk&gt;&gt;
+database    : &lt;&lt;PostgreSQL connection information&gt;&gt;
+</pre><p>The executable program <em>aesd-mysql-server</em> takes a single argument, which is a configuration file in YAML or JSON format, is a server for MySQL.  See <a href="https://hackage.haskell.org/package/HDBC-mysql-0.7.1.0/docs/Database-HDBC-MySQL.html">https://hackage.haskell.org/package/HDBC-mysql-0.7.1.0/docs/Database-HDBC-MySQL.html</a> for documentation of the connection string.</p><pre>host        : &lt;&lt;WebSocket host address&gt;&gt;
+port        : &lt;&lt;WebSocket port number&gt;&gt;
+directory   : &lt;&lt;path to directory containing SQL SELECT queries&gt;&gt;
+persistence : &lt;&lt;optional path to journal file for persisting bookmarks&gt;&gt;
+chunkSize   : &lt;&lt;optional number of records per chunk&gt;&gt;
+database    : &lt;&lt;MySQL connection information&gt;&gt;
+</pre><p>The executable program <em>aesd-sqlite3-server</em> takes a single argument, which is a configuration file in YAML or JSON format, is a server for SQLite3.</p><pre>host        : &lt;&lt;WebSocket host address&gt;&gt;
+port        : &lt;&lt;WebSocket port number&gt;&gt;
+directory   : &lt;&lt;path to directory containing SQL SELECT queries&gt;&gt;
+persistence : &lt;&lt;optional path to journal file for persisting bookmarks&gt;&gt;
+chunkSize   : &lt;&lt;optional number of records per chunk&gt;&gt;
+database    : &lt;&lt;Path to database file&gt;&gt;
+</pre><p>The executable program <em>aesd-odbc-server</em> takes a single argument, which is a configuration file in YAML or JSON format, is a server for ODBC.  See <a href="http://msdn2.microsoft.com/en-us/library/ms715433(VS.85).aspx">http://msdn2.microsoft.com/en-us/library/ms715433(VS.85).aspx</a> for documentation of the connection string.</p><pre>host        : &lt;&lt;WebSocket host address&gt;&gt;
+port        : &lt;&lt;WebSocket port number&gt;&gt;
+directory   : &lt;&lt;path to directory containing SQL SELECT queries&gt;&gt;
+persistence : &lt;&lt;optional path to journal file for persisting bookmarks&gt;&gt;
+chunkSize   : &lt;&lt;optional number of records per chunk&gt;&gt;
+database    : &lt;&lt;ODBC connection information&gt;&gt;
+</pre></div></div><div id="module-list"><p class="caption">Modules</p><ul><li><span id="control.n.1" class="module collapser" onclick="toggleSection('n.1')">AESD</span><ul id="section.n.1" class="show"><li><span id="control.n.1.1" class="module collapser" onclick="toggleSection('n.1.1')">Records</span><ul id="section.n.1.1" class="show"><li><span id="control.n.1.1.1" class="module collapser" onclick="toggleSection('n.1.1.1')">Server</span><ul id="section.n.1.1.1" class="show"><li><span class="module"><a href="AESD-Records-Server-HDBC.html">AESD.Records.Server.HDBC</a></span></li></ul></li></ul></li></ul></li></ul></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.16.1</p></div></body></html>

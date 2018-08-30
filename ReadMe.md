@@ -32,8 +32,9 @@ Software
     *   Core library: [aesd-records](libs/Haskell/records/)
     *   [HDBC](http://hackage.haskell.org/package/HDBC) support: [aesd-records-hdbc](libs/Haskell/records-hdbc/)
     *   [Project Haystack](https://project-haystack.org/) support: [aesd-records-haystack](libs/Haskell/records-haystack/)
+    *   [API documentation](https://github.com/NREL/AESD/docs/haskell/index.html)
 *   JavaScript
     *   [client library](libs/JavaScript/)
 *   Python
     *   [client library](libs/Python/)
-    *   [API documentation](https://github.com/NREL/AESD/python/index.html)
+    *   [API documentation](https://github.com/NREL/AESD/docs/python/index.html)
