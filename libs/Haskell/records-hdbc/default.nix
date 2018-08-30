@@ -15,7 +15,7 @@ mkDerivation {
     aeson base aesd-records data-default directory filepath HDBC
     HDBC-mysql HDBC-odbc HDBC-postgresql HDBC-sqlite3 uuid yaml
   ];
-  homepage = "https://github.nrel.gov/haskell/aesd-records-hdbc";
+  homepage = "https://github.com/NREL/AESD/libs/Haskell/records-hdbc";
   description = "Database support for AESD records API";
   license = stdenv.lib.licenses.mit;
 }

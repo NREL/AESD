@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -16,7 +16,7 @@ Access to Haystack servers.
 {-# LANGUAGE RecordWildCards   #-}
 
 
-module CESDS.Haystack (
+module AESD.Haystack (
   HaystackAccess(..)
 , HaystackTimes(..)
 , haystackRequest

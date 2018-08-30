@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -18,10 +18,10 @@ module Main (
 ) where
 
 
-import CESDS.Haystack.Cache.Memory (runCacheT, makeCache, refreshExtractCacheManager)
-import CESDS.Records.Server (serverMain)
-import CESDS.Records.Server.Manager (makeInMemoryManager)
-import CESDS.Types.Model as Model (identifier)
+import AESD.Haystack.Cache.Memory (runCacheT, makeCache, refreshExtractCacheManager)
+import AESD.Records.Server (serverMain)
+import AESD.Records.Server.Manager (makeInMemoryManager)
+import AESD.Types.Model as Model (identifier)
 import Control.Monad.Except (liftIO)
 import Control.Monad.Except.Util (runToIO)
 import Control.Monad.Trans.Resource (runResourceT)

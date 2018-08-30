@@ -7,10 +7,10 @@ let
         packages = pkgs.haskell.packages // {
           "${compiler}" = pkgs.haskell.packages."${compiler}".override {
             overrides = haskellPackagesNew: haskellPackagesOld: rec {
-              cesds-records =
+              aesd-records-haystack =
                 haskellPackagesNew.callPackage ./default.nix { };
-              raft =
-                haskellPackagesNew.callPackage /home/bbush/Projects/Deploy/raft/default.nix {};
+              aesd-records =
+                haskellPackagesNew.callPackage ../records/default.nix { };
             };
           };
         };
@@ -22,5 +22,5 @@ let
 
 in
   {
-   cesds-records = pkgs.haskell.packages.${compiler}.cesds-records;
+   aesd-records-haystack = pkgs.haskell.packages.${compiler}.aesd-records-haystack;
   }

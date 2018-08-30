@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -17,7 +17,7 @@ A memory cache for data from Haystack.
 {-# LANGUAGE TupleSections     #-}
 
 
-module CESDS.Haystack.Cache.Memory (
+module AESD.Haystack.Cache.Memory (
   Cached
 , CacheM
 , runCacheT
@@ -29,9 +29,9 @@ module CESDS.Haystack.Cache.Memory (
 ) where
 
 
-import CESDS.Haystack (EpochSeconds, HaystackAccess(..), HaystackTimes(..), Measurement, MeasurementIdentifier, TimeStamp, haystackHisRead, sEpochSeconds, sMeasurement, sTimeStamp)
-import CESDS.Types.Record (RecordContent)
-import CESDS.Types.Value (integerValue, realValue, stringValue)
+import AESD.Haystack (EpochSeconds, HaystackAccess(..), HaystackTimes(..), Measurement, MeasurementIdentifier, TimeStamp, haystackHisRead, sEpochSeconds, sMeasurement, sTimeStamp)
+import AESD.Types.Record (RecordContent)
+import AESD.Types.Value (integerValue, realValue, stringValue)
 import Control.Applicative ((<|>))
 import Control.Arrow ((&&&))
 import Control.Monad.Except (MonadError)

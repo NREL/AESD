@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-17 National Renewable Energy Laboratory
+Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -23,10 +23,10 @@ module NREL.Meters (
 ) where
 
 
-import CESDS.Haystack (HaystackAccess)
-import CESDS.Types.Model as Model (ModelMeta, makeModelMeta)
-import CESDS.Types.Value as Value (VarType(..))
-import CESDS.Types.Variable as Variable (VarUnits(VarUnits), makeVarMeta, units, varType)
+import AESD.Haystack (HaystackAccess)
+import AESD.Types.Model as Model (ModelMeta, makeModelMeta)
+import AESD.Types.Value as Value (VarType(..))
+import AESD.Types.Variable as Variable (VarUnits(VarUnits), makeVarMeta, units, varType)
 import Control.Arrow ((***))
 import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))

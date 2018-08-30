@@ -26,6 +26,9 @@ Technical Manual:
 Software
 --------
 
+*   [Protocol Buffers 3](https://developers.google.com/protocol-buffers/docs/proto3)
+    *   [proto3 definition file](doc-src/aesd_records_4.proto)
 *   Haskell
     *   Core library: [aesd-records](libs/Haskell/records/)
-    *   HDBC support: [aesd-records-hdbc](libs/Haskell/records-hdbc/)
+    *   [HDBC](http://hackage.haskell.org/package/HDBC) support: [aesd-records-hdbc](libs/Haskell/records-hdbc/)
+    *   [Project Haystack](https://project-haystack.org/) support: [aesd-records-haystack](libs/Haskell/records-haystack/)
