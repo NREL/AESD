@@ -1,0 +1,7 @@
+.env
+*.pyc
+*.log
+.DS_Store
+cesdspy.egg-info/
+*.swp
+*.egg
