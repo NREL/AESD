@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module aesd-records.bookmarks</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="aesd-records.html"><font color="#ffffff">aesd-records</font></a>.bookmarks</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/Users/mrossol/Documents/Design_Studio/aesd-records/aesd-records/bookmarks.py">/Users/mrossol/Documents/Design_Studio/aesd-records/aesd-records/bookmarks.py</a></font></td></tr></table>
+    <p><tt>Package&nbsp;for&nbsp;models&nbsp;request<br>
+&nbsp;<br>
+Created&nbsp;by:&nbsp;Michael&nbsp;Rossol&nbsp;Feb.&nbsp;2017</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="aesd-records.records_def_4_pb2.html">aesd-records.records_def_4_pb2</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-from_bookmark_meta"><strong>from_bookmark_meta</strong></a>(bookmark_meta)</dt><dd><tt>Unpacks&nbsp;proto&nbsp;BookmarkMeta&nbsp;message&nbsp;to&nbsp;dictionary<br>
+Parameters<br>
+----------<br>
+bookmark_meta&nbsp;:&nbsp;'proto.BookmarkMeta'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;proto&nbsp;BookmarkMeta&nbsp;message&nbsp;from&nbsp;BookmarkMetaList<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+'dict'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Dictionary&nbsp;containing&nbsp;the&nbsp;bookmark's&nbsp;metadata</tt></dd></dl>
+ <dl><dt><a name="-from_bookmark_meta_list"><strong>from_bookmark_meta_list</strong></a>(bookmarks)</dt><dd><tt>Unpacks&nbsp;proto&nbsp;BookmarkMetaList&nbsp;message&nbsp;to&nbsp;list&nbsp;of&nbsp;dictionaries<br>
+Parameters<br>
+----------<br>
+bookmarks&nbsp;:&nbsp;'proto.BookmarkMetaList'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;proto&nbsp;BookmarkMeta&nbsp;message&nbsp;from&nbsp;BookmarkMetaList<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+'list'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Dictionary&nbsp;containing&nbsp;the&nbsp;bookmark's&nbsp;metadata</tt></dd></dl>
+ <dl><dt><a name="-handle_bookmark_response"><strong>handle_bookmark_response</strong></a>(response)</dt><dd><tt>Extract&nbsp;bookmark&nbsp;metadata&nbsp;from&nbsp;each&nbsp;server&nbsp;response&nbsp;message<br>
+Parameters<br>
+----------<br>
+response&nbsp;:&nbsp;'list'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;of&nbsp;proto&nbsp;Response&nbsp;messages<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+bookmark_metadata&nbsp;:&nbsp;'list'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;List&nbsp;of&nbsp;bookmark's&nbsp;metadata&nbsp;dictionaries&nbsp;for&nbsp;each&nbsp;model&nbsp;in&nbsp;models</tt></dd></dl>
+ <dl><dt><a name="-request_bookmark_meta"><strong>request_bookmark_meta</strong></a>(model_id, bookmark_id, request_id, version=4)</dt><dd><tt>Create&nbsp;request&nbsp;for&nbsp;bookmark&nbsp;bookmark_meta<br>
+Parameters<br>
+----------<br>
+model_id&nbsp;:&nbsp;'string'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Id&nbsp;of&nbsp;model&nbsp;for&nbsp;which&nbsp;to&nbsp;requst&nbsp;bookmark_meta<br>
+bookmark_id&nbsp;:&nbsp;'string'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Id&nbsp;of&nbsp;bookmark&nbsp;for&nbsp;which&nbsp;to&nbsp;request&nbsp;models_metadata<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;None&nbsp;request&nbsp;all&nbsp;bookmarks<br>
+request_id&nbsp;:&nbsp;'int'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Unique&nbsp;request&nbsp;id<br>
+version&nbsp;:&nbsp;'int'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Google&nbsp;protobuf&nbsp;version,&nbsp;default&nbsp;=&nbsp;4<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+request&nbsp;:&nbsp;'proto.Request'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;proto&nbsp;Request&nbsp;message&nbsp;for&nbsp;models_metadata</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__all__</strong> = ['request_bookmark_meta', 'from_bookmark_meta', 'from_bookmark_meta_list', 'handle_bookmark_response']</td></tr></table>
+</body></html>

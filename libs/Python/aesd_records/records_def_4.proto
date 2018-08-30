@@ -1,0 +1,343 @@
+//====================== Records API Definitions ===============================
+
+// Version: 4
+
+// Questions ===================================================================
+// for request/response, what is the best way?
+// - messages for each?
+//   - this makes responses way less general
+//   - we bloat the type list
+// - no specific messages? (makes repeated hard)
+
+
+// Conventions =================================================================
+
+// var_id:   int32
+// model_id: string
+// record_id: int64
+// version: uint32. Version of the API, i.e. of this document.
+//                  If your version doesn't match the server, expect pain.
+
+// Layout ======================================================================
+
+syntax = "proto3";
+package RecordsAPI;
+
+option optimize_for = LITE_RUNTIME; //reduce linking requirements
+
+// Common ======================================================================
+
+//in protobuf3, we can't nicely detect if an optional has been set or not.
+message OptionalInt32 {
+    int32 value = 1; // Semantically required.
+}
+
+message OptionalUInt32 {
+    uint32 value = 1; // Semantically required.
+}
+
+message OptionalString {
+    string value = 1; // Semantically required.
+}
+
+message Value {
+    oneof value { // Semantically required.
+      double real_value    = 1;
+      int64  integer_value = 2;
+      string string_value  = 3;
+    }
+}
+
+message DoubleList {
+    repeated double values = 1; // Semantically required.
+}
+
+message IntegerList {
+    //we used explicit signed here to deal with protobuf3 integer handling
+    repeated sint64 values = 1; // Semantically required.
+}
+
+message StringList {
+    repeated string values = 1; // Semantically required.
+}
+
+// Bookmarking =================================================================
+
+message BookmarkIntervalContent {
+    int64 first_record = 1; // Semantically optional.
+    int64 last_record  = 2; // Semantically optional.
+}
+
+message BookmarkSetContent {
+    repeated int64 record_ids = 1; // Semantically optional.
+}
+
+message BookmarkMeta {
+    string bookmark_id   = 1; // Semantically optional: when creating a new bookmark, leave this empty. The server will take care of filling this in.
+    string bookmark_name = 2; // Semantically required.
+
+    // we have content here to reduce redundant message info
+    //  Also, it allows the server to send bookmarks that are small on
+    //  initial query. If it's too large, we will send the size back
+    //  to see if you really want to query it.
+    oneof content { // Semantically required.
+        BookmarkIntervalContent interval    = 3;
+        BookmarkSetContent      set         = 4;
+        FilterExpression        filter      = 5;
+    }
+}
+
+message BookmarkMetaList {
+    repeated BookmarkMeta bookmark_metas = 1; // Semantically optional.
+}
+
+message RequestBookmarkMeta {
+    //tags, etc?
+    string         model_id    = 1; // Semantically required: give a model please
+    OptionalString bookmark_id = 2; // Semantically optional: if blank, return all. if given, give CONTENT
+}
+
+message RequestSaveBookmark {
+    string       model_id     = 1; // Semantically required.
+    BookmarkMeta new_bookmark = 2; // Semantically optional: dont fill in the id, we will do that for you, and send the meta back to you
+}
+
+// Filtering  ====================================================================
+
+message FilterExpression {
+  oneof expression { // Semantically required.
+    FilterNot          filter_not          = 1;
+    FilterUnion        filter_union        = 2;
+    FilterIntersection filter_intersection = 3;
+    DomainMeta         filter_domain       = 4;
+  }
+}
+
+message FilterNot {
+  FilterExpression filter_expression = 1; // Semantically required.
+}
+
+message FilterUnion {
+  repeated FilterExpression filter_expressions = 1; // Semantically required.
+}
+
+message FilterIntersection {
+  repeated FilterExpression filter_expressions = 1; // Semantically required.
+}
+
+
+
+// Variable ====================================================================
+
+message VarMeta {
+    int32  var_id      = 1; // Semantically required, but defaults to zero.
+    string var_name    = 2; // Semantically required.
+
+    //on death watch, because do we need this?
+    string units       = 3; // Semantically optional: name of units.
+    repeated sint32 si = 4; // Semantically optional, but must be length eight.
+    double scale       = 5; // Semantically optional.
+
+    enum VariableType {
+        REAL    = 0;
+        INTEGER = 1;
+        STRING  = 2;
+    }
+    VariableType type  = 6; // Semantically optional, defaults to REAL.
+
+}
+
+// Models ======================================================================
+
+message ModelMeta {
+    string model_id = 1; // Semantically required.
+    string model_name = 2; // Semantically required.
+    string model_uri  = 3; // Semantically required.
+
+    repeated VarMeta variables = 4; // Semantically required.
+
+    repeated DomainMeta inputs = 5; // Semantically optional, empty if a model has no input variables.
+}
+
+//hack to get around union arrays
+message ModelMetaList {
+    repeated ModelMeta models = 1; // Semantically optional.
+}
+
+// Input domain ================================================================
+
+message VarInterval {
+    Value first_value = 1; // Semantically optional.
+    Value last_value  = 2; // Semantically optional.
+}
+
+message VarSet {
+    repeated Value elements = 1; // Semantically optional.
+}
+
+message DomainMeta {
+    int32  var_id      = 1; // Semantically required.
+    oneof domain { //Semantically required: but having the bounds here feels wrong
+        VarInterval interval = 2;
+        VarSet      set      = 3;
+    }
+}
+
+// Work ========================================================================
+
+
+message RequestWork {
+    string model_id = 1;
+    repeated VarValue inputs = 2; // Semantically optional, specifying which input variables to set.
+  // The response to this request is simply RecordData.
+}
+
+// Records should have a record ID, expressed as an int64. The primary reason
+//  for an ID this is for bookmarking.
+
+//We have the option of doing things in a column or row oriented manner.
+// column seems more efficient to transfer, but more difficult to code around.
+
+// we have two ways of returning record data
+// - A heterogeneous list of data
+// - A table of homogenous data
+
+// helper message: a pair of a var and its value
+message VarValue {
+    int32 var_id = 1; // Semantically required.
+    Value value  = 2; // Semantically required.
+}
+
+// helper message: a record, with a list of associated variables and their values
+message Record {
+    int64 record_id = 1; // Semantically required.
+    repeated VarValue variables = 2; // Semantically optional.
+}
+
+//a list of records, for heterogeneous data
+message RecordList {
+    repeated Record records = 1; // Semantically optional.
+}
+
+//a homogenously typed frame of data
+// the format tries to represent this:
+// __________|_var_id[0]_____|_var_id[1]_____|_var_id[N]_____
+// rec_id[0] | list[0][0]    | list[0][1]    | list[0][N]
+// rec_id[1] | list[1][0]    | list[1][1]    | list[1][N]
+// rec_id[M] | list[M][0]    | list[M][1]    | list[M][N]
+
+// The underlying list is a SINGLE array, addressable using the following
+// row-major index formula
+// list[row][var] = array[var + NY*row]
+//  where NX = length of rec_ids, NY = length of var_ids
+
+message RecordTable {
+    repeated int32  var_ids    = 1; // Semantically required.
+    repeated int64  rec_ids    = 2; // Semantically required.
+
+    oneof list { // Semantically required
+        DoubleList  reals    = 3;
+        IntegerList integers = 4;
+        StringList  strings  = 5;
+    }
+}
+
+message RecordData {
+    oneof style { // Semantically required
+        RecordList  list = 1;
+        RecordTable table = 2;
+    }
+}
+
+// Responses ===================================================================
+
+message Response {
+    uint32 version = 1;
+    //a response without an ID is a notification
+    // otherwise you should be getting an ID that matches your request ID
+    // why is this unsigned? because...wraparound incrementers? maybe?
+    OptionalUInt32 id = 2; // Semantically optional, but encourgaged.
+
+    //some messages are big, so you should check this is chunked
+    // next_chunk_id is the key. if its -1 or 0, you are done
+    // (0 because that is the default, so if someone forgot to set it, you can ignore the rest)
+
+    // servers had better set that chunk_id correctly.
+    // recommend chunking by record_id, i.e. try to keep records intact.
+    int32 chunk_id      = 3; // Semantically optional: the id of this chunk 1 - N
+    int32 next_chunk_id = 4; // Semantically optional: the id to expect next, or 0 if its the last
+
+    //note that you can also just send an empty typed response to signal an end
+    // of all chunks. I.e. for record tables, send your chunks, then send an
+    // empty record table with a -1 next chunk id. code shouldn't explode,
+    // simplifies things
+
+    oneof type { // Semantically required.
+        string           error     = 5;
+        ModelMetaList    models    = 6;
+        RecordData       data      = 7;
+        BookmarkMetaList bookmarks = 8;
+    }
+}
+
+// Requests ====================================================================
+
+//ask about model metadata
+message RequestModelsMeta {
+    //this seems stupid. How would you know the id?
+    // you ask for all. and it gives you everything already
+    OptionalString model_id = 1; // Semantically optional: ask for specific one,
+                                //  if empty, ask for all
+    // lets make it a placeholder for now until we can get tags/etc
+}
+
+//request record data from a model.
+message RequestRecordsData {
+    //which model are we talking about?
+    string model_id    = 1; // Semantically required.
+    uint64 max_records = 2; // Semantically optional: specify a limit, so you
+                            //  dont blow yourself up
+                            // if zero, there is NO limit
+    repeated int32 var_ids = 3; // Semantically optional: specify the variables
+                                //  you want, in the order you want
+                                // if empty, you get everything, unspecified
+                                //  order? this is fail deadly...
+
+    oneof filter {
+        string           bookmark_id = 4; // Semantically optional: if filled
+                                          //  in, get the data from this bookmark
+        FilterExpression expression = 5; // Semantically optional: if provided,
+                                         //  this filter will be used to query
+    }
+}
+
+//cancel a request, primarily for canceling record data.
+message RequestCancel {
+    OptionalUInt32 id = 1; // Semantically required, specifying which previous
+                           //  request should be cancelled.
+}
+
+//requests SHOULD have a correlation ID
+// unless no response
+message Request {
+    uint32 version = 1; // Semantically required.
+    OptionalUInt32 id = 2; // Semantically optional, but encouraged.
+
+    bool subscribe = 3; //Semantically optional.
+                        // if true, implies that the request should be kept open,
+                        // and any changes or updates to the request will be streamed.
+                        //For example, set subscribe on a data request with a filter,
+                        // and any new data that matches the filter will be shipped to your
+                        // door like a package with a magnet. For some things,
+                        // this will have no meaning.
+                        //Use a Request Cancel to remove the subscription
+
+    oneof type { // Semantically required.
+        RequestModelsMeta      models_metadata = 4;
+        RequestRecordsData     records_data    = 5;
+        RequestBookmarkMeta    bookmark_meta   = 6;
+        RequestSaveBookmark    save_bookmark   = 7;
+        RequestCancel          cancel          = 8;
+        RequestWork            work            = 9;
+    }
+}

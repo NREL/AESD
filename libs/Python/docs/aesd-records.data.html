@@ -1,0 +1,171 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module aesd-records.data</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="aesd-records.html"><font color="#ffffff">aesd-records</font></a>.data</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/Users/mrossol/Documents/Design_Studio/aesd-records/aesd-records/data.py">/Users/mrossol/Documents/Design_Studio/aesd-records/aesd-records/data.py</a></font></td></tr></table>
+    <p><tt>Package&nbsp;for&nbsp;data&nbsp;requests<br>
+&nbsp;<br>
+Created&nbsp;by:&nbsp;Michael&nbsp;Rossol&nbsp;Feb.&nbsp;2017</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="numpy.html">numpy</a><br>
+</td><td width="25%" valign=top><a href="pandas.html">pandas</a><br>
+</td><td width="25%" valign=top><a href="aesd-records.records_def_4_pb2.html">aesd-records.records_def_4_pb2</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-empty_data_chunk"><strong>empty_data_chunk</strong></a>(records_data)</dt><dd><tt>Check&nbsp;to&nbsp;see&nbsp;if&nbsp;data&nbsp;chunk&nbsp;is&nbsp;empty<br>
+Parameters<br>
+----------<br>
+records_data&nbsp;:&nbsp;'proto.data'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;proto&nbsp;data&nbsp;message&nbsp;from&nbsp;Response&nbsp;type<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+empty&nbsp;:&nbsp;'bool'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Returns&nbsp;True&nbsp;if&nbsp;data&nbsp;chunk&nbsp;is&nbsp;empty,&nbsp;else&nbsp;False</tt></dd></dl>
+ <dl><dt><a name="-from_list"><strong>from_list</strong></a>(record_table)</dt><dd><tt>Extract&nbsp;record&nbsp;data&nbsp;from&nbsp;RecordTable&nbsp;list<br>
+Parameters<br>
+----------<br>
+record_table&nbsp;:&nbsp;'proto.RecordTable'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;proto&nbsp;RecordTable&nbsp;message&nbsp;from&nbsp;RecordData&nbsp;style<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+'list'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;of&nbsp;value&nbsp;in&nbsp;record_table:&nbsp;either&nbsp;floats,&nbsp;ints,&nbsp;or&nbsp;strings</tt></dd></dl>
+ <dl><dt><a name="-from_record"><strong>from_record</strong></a>(record)</dt><dd><tt>Extract&nbsp;variable&nbsp;id&nbsp;and&nbsp;value&nbsp;from&nbsp;Record<br>
+Parameters<br>
+----------<br>
+record_list&nbsp;:&nbsp;'proto.Record'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;proto&nbsp;Record&nbsp;message&nbsp;from&nbsp;RecordList&nbsp;records<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+'dict'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Dictionary&nbsp;matching&nbsp;var_id&nbsp;to&nbsp;value&nbsp;for&nbsp;all&nbsp;VarValues&nbsp;in&nbsp;record</tt></dd></dl>
+ <dl><dt><a name="-from_record_data"><strong>from_record_data</strong></a>(record_data)</dt><dd><tt>Create&nbsp;request&nbsp;for&nbsp;records&nbsp;data<br>
+Parameters<br>
+----------<br>
+records_data&nbsp;:&nbsp;'proto.data'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;proto&nbsp;data&nbsp;message&nbsp;from&nbsp;Response&nbsp;type<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+'ndarray'&nbsp;or&nbsp;'pd.DataFrame'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Return&nbsp;records_data&nbsp;as&nbsp;either&nbsp;and&nbsp;ndarray&nbsp;or&nbsp;pd.DataFrame</tt></dd></dl>
+ <dl><dt><a name="-from_record_list"><strong>from_record_list</strong></a>(record_list)</dt><dd><tt>Extract&nbsp;record&nbsp;data&nbsp;from&nbsp;RecordList<br>
+Parameters<br>
+----------<br>
+record_list&nbsp;:&nbsp;'proto.RecordList'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;proto&nbsp;RecordList&nbsp;message&nbsp;from&nbsp;RecordData&nbsp;style<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+'pd.DataFrame'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;DataFrame&nbsp;with&nbsp;record_ids&nbsp;as&nbsp;indexes&nbsp;and&nbsp;var_ids&nbsp;as&nbsp;columns</tt></dd></dl>
+ <dl><dt><a name="-from_record_table"><strong>from_record_table</strong></a>(record_table)</dt><dd><tt>Extract&nbsp;record&nbsp;data&nbsp;from&nbsp;RecordTable<br>
+Parameters<br>
+----------<br>
+record_table&nbsp;:&nbsp;'proto.RecordTable'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;proto&nbsp;RecordTable&nbsp;message&nbsp;from&nbsp;RecordData&nbsp;style<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+'ndarray'&nbsp;or&nbsp;'pd.DataFrame'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;array&nbsp;or&nbsp;pd.DataFrame&nbsp;of&nbsp;data&nbsp;rec_ids&nbsp;x&nbsp;var_ids&nbsp;in&nbsp;shape</tt></dd></dl>
+ <dl><dt><a name="-from_value"><strong>from_value</strong></a>(value)</dt><dd><tt>Extract&nbsp;variable&nbsp;value&nbsp;from&nbsp;VarValue<br>
+Parameters<br>
+----------<br>
+value&nbsp;:&nbsp;'proto.VarValue'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;proto&nbsp;VarValue&nbsp;message&nbsp;from&nbsp;Records&nbsp;variables<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+'float',&nbsp;'int',&nbsp;or&nbsp;'string'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;variable&nbsp;value</tt></dd></dl>
+ <dl><dt><a name="-handle_data_response"><strong>handle_data_response</strong></a>(response)</dt><dd><tt>Extracts&nbsp;records_data&nbsp;from&nbsp;each&nbsp;server&nbsp;response&nbsp;message<br>
+Parameters<br>
+----------<br>
+response&nbsp;:&nbsp;'list'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;of&nbsp;proto&nbsp;Response&nbsp;messages<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+'pd.DataFrame'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Concatinated&nbsp;data&nbsp;from&nbsp;each&nbsp;response&nbsp;message</tt></dd></dl>
+ <dl><dt><a name="-request_records_data"><strong>request_records_data</strong></a>(model_id, request_id, max_records=1000, variable_ids=None, bookmark_id=None, version=4)</dt><dd><tt>Create&nbsp;request&nbsp;for&nbsp;records&nbsp;data<br>
+Parameters<br>
+----------<br>
+model_id&nbsp;:&nbsp;'string'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Id&nbsp;of&nbsp;model&nbsp;for&nbsp;which&nbsp;to&nbsp;requst&nbsp;records_data<br>
+request_id&nbsp;:&nbsp;'int'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Unique&nbsp;request&nbsp;id<br>
+max_records&nbsp;:&nbsp;'int'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Number&nbsp;or&nbsp;records&nbsp;being&nbsp;request<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Default=0,&nbsp;will&nbsp;return&nbsp;all&nbsp;records<br>
+variable_ids&nbsp;:&nbsp;'list'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;List&nbsp;of&nbsp;variable&nbsp;ids&nbsp;(ints)&nbsp;to&nbsp;be&nbsp;requested<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Will&nbsp;be&nbsp;returned&nbsp;in&nbsp;same&nbsp;order&nbsp;as&nbsp;request<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Default=None,&nbsp;all&nbsp;variables&nbsp;will&nbsp;be&nbsp;returned&nbsp;(order?)<br>
+bookmark_id&nbsp;:&nbsp;'int'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Request&nbsp;records_data&nbsp;based&nbsp;on&nbsp;bookmark&nbsp;id<br>
+version&nbsp;:&nbsp;'int'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Google&nbsp;protobuf&nbsp;version,&nbsp;default&nbsp;=&nbsp;4<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+request&nbsp;:&nbsp;'proto.Request'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;proto&nbsp;Request&nbsp;message&nbsp;for&nbsp;records_data</tt></dd></dl>
+ <dl><dt><a name="-request_work"><strong>request_work</strong></a>(model_id, inputs, request_id, version=4)</dt><dd><tt>Create&nbsp;request&nbsp;for&nbsp;records&nbsp;data<br>
+Parameters<br>
+----------<br>
+model_id&nbsp;:&nbsp;'string'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Id&nbsp;of&nbsp;model&nbsp;for&nbsp;which&nbsp;to&nbsp;requst&nbsp;records_data<br>
+inputs&nbsp;:&nbsp;'dict'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Dictionary&nbsp;of&nbsp;{var_id:&nbsp;value}&nbsp;pairs<br>
+request_id&nbsp;:&nbsp;'int'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Unique&nbsp;request&nbsp;id<br>
+version&nbsp;:&nbsp;'int'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Google&nbsp;protobuf&nbsp;version,&nbsp;default&nbsp;=&nbsp;4<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+request&nbsp;:&nbsp;'proto.Request'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;proto&nbsp;Request&nbsp;message&nbsp;for&nbsp;records_data</tt></dd></dl>
+ <dl><dt><a name="-set_var_value"><strong>set_var_value</strong></a>(var_id, value)</dt><dd><tt>set&nbsp;proto.VarValue&nbsp;message<br>
+Parameters<br>
+----------<br>
+var_id&nbsp;:&nbsp;'int'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;input&nbsp;var_id<br>
+value&nbsp;:&nbsp;'float'|'int'|'string'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;input&nbsp;value<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+var_value&nbsp;:&nbsp;'proto.VarValue'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Filled&nbsp;proto.VarValue&nbsp;message</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__all__</strong> = ['request_records_data', 'from_record_data', 'from_record_list', 'from_record', 'from_value', 'from_record_table', 'from_list', 'empty_data_chunk', 'handle_data_response', 'request_work', 'set_var_value']</td></tr></table>
+</body></html>
