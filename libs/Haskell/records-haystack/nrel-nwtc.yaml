@@ -1,0 +1,103 @@
+siteAccess     :
+  server       : xv11skys01.nrel.gov
+  root         : /api/nrel_wt_V7
+  authorization: ["bbush",<<INSERT PASSWORD HERE>>]
+  secure       : false
+  timeZone     : [-360, true, Denver]
+siteIdentifier : NWTCv4
+siteURI        : http://aesd.nrel.gov/records/v4/nwtc/
+siteName       : NREL NWTC
+siteDescription: Sensors from NREL National Wind Technology Center
+siteTags       :
+               ! 'DC.source'     : https://xv11skys01.nrel.gov/proj/nrel_wt_v7
+               ! 'DC.creator'    : Brian W Bush <brian.bush@nrel.gov>
+               ! 'DC.description': NREL NWTC sensors
+siteMeters     :
+               - 1dca834e-c6af46d6 NWTC Alstom Turbine Electricity Meter Turbine-Alstom kW Demand Forward
+               - 1dca834e-69a3e57e NWTC Alstom Turbine Electricity Meter Turbine-Alstom kW Demand Reverse
+               - 1dca834e-f56e11f0 NWTC Alstom Turbine Electricity Meter Turbine-Alstom kWh Delivered Forward
+               - 1dca834e-ef89a4e3 NWTC Alstom Turbine Electricity Meter Turbine-Alstom kWh Delivered Net
+               - 1dca834e-e05a8fcc NWTC Alstom Turbine Electricity Meter Turbine-Alstom kWh Delivered Reverse
+               - 1dcb9876-d6747947 NWTC Building Main Electricity Meter Main Bus 253 kW Demand Forward
+               - 1dcb9876-bb870264 NWTC Building Main Electricity Meter Main Bus 253 kW Demand Reverse
+               - 1dcb9876-c8a6f217 NWTC Building Main Electricity Meter Main Bus 253 kWh Delivered Forward
+               - 1dcb9876-be5bc8f1 NWTC Building Main Electricity Meter Main Bus 253 kWh Delivered Net
+               - 1dcb9876-51993c7b NWTC Building Main Electricity Meter Main Bus 253 kWh Delivered Reverse
+               - 1dca834e-88ccc232 NWTC Building Main - Dyno 2.5MW Electricity Meter Dynamometer Research kW Demand Forward
+               - 1dca834e-cc468b89 NWTC Building Main - Dyno 2.5MW Electricity Meter Dynamometer Research kW Demand Reverse
+               - 1dca834e-77364a3b NWTC Building Main - Dyno 2.5MW Electricity Meter Dynamometer Research kWh Delivered Forward
+               - 1dca834e-c25eb00d NWTC Building Main - Dyno 2.5MW Electricity Meter Dynamometer Research kWh Delivered Net
+               - 1dca834e-cfef69e6 NWTC Building Main - Dyno 2.5MW Electricity Meter Dynamometer Research kWh Delivered Reverse
+               - 1dca834e-86a9dfa0 NWTC Gamesa Turbine Electricity Meter Turbine-Gamesa kW Demand Forward
+               - 1dca834e-7288fb1d NWTC Gamesa Turbine Electricity Meter Turbine-Gamesa kW Demand Reverse
+               - 1dca834e-f2e8dcfe NWTC Gamesa Turbine Electricity Meter Turbine-Gamesa kWh Delivered Forward
+               - 1dca834e-86ba13b2 NWTC Gamesa Turbine Electricity Meter Turbine-Gamesa kWh Delivered Net
+               - 1dca834e-5fc0e61b NWTC Gamesa Turbine Electricity Meter Turbine-Gamesa kWh Delivered Reverse
+               - 1e63995c-0da82530 NWTC GE Turbine Electricity Meter Turbine-GE IO_1_LossofUPS
+               - 1e63a1a3-3e39bd46 NWTC GE Turbine Electricity Meter Turbine-GE IO_2_LossofTurbine
+               - 1dca834e-25374f22 NWTC GE Turbine Electricity Meter Turbine-GE kW Demand Forward
+               - 1dca834e-1aad18f0 NWTC GE Turbine Electricity Meter Turbine-GE kW Demand Reverse
+               - 1dca834e-06d75c90 NWTC GE Turbine Electricity Meter Turbine-GE kWh Delivered Forward
+               - 1dca834e-4a8f0931 NWTC GE Turbine Electricity Meter Turbine-GE kWh Delivered Net
+               - 1dca834e-e08594e0 NWTC GE Turbine Electricity Meter Turbine-GE kWh Delivered Reverse
+               - 1fb6783b-d4aa5bad NWTC PQMs Electricity Meter 2.5MW Dyno Bldg kW Demand
+               - 1fb6783b-338fe70f NWTC PQMs Electricity Meter 2.5MW Dyno Bldg kWh Delivered Positive
+               - 1fb6783b-eb2921d3 NWTC PQMs Electricity Meter 2.5MW Dyno Bldg kWh Received Negative
+               - 1fb67b17-485f508d NWTC PQMs Electricity Meter 5MW Dyno Bldg kW Demand
+               - 1fb67b17-cf420f24 NWTC PQMs Electricity Meter 5MW Dyno Bldg kWh Delivered Positive
+               - 1fb67b17-ebf6f3ed NWTC PQMs Electricity Meter 5MW Dyno Bldg kWh Received Negative
+               - 1fb67249-cdae7766 NWTC PQMs Electricity Meter Building 252 A60 kW Demand
+               - 1fb67230-e7e32d82 NWTC PQMs Electricity Meter Building 252 A60 kWh Delivered Positive
+               - 1fb6723b-d98aca6e NWTC PQMs Electricity Meter Building 252 A60 kWh Received Negative
+               - 1fb67a51-cd93177f NWTC PQMs Electricity Meter Building 254 IUF kW Demand
+               - 1fb67a51-a4df752d NWTC PQMs Electricity Meter Building 254 IUF kWh Delivered Positive
+               - 1fb67a51-0540aa4e NWTC PQMs Electricity Meter Building 254 IUF kWh Received Negative
+               - 1fb67b77-29928ea8 NWTC PQMs Electricity Meter Building 256 257 kW Demand
+               - 1fb67b77-6e2eb188 NWTC PQMs Electricity Meter Building 256 257 kWh Delivered Positive
+               - 1fb67b77-3904aeb6 NWTC PQMs Electricity Meter Building 256 257 kWh Received Negative
+               - 1fb677ac-5c70c313 NWTC PQMs Electricity Meter Hybrid Bldg kW Demand
+               - 1fb677ac-0dab1c25 NWTC PQMs Electricity Meter Hybrid Bldg kWh Delivered Positive
+               - 1fb677ac-c43be8d5 NWTC PQMs Electricity Meter Hybrid Bldg kWh Received Negative
+               - 1fad2db2-f0faa079 NWTC PQMs Electricity Meter Main Bus 251 kW Demand
+               - 1fad2d1a-ddb869a3 NWTC PQMs Electricity Meter Main Bus 251 kWh Delivered Positive
+               - 1fad2d8d-50a7a63e NWTC PQMs Electricity Meter Main Bus 251 kWh Received Negative
+               - 1e14632c-0e2fbc34 NWTC PV Electricity Meter Turbine-Row 2-PV Array kW Demand Forward
+               - 1e14635a-de0340d9 NWTC PV Electricity Meter Turbine-Row 2-PV Array kW Demand Reverse
+               - 1dca834e-d940d9ab NWTC PV Electricity Meter Turbine-Row 2-PV Array kWh Delivered Forward
+               - 1dca834e-904ec18f NWTC PV Electricity Meter Turbine-Row 2-PV Array kWh Delivered Net
+               - 1dca834e-cf756ef7 NWTC PV Electricity Meter Turbine-Row 2-PV Array kWh Delivered Reverse
+               - 1dca834e-c8f7dbee NWTC Siemens Turbine Electricity Meter Turbine-Siemens kW Demand Forward
+               - 1dca834e-a8589fe8 NWTC Siemens Turbine Electricity Meter Turbine-Siemens kW Demand Reverse
+               - 1dca834e-139265cf NWTC Siemens Turbine Electricity Meter Turbine-Siemens kWh Delivered Forward
+               - 1dca834e-b740e6da NWTC Siemens Turbine Electricity Meter Turbine-Siemens kWh Delivered Net
+               - 1dca834e-16d1eac1 NWTC Siemens Turbine Electricity Meter Turbine-Siemens kWh Delivered Reverse
+               - 1dca8118-55a18bbc NWTC Turbine Main Electricity Meter Building 253 Turbine Bus kW Demand Forward
+               - 1dca8118-6509834d NWTC Turbine Main Electricity Meter Building 253 Turbine Bus kW Demand Reverse
+               - 1dca8118-d9c27128 NWTC Turbine Main Electricity Meter Building 253 Turbine Bus kWh Delivered Forward
+               - 1dca8118-e26c20c7 NWTC Turbine Main Electricity Meter Building 253 Turbine Bus kWh Delivered Net
+               - 1dca8118-4966ef65 NWTC Turbine Main Electricity Meter Building 253 Turbine Bus kWh Delivered Reverse
+               - 1dca834e-1efc0fb1 NWTC Turbine Main - N3 Met Tower Electricity Meter N-3 Met Tower kW Demand Forward
+               - 1dca834e-a5de4d12 NWTC Turbine Main - N3 Met Tower Electricity Meter N-3 Met Tower kW Demand Reverse
+               - 1dca834e-6477287f NWTC Turbine Main - N3 Met Tower Electricity Meter N-3 Met Tower kWh Delivered Forward
+               - 1dca834e-0a65eb03 NWTC Turbine Main - N3 Met Tower Electricity Meter N-3 Met Tower kWh Delivered Net
+               - 1dca834e-d03e095f NWTC Turbine Main - N3 Met Tower Electricity Meter N-3 Met Tower kWh Delivered Reverse
+               - 1dca834e-498ad3b4 NWTC Turbine Main - Row 1 Electricity Meter Turbine-Row 1 kW Demand Forward
+               - 1dca834e-08374f33 NWTC Turbine Main - Row 1 Electricity Meter Turbine-Row 1 kW Demand Reverse
+               - 1dca834e-a09bbfbf NWTC Turbine Main - Row 1 Electricity Meter Turbine-Row 1 kWh Delivered Forward
+               - 1dca834e-f766dde3 NWTC Turbine Main - Row 1 Electricity Meter Turbine-Row 1 kWh Delivered Net
+               - 1dca834e-6ba65061 NWTC Turbine Main - Row 1 Electricity Meter Turbine-Row 1 kWh Delivered Reverse
+               - 1dca834e-af3a8dc2 NWTC Turbine Main - Row 3 Electricity Meter Turbine-Row 3 kW Demand Forward
+               - 1dca834e-098bd30f NWTC Turbine Main - Row 3 Electricity Meter Turbine-Row 3 kW Demand Reverse
+               - 1dca834e-26e8f2e8 NWTC Turbine Main - Row 3 Electricity Meter Turbine-Row 3 kWh Delivered Forward
+               - 1dca834e-681b8c58 NWTC Turbine Main - Row 3 Electricity Meter Turbine-Row 3 kWh Delivered Net
+               - 1dca834e-4adb7d95 NWTC Turbine Main - Row 3 Electricity Meter Turbine-Row 3 kWh Delivered Reverse
+               - 1dca834e-5023f846 NWTC Turbine Main - Row 4 Electricity Meter Turbine-Row 4 kW Demand Forward
+               - 1dca834e-c7c103f0 NWTC Turbine Main - Row 4 Electricity Meter Turbine-Row 4 kW Demand Reverse
+               - 1dca834e-5675f01a NWTC Turbine Main - Row 4 Electricity Meter Turbine-Row 4 kWh Delivered Forward
+               - 1dca834e-7a646c45 NWTC Turbine Main - Row 4 Electricity Meter Turbine-Row 4 kWh Delivered Net
+               - 1dca834e-761c476e NWTC Turbine Main - Row 4 Electricity Meter Turbine-Row 4 kWh Delivered Reverse
+               - 1dca834e-4aa9acf6 NWTC Turbine Main - Row 4A Electricity Meter Turbine-Row 4A kW Demand Forward
+               - 1dca834e-14f1e54b NWTC Turbine Main - Row 4A Electricity Meter Turbine-Row 4A kW Demand Reverse
+               - 1dca834e-22aa3005 NWTC Turbine Main - Row 4A Electricity Meter Turbine-Row 4A kWh Delivered Forward
+               - 1dca834e-5e55b14a NWTC Turbine Main - Row 4A Electricity Meter Turbine-Row 4A kWh Delivered Net
+               - 1dca834e-954aa87f NWTC Turbine Main - Row 4A Electricity Meter Turbine-Row 4A kWh Delivered Reverse
