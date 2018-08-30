@@ -1,7 +1,0 @@
-.env
-*.pyc
-*.log
-.DS_Store
-aesdpy.egg-info/
-*.swp
-*.egg
