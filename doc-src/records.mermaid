@@ -1,0 +1,115 @@
+graph LR
+
+subgraph Requests
+  req[Request]
+  rmm[RequestModelsMeta]
+  rrd[RequestRecordsData]
+  rbm[RequestBookmarkMeta]
+  rsb[RequestSaveBookmark]
+  rwo[RequestWork]
+  rca[RequestCancel]
+end
+
+req --> rmm
+req --> rrd
+req --> rbm
+req --> rsb
+req --> rca
+req --> rwo
+
+rrd --> fie
+
+rsb --> bmm
+
+rwo --> vav
+
+subgraph Responses
+  res[Response]
+  mml[ModelMetaList]
+  red[RecordData]
+  bml[BookmarkMetaList]
+end
+
+res --> mml
+res --> red
+res --> bml
+
+mml --> mom
+
+bml --> bmm
+
+subgraph Bookmarks
+  bmm[BookmarkMeta]
+  bic[BoomarkIntervalContent]
+  bsc[BookmarkSetContent]
+end
+
+bmm --> bic
+bmm --> bsc
+bmm --> fie
+
+subgraph Metadata
+  mom[ModelMeta]
+  vam[VarMeta]
+  vat[VariableType]
+  dom[DomainMeta]
+  vai[VarInterval]
+  vas[VarSet]
+end
+
+mom --> vam
+mom --> dom
+
+vam --> vat
+
+dom --> vai
+dom --> vas
+
+vai --> val
+
+vas --> val
+
+subgraph Records
+  rec[Record]
+  rel[RecordList]
+  ret[RecordTable]
+end
+
+rec --> vav
+
+rel --> rec
+
+ret --> dol
+ret --> inl
+ret --> stl
+
+red --> rel
+red --> ret
+
+subgraph Values
+  vav[VarValue]
+  val[Value]
+  dol[DoubleList]
+  inl[IntegerList]
+  stl[StringList]
+end
+
+vav --> val
+
+subgraph Filters
+  fie[FilterExpression]
+  fin[FilterNot]
+  fiu[FilterUnion]
+  fii[FilterIntersection]
+end
+
+fie --> fin
+fie --> fiu
+fie --> fii
+fie --> dom
+
+fin --> fie
+
+fiu --> fie
+
+fii --> fie

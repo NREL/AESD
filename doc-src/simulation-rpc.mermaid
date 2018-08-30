@@ -1,0 +1,34 @@
+sequenceDiagram
+
+participant User
+participant Visualizer Client
+participant AESD Records Server
+participant Simulation
+
+User ->> Visualizer Client: load configuration
+activate Visualizer Client
+Visualizer Client ->> AESD Records Server: Request models_meta
+activate AESD Records Server
+AESD Records Server ->> Simulation: list simulations
+activate Simulation
+Simulation -->> AESD Records Server: metadata for simulations
+deactivate Simulation
+AESD Records Server --x Visualizer Client: Response models
+deactivate AESD Records Server
+Visualizer Client -->> User: show list of simulations
+deactivate Visualizer Client
+
+loop user requests more simulations
+  activate Visualizer Client
+  User ->> Visualizer Client: create new simulation
+  Visualizer Client ->> AESD Records Server: Request work
+  activate AESD Records Server
+  AESD Records Server ->> Simulation: input for new simulation
+  activate Simulation
+  Simulation -->> AESD Records Server: output from new simulation
+  deactivate Simulation
+  AESD Records Server --x Visualizer Client: Response data
+  deactivate AESD Records Server
+  Visualizer Client --x User: update visualization
+  deactivate Visualizer Client
+end

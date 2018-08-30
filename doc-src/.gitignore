@@ -1,0 +1,7 @@
+*.tmp
+tmp/
+*.sw?
+~$*
+node_modules/
+docs/aesd-slides.html
+.ipynb_checkpoints/

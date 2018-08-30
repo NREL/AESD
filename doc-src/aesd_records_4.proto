@@ -1,0 +1,588 @@
+/**
+ * # Records API, Version 4
+ *
+ * The AESD Records API consists of Google Protobuf 3 [@protobuf] messages used to request and provid data and metadata for record-oriented information. This section contains the complete specification for version 4 of the Records API. Clients send `Request` messages and servers send `Response` messages, typically transported via WebSockets [@websockets].
+ * 
+ * ## Message Groups
+ *
+ * The message types in the Records API are organized into thematic groups below.
+ *
+ * ### Requests and Responses
+ * 
+ * `Request` messages are sent from client to server and `Response` messages are sent from server to client.  Request messages contain a specific type of request and response messages contain a corresponding specific type of response.
+ *
+ * *   [Request](#AesdRecords.Request)
+ * *   [RequestModelsMeta](#AesdRecords.RequestModelsMeta)
+ * *   [RequestRecordsData](#AesdRecords.RequestRecordsData)
+ * *   [RequestWork](#AesdRecords.RequestWork)
+ * *   [RequestBoomarkMeta](#AesdRecords.RequestBoomarkMeta)
+ * *   [RequestSaveBookmark](#AesdRecords.RequestSaveBookmark)
+ * *   [RequestCancel](#AesdRecords.RequestCancel)
+ * *   [Response](#AesdRecords.Response)
+ * 
+ * ### Metadata
+ * 
+ * Metadata messages describe data sources ("models") and variables.
+ *
+ * *   [ModelMeta](#AesdRecords.ModelMeta)
+ * *   [ModelMetaList](#AesdRecords.ModelMetaList)
+ * *   [DomainMeta](#AesdRecords.DomainMeta)
+ * *   [VarMeta](#AesdRecords.VarMeta)
+ * *   [VariableType](#AesdRecords.VariableType)
+ * *   [VarSet](#AesdRecords.VarSet)
+ * *   [VarInterval](#AesdRecords.VarInterval)
+ * 
+ * ### Data Records
+ * 
+ * Data are represented as either lists of records or tables of them.
+ *
+ * *   [Record](#AesdRecords.Record)
+ * *   [VarValue](#AesdRecords.VarValue)
+ * *   [Value](#AesdRecords.Value)
+ * *   [RecordData](#AesdRecords.RecordData)
+ * *   [RecordList](#AesdRecords.RecordList)
+ * *   [RecordTable](#AesdRecords.RecordTable)
+ * 
+ * ### Filtering
+ *
+ * Records can be filtered by logical operations on conditions for values of variables in the records.
+ *
+ * *   [FilterExpression](#AesdRecords.FilterExpression)
+ * *   [FilterNot](#AesdRecords.FilterNot)
+ * *   [FilterIntersection](#AesdRecords.FilterIntersection)
+ * *   [FilterUnion](#AesdRecords.FilterUnion)
+ * *   [DomainMeta](#AesdRecords.DomainMeta)
+ * 
+ * ### Bookmarks
+ * 
+ * Bookmarks record particular sets or records or conditions for record data.
+ *
+ * *   [BookmarkMeta](#AesdRecords.BookmarkMeta)
+ * *   [BookmarkMetaList](#AesdRecords.BookmarkMetaList)
+ * *   [BookmarkIntervalContent](#AesdRecords.BookmarkIntervalContent)
+ * *   [BookmarkSetContent](#AesdRecords.BookmarkSetContent)
+ * 
+ * ### Miscellaneous
+ * 
+ * The following messages wrap data types for the content of records.
+ *
+ * *   [DoubleList](#AesdRecords.DoubleList)
+ * *   [IntegerList](#AesdRecords.IntegerList)
+ * *   [StringList](#AesdRecords.StringList)
+ * *   [OptionalInt32](#AesdRecords.OptionalInt32)
+ * *   [OptionalUInt32](#AesdRecords.OptionalUInt32)
+ * *   [OptionalString](#AesdRecords.OptionalString)
+ * 
+ * ## General Conventions
+ *
+ * All fields are technically optional in ProtoBuf 3, but some fields may be required in each message type in order for the message to be semantically valid.  In the following specifications for the messages, fields are annotated as *semantically required* or *semantically optional*.  Also, the specification notes when field in the [protobuf `oneof` construct](https://developers.google.com/protocol-buffers/docs/proto3#oneof) are required or mutually exclusive.
+ *
+ * Furthermore, one cannot determine whether an optional value has been set or not if it is just a value, as opposed to a message. That is not true for fields that are messages, where the absence of the field truly indicates that the value is absent, not just a default or unset value. The message `OptionalString`, for example, is used in this API to indicate whether a character string value is truly present. Thus [`RequestModelsMeta`](#AesdRecords.RequestModelsMeta) has a `model_id` field that indicates whether the request is for all models, when the field has not been set, or for a specific one, when the field has been set.
+ *
+ * Throughout this specification, the following types are used for identifiers:
+ * *  `var_id` is [int32](#int32)
+ * *  `model_id` is [string](#string)
+ * *  `record_id` is [int64](#int64)
+ *
+ * This specification conforms to [Protocol Buffers version 3](https://developers.google.com/protocol-buffers/docs/proto3).
+ */
+syntax = "proto3";
+package AesdRecords;
+
+
+// This reduces linking requirements.
+option optimize_for = LITE_RUNTIME;
+
+
+// General
+
+
+/**
+ * Wrapper for an optional signed integer.
+ */
+message OptionalInt32 {
+    int32 value = 1; /// [semantically required] The signed integer value.
+}
+
+
+/**
+ * Wrapper for an optional unsigned integer.
+ */
+message OptionalUInt32 {
+    uint32 value = 1; /// [semantically required] The unsigned integer value.
+}
+
+
+/**
+ * Wrapper for an optional string.
+ */
+message OptionalString {
+    string value = 1; /// [semantically required] The character string value.
+}
+
+
+/**
+ * Value that may be a real number, an integer, or a character string
+ *
+ * *Exactly one of `real_value`, `integer_value`, or `string_value` must be specified in this message.*
+ */
+message Value {
+    oneof    value              /// [semantically required] *Exactly one of `real_value`, `integer_value`, or `string_value` must be specified in this message.*
+    {
+      double real_value    = 1; /// The real number.
+      int64  integer_value = 2; /// The integer.
+      string string_value  = 3; /// The character string.
+    }
+}
+
+
+/**
+ * A list of real numbers.
+ */
+message DoubleList {
+    repeated double values = 1; /// [semantically required] The real numbers.
+}
+
+
+/**
+ * A list of integers.
+ */
+message IntegerList {
+    repeated sint64 values = 1; /// [semantically required] The integers.
+}
+
+
+/**
+ * A list of character strings.
+ */
+message StringList {
+    repeated string values = 1; /// [semantically required] The character strings.
+}
+
+
+// Bookmarks
+
+
+/**
+ * A range of [record identifiers](#AesdRecords.Record) can specify the content of a [bookmark](#AesdRecords.BookmarkMeta). Bookmark interval content provides a convenient means to bookmark a contiguous selection of records in a [model](#AesdRecords.ModelMeta).
+ *
+ * Both fields in this message are optional:
+ *
+ * *   If neither field is present, the bookmark interval designates all records in the model.
+ * *   If only `first_record`is present, the bookmark interval designates all records starting from that record identifier.
+ * *   If only `last_record` is present, the bookmark interval designates all records ending at that record identifier. For a dynamic model, such a bookmark interval includes all "future" records.
+ * *   If both fields are present, the bookmark interval designates all records between the two identifiers, inclusively.
+ */
+message BookmarkIntervalContent {
+    int64 first_record = 1; /// [semantically optional] The identifier for the first record in the interval.
+    int64 last_record  = 2; /// [semantically optional] The identifier for the last record in the interval.
+}
+
+
+/**
+ * A list (set) of [record identifiers](#AesdRecords.Record) can specify the contents of a [bookmark](#AesdRecords.BookmarkMeta). Bookmark-set content provides a convenient means to bookmark a specific selection of non-continuous records in a [model](#AesdRecords.ModelMeta).
+ */
+message BookmarkSetContent {
+    repeated int64 record_ids = 1; /// [semantically optional] The list of record identifiers in the set.
+}
+
+
+/**
+ * A bookmark is metadata defining a subset of records in a [model](#AesdRecords.ModelMeta).
+ *
+ * There are three alternatives to specifying a bookmark:
+ *
+ * 1.  [Interval content](#AesdRecords.BookmarkIntervalContent) specifies a range of records in the bookmark.
+ * 2.  [Set content](#AesdRecords.BookmarkSetContent) specifies a list of records in the bookmark.
+ * 3.  A [filter expression](#AesdRecords.FilterExpression) defines a set of logical conditions for determining whether a record is in the bookmark.
+ *
+ * *Exactly one of `interval`, `set`, or `filter` must be specified in this message.*
+ */
+message BookmarkMeta {
+    string                      bookmark_id   = 1; /// [semantically optional] When creating a new bookmark, this field must be empty: the server will create a unique identifier for the bookmark. This identifier uniquely identifies the bookmark *on the particular server*.
+    string                      bookmark_name = 2; /// [semantically required] A name for the bookmark, which is useful for displaying the bookmark to users. This need not be unique, although it is recommended to be so.
+    oneof                       content            /// [semantically required] The specification for which records are present in the bookmark. *Exactly one of `interval`, `set`, or `filter` must be specified in this message.*
+    {
+        BookmarkIntervalContent interval      = 3; /// The range of records in the bookmark.
+        BookmarkSetContent      set           = 4; /// The list of records in the bookmark.
+        FilterExpression        filter        = 5; /// Logical conditions for defining which records are in the bookmark.
+    }
+}
+
+
+/**
+ * Bookmarks may be grouped into lists (sets).
+ */
+message BookmarkMetaList {
+    repeated BookmarkMeta bookmark_metas = 1; /// [semantically optional] The bookmarks in the list.
+}
+
+
+/**
+ * A request for one or more bookmarks for a [model](#AesdRecords.ModelMeta).
+ *
+ * The response to this request is [BookmarkMetaList](#AesdRecords.MetaList)
+ */
+message RequestBookmarkMeta {
+    string         model_id    = 1; /// [semantically required] Which model for which to list bookmarks.
+    OptionalString bookmark_id = 2; /// [semantically optional] If empty, list all bookmarks for the model. Otherwise, list just the bookmark metadata for this specific bookmark identifier.
+}
+
+
+/**
+ * A request to create or update a bookmark.
+ *
+ * The response to this request is [BookmarkMetaList](#AesdRecords.BookmarkMetaList).
+ */
+message RequestSaveBookmark {
+    string       model_id     = 1; /// [semantically required] Which model for which to save the bookmark.
+    BookmarkMeta new_bookmark = 2; /// [semantically optional] If empty, create a new bookmark. (In which case, leave the `bookmark_id` empty, so that the server will create a unique identifier for the new bookmark.) Otherwise, update an existing bookmark.
+}
+
+
+// Filters
+
+
+/**
+ * A filtering expression is a composition of logical conditions on a [record](#AesdRecords.Record). It can be used to filter records.
+ * There are four alternatives to specifying a filter expression:
+ *
+ * 1.  The [logical negation](#AesdRecords.FilterNot) of another filtering expression.
+ * 2.  The [set union](#AesdRecords.FilterUnion) of multiple filtering expressions.
+ * 3.  The [set intersection](#AesdRecords.FilterIntersection) of multiple filtering expressions.
+ * 4.  [Particular values](#AesdRecords.DomainMeta) of variables in a record.
+ *
+ * *Exactly one of `filter_not`, `filter_union`, `filter_intersection`, or `filter_domain` must be specified in this message.*
+ */
+message FilterExpression {
+  oneof                expression               /// [semantically required] The particular filter expression. *Exactly one of `filter_not`, `filter_union`, `filter_intersection`, or `filter_domain` must be specified in this message.*
+  {
+    FilterNot          filter_not          = 1; /// Logical negation of an expression.
+    FilterUnion        filter_union        = 2; /// Set union of expressions.
+    FilterIntersection filter_intersection = 3; /// Set intersection of expressions.
+    DomainMeta         filter_domain       = 4; /// Particular values of variables.
+  }
+}
+
+
+/**
+ * Logically negate a filtering expression. A record satisfies this expression if it does not satisfy `filter_expression`.
+ */
+message FilterNot {
+  FilterExpression filter_expression = 1; /// [semantically required] The expression to be negated.
+}
+
+
+/**
+ * Set union of filtering expressions. A record satisfies this expression if it satisfies any of `filter_expressions`.
+ */
+message FilterUnion {
+  repeated FilterExpression filter_expressions = 1; /// [semantically required] The expressions to be "unioned".
+}
+
+
+/**
+ * Set intersection of filtering expressions. A record satisfies this expression if it satisfies all `filter_expressions`.
+ */
+message FilterIntersection {
+  repeated FilterExpression filter_expressions = 1; /// [semantically required] The expressions to be intersected.
+}
+
+
+
+// Variables
+
+
+/**
+ * The data type for a value.
+ */
+enum VariableType
+{
+    REAL            = 0; /// A real number.
+    INTEGER         = 1; /// An integer.
+    STRING          = 2; /// A character string.
+}
+
+
+/**
+ * Metadata for a variable.
+ */
+message VarMeta {
+    int32           var_id   = 1; /// [semantically required] An integer identifying the variable.
+    string          var_name = 2; /// [semantically required] The name of the variable.
+    string          units    = 3; /// [semantically optional] The name of the unit of measure for values of the variable.
+    repeated sint32 si       = 4; /// [semantically optional] The unit of measure expressed as a list of the exponents for the eight fundamental SI quantities [meter, kilogram, second, ampere, kelvin, mole, calenda, radian]. For example, the unit of acceleration $m/s^2$ would be express as `[1, 0, -2, 0, 0, 0, 0, 0]` because meters has an exponent of positive one and seconds has an exponent of negative two.
+    double          scale    = 5; /// [semantically optional] An overall scale relative to the fundamental SI scale of the unit of measure. For instance, kilometers would have a scale of 1000 because the fundamental unit of distance is meters.
+    VariableType    type     = 6; /// [semantically optional] The data type for values of the variable. The default type is real number.
+}
+
+
+// Models
+
+/**
+ * Metadata for a model.
+ */
+message ModelMeta {
+    string              model_id   = 1; /// [semantically required] The unique identifier for the model *on the particular server*.
+    string              model_name = 2; /// [semantically required] A name for the model, useful for display the model to users. This need not be unique, although it is recommended to be so.
+    string              model_uri  = 3; /// [semantically required] The unique URI for the model. Additional metadata may be obtained by dereferencing that URI.
+    repeated VarMeta    variables  = 4; /// [semantically required] Metadata for the variables.
+    repeated DomainMeta inputs     = 5; /// [semantically optional] Metadata for input values to the model, if any.
+}
+
+
+/**
+ * A list of metadata for models.
+ */
+message ModelMetaList {
+    repeated ModelMeta models = 1; /// [semantically optional] The metadata for the models.
+}
+
+
+/**
+ * A request for metadata about model(s).
+ *
+ * The response to this request is [ModelMetaList](#AesdRecords.ModelMetaList).
+ */
+message RequestModelsMeta {
+    OptionalString model_id = 1; /// [semantically optional] If absent, the request is for metadata for all models. Otherwise the request is for the specifically identified model.
+}
+
+
+// Input domain
+
+
+/**
+ * A range of values of a [variable](#AesdRecords.VarMeta).
+ *
+ * Both fields in this message are optional:
+ *
+ * *   If neither field is present, the interval designates all values in the domain.
+ * *   If only `first_value`is present, the interval designates all values starting from that value.
+ * *   If only `last_value` is present, the bookmark interval designates all values ending at that value.
+ * *   If both fields are present, the interval designates all values between the two values, inclusive.
+ */
+message VarInterval {
+    Value first_value = 1; /// [semantically optional] The first value in the interval.
+    Value last_value  = 2; /// [semantically optional] The last value in the interval.
+}
+
+
+/**
+ * A set of values for a variable.
+ */
+message VarSet {
+    repeated Value elements = 1; /// [semantically optional] The list of values in the set.
+}
+
+
+/**
+ * The domain (set of valid values) for a variable.
+ *
+ * There are two alternatives to specifying a domain:
+ *
+ * 1.  [An interval](#AesdRecords.VarInterval) specifies a range of values in the domain.
+ * 2.  [A set](#AesdRecords.VarSet) specifies a list of values in the domain.
+ *
+ * *Exactly one of `interval` or `set` must be specified in the message.*
+ */
+message DomainMeta {
+    int32           var_id   = 1; /// [semantically required] 
+    oneof           domain        /// [semantically required] Which values are in the domain. *Exactly one of `interval` or `set` must be specified in the message.*
+    {
+        VarInterval interval = 2; /// The interval of values in the domain.
+        VarSet      set      = 3; /// The list of values in the domain.
+    }
+}
+
+
+// Work
+
+
+/**
+ * Request that the server compute new records based on input values.
+ *
+ * The response to this request is [RecordData](#AesdRecords.RecordData).
+ */
+message RequestWork {
+    string model_id          = 1; /// [semantically required] The identifier for the model.
+    repeated VarValue inputs = 2; /// [semantically optional] Which input variables to set to which values.
+}
+
+
+// Records
+
+
+// Records should have a record ID, expressed as an int64. The primary reason
+//  for an ID this is for bookmarking.
+
+//We have the option of doing things in a column or row oriented manner.
+// column seems more efficient to transfer, but more difficult to code around.
+
+// we have two ways of returning record data
+// - A heterogeneous list of data
+// - A table of homogenous data
+
+
+/**
+ * The value of a variable.
+ */
+message VarValue {
+    int32 var_id = 1; /// [semantically required] The identifier for the variable.
+    Value value  = 2; /// [semantically required] The value of the variable.
+}
+
+
+/**
+ * A record is a list of variables and their associated values.
+ */
+message Record {
+    int64    record_id          = 1; /// [semantically required] A unique identifier for the record.
+    repeated VarValue variables = 2; /// [semantically optional] The values for variables in the record.
+}
+
+
+/**
+ * A list of records. The list is heterogeneous in the sense that each variable may have a different type.
+ */
+message RecordList {
+    repeated Record records = 1; /// [semantically optional] The list of records.
+}
+
+
+/**
+ *  A homogeneously typed table of records, where each variable has each type, with a row for each record and a column for each variable.
+ *
+ *  This message represents the following table:
+ *
+ *  | Record Identifier | `var_id[0]`  | `var_id[1]`  | . . . | `var_id[N]`  |
+ *  |-------------------|--------------|--------------|-------|--------------|
+ *  | `rec_id[0]`       | `list[0][0]` | `list[0][1]` | . . . | `list[0][N]` |
+ *  | `rec_id[1]`       | `list[1][0]` | `list[1][1]` | . . . | `list[1][N]` |
+ *  | . . .             | . . .        | . . .        | . . . | . . .        |
+ *  | `rec_id[M]`       | `list[M][0]` | `list[M][1]` | . . . | `list[M][N]` |
+ * 
+ *  The underlying list is a **single** array, addressable using the following [row-major index formula](https://en.wikipedia.org/wiki/Row-_and_column-major_order)
+ *  	list[row][var] = array[var + NY * row]
+ *  where `NX` = length of `rec_ids` and `NY` = length of `var_ids`.
+ *
+ * *Exacly one of `reals`, `integers`, or `strings` must be specified in the message.* 
+ */
+message RecordTable {
+    repeated int32  var_ids    = 1; /// [semantically required] The identifiers of the variables (columns) in the table.
+    repeated int64  rec_ids    = 2; /// [semantically required] The identifiers of the records (rows) in the table.
+    oneof           list            /// [semantically required] The values of the variables, in [row-major order](https://en.wikipedia.org/wiki/Row-_and_column-major_order). *Exacly one of `reals`, `integers`, or `strings` must be specified in the message.*
+    {
+        DoubleList  reals      = 3; /// The real numbers comprising the values of the variables, in [row-major order](https://en.wikipedia.org/wiki/Row-_and_column-major_order).
+        IntegerList integers   = 4; /// The integers comprising the values of the variables, in [row-major order](https://en.wikipedia.org/wiki/Row-_and_column-major_order).
+        StringList  strings    = 5; /// The character strings comprising the values of the variables, in [row-major order](https://en.wikipedia.org/wiki/Row-_and_column-major_order).
+    }
+}
+
+
+/**
+ * A collection of records.
+ *
+ * There are two alternatives to specifying record data:
+ *
+ * 1.  [A list](#AesdRecords.RecordList) specifies a heterogeneously typed list.
+ * 2.  [A table](#AesdRecords.RecordTable) specifies a homogeneously typed table.
+ *
+ *  *Exactly one of `list` or `table` must be present in the message.*
+ */
+message RecordData {
+    oneof           style      /// [semantically required] The collection of records. *Exactly one of `list` or `table` must be present in the messsage.*
+    {
+        RecordList  list  = 1; /// A heterogeneously typed list of records.
+        RecordTable table = 2; /// A homogeneously typed table of records.
+    }
+}
+
+
+/**
+ * Request record data for a model.
+ *
+ * There are three alternatives to requesting record data.
+ *
+ * 1.  Request all records.
+ * 2.  Request records in [a bookmark](#AesdRecords.BookmarkMeta).
+ * 3.  [Filter](#AesdRecords.FilterExpression) records according to a criterion.
+ *
+ * The response to this request is [RecordData](#AesdRecords.RecordData).
+ *
+ * *No more than on of `bookmark_id` or `expression` may be present in the message.*
+ */
+message RequestRecordsData {
+    string               model_id    = 1; /// [semantically required] The identifier for the model.
+    uint64               max_records = 2; /// [semantically optional] If specified, this is the maximum number of records to return. Otherwise all records are returned, although they may be returned as multiple responses, each with a chunk of records.
+    repeated int32       var_ids     = 3; /// [semantically optional] Which variables to include in the response. If this is not specified, all variables will be included.
+    oneof                filter           /// [semantically optional] How to filter the results. *No more than on of `bookmark_id` or `expression` may be present in the message.*
+    {
+        string           bookmark_id = 4; /// [semantically optional] Only respond with records in a specified bookmark.
+        FilterExpression expression  = 5; /// [semantically optional] Only respond with records matching a specified criterion.
+    }
+}
+
+
+// Responses
+
+
+/**
+ * A response to a request.
+ *
+ * Note that a server may send multiple responses to a single request, expressed as a linked list of chunks. It is strongly recommended that servers chunk by `record_id` so that each record is kept intact. A chunk may be empty.
+ */
+message Response {
+    uint32               version       = 1; /// [semantically required] The version number for the API. *This must be the number **four**.*
+    OptionalUInt32       id            = 2; /// [semantically optional] A response without an identifier is a notification. Otherwise, the response identifier matches the response identifier for the original request.
+    int32                chunk_id      = 3; /// [semantically optional, but recommended] The identifier for this chunk. It is recommended that chunks are number sequentially starting from then number one.
+    int32                next_chunk_id = 4; /// [semantically optional] The identifier of the next chunk, or zero if this is the last chunk.
+    oneof                type               /// [semantically optional] A chunk may be empty.
+    {
+        string           error         = 5; /// An error message.
+        ModelMetaList    models        = 6; /// A list of model metadata.
+        RecordData       data          = 7; /// A list of record data.
+        BookmarkMetaList bookmarks     = 8; /// A list of bookmark metadata.
+    }
+}
+
+
+// Requests
+
+
+/**
+ * Cancel a previous request.
+ */
+message RequestCancel {
+    OptionalUInt32 id = 1; /// [semantically required] Which request to cancel.
+}
+
+
+/**
+ * A request. There are six types of requests:
+ *
+ * | Request                        | Response                                          |
+ * |--------------------------------|---------------------------------------------------|
+ * | Metadata for model(s)          | [ModelMetaList](#AesdRecords.ModelMetaList)       |
+ * | Data records                   | [RecordData](#AesdRecords.RecordData)             |
+ * | Metadata for bookmark(s)       | [BookmarkMetaList](#AesdRecords.BookmarkMetaList) |
+ * | Saving a bookmark              | [BookmarkMetaList](#AesdRecords.BookmarkMetaList) |
+ * | Canceling a previous request   | n/a                                               |
+ * | New work, such as a simulation | [RecordData](#AesdRecords.RecordData)             |
+ *
+ * *Exactly one of `models_metadata`, `records_data`, `bookmark_meta`, `save_bookmark`, `cancel`, or `work` must be specified in the message.
+ */
+message Request {
+    uint32                  version         = 1; /// [semantically required] The version number for the API. *This must be the number **four**.*
+    OptionalUInt32          id              = 2; /// [semantically optional, but recommended] An identifier that will be used to tag responses, so that responses can be correlated with requests.
+    bool                    subscribe       = 3; /// [semantically optional] Whether to continue receiving responses indefinitely, as new records become available. This is useful, for example, when a sensor is reporting measurements periodically or when simulations are reporting a series or results. Use [RequestCancel](#AesdRecords.RequestCancel) to end the subscription.
+    oneof                   type                 /// [semantically required] The details of the request. *Exactly one of `models_metadata`, `records_data`, `bookmark_meta`, `save_bookmark`, `cancel`, or `work` must be specified in the message.
+    {
+        RequestModelsMeta   models_metadata = 4; /// Request metadata for model(s).
+        RequestRecordsData  records_data    = 5; /// Request data records.
+        RequestBookmarkMeta bookmark_meta   = 6; /// Request metadata for bookmark(s).
+        RequestSaveBookmark save_bookmark   = 7; /// Request save a new bookmark or update an existing one.
+        RequestCancel       cancel          = 8; /// Request cancel a previous request).
+        RequestWork         work            = 9; /// Request work (e.g., simulation results).
+    }
+}

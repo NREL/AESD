@@ -1,0 +1,44 @@
+sequenceDiagram
+
+participant User
+participant Visualizer Client
+participant AESD Records Server
+participant Backend Supplying Data
+
+User ->> Visualizer Client: load configuration
+activate Visualizer Client
+Visualizer Client ->> AESD Records Server: Request models_metadata
+activate AESD Records Server
+AESD Records Server ->> Backend Supplying Data: list data sources
+activate Backend Supplying Data
+Backend Supplying Data -->> AESD Records Server: metadata for sources
+deactivate Backend Supplying Data
+AESD Records Server --x Visualizer Client: Response models
+deactivate AESD Records Server
+Visualizer Client -->> User: show list of models
+deactivate Visualizer Client
+
+User ->> Visualizer Client: select model to display
+activate Visualizer Client
+Visualizer Client ->> AESD Records Server: Request records_data
+activate AESD Records Server
+AESD Records Server ->> Backend Supplying Data: get data from source
+activate Backend Supplying Data
+Backend Supplying Data -->> AESD Records Server: available data from source
+deactivate Backend Supplying Data
+AESD Records Server --x Visualizer Client: Response data
+Visualizer Client --x User: show visualization
+
+loop poll source for new data
+  AESD Records Server ->> Backend Supplying Data: get data from source
+  activate Backend Supplying Data
+  Backend Supplying Data -->> AESD Records Server: new data from source
+  deactivate Backend Supplying Data
+  AESD Records Server --x Visualizer Client: Response data
+  Visualizer Client --x User: update visualization
+end
+
+User ->> Visualizer Client: stop updates
+Visualizer Client ->> AESD Records Server: Request cancel
+deactivate AESD Records Server
+deactivate Visualizer Client
