@@ -1,3 +1,3 @@
-var cesds = require('./cesds-records.js');
+var aesd = require('./aesd-records.js');
 
-global.window.cesds = cesds;
+global.window.aesd = aesd;

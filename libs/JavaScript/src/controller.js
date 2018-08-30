@@ -24,15 +24,15 @@ function updateConnectButtons() {
 
 function reconnect() {
   disconnect();
-  ws = cesds.connect(connection.value);
+  ws = aesd.connect(connection.value);
   updateConnectButtons();
-  ws.onopen = function() {wait(); cesds.requestModelsMetadata(ws, null, loadModels, reportError);};
+  ws.onopen = function() {wait(); aesd.requestModelsMetadata(ws, null, loadModels, reportError);};
 }
 
 
 function disconnect() {
   if (ws != null)
-    cesds.disconnect(ws);
+    aesd.disconnect(ws);
   ws = null;
   var root = document.getElementById("models");
   while (root.firstChild)
@@ -205,7 +205,7 @@ function loadModels(result) {
       subdetail = document.createElement("BUTTON");
       text = document.createTextNode("show");
       subdetail.appendChild(text);
-      subdetail.addEventListener("click", function() {wait(); lastBookmark = null; cesds.requestRecordsData(ws, m.id, maxRecords.valueAsNumber, null, null, showRecords, reportError);});
+      subdetail.addEventListener("click", function() {wait(); lastBookmark = null; aesd.requestRecordsData(ws, m.id, maxRecords.valueAsNumber, null, null, showRecords, reportError);});
       detail.appendChild(subdetail);
       subnode.appendChild(detail);
 
@@ -225,13 +225,13 @@ function loadModels(result) {
               var item = document.createElement("LI");
               text = document.createTextNode("[" + b.id + "] " + b.name);
               item.appendChild(text);
-              item.addEventListener("click", function() {wait(); lastBookmark = b; cesds.requestRecordsData(ws, m.id, maxRecords.valueAsNumber, null, b.id, showRecords, reportError);});
+              item.addEventListener("click", function() {wait(); lastBookmark = b; aesd.requestRecordsData(ws, m.id, maxRecords.valueAsNumber, null, b.id, showRecords, reportError);});
               item.style.cursor = "pointer";
               subdetail.appendChild(item);
             }
           )
         };
-      cesds.requestBookmarkMeta(ws, m.id, null, findBookmarks, reportError);
+      aesd.requestBookmarkMeta(ws, m.id, null, findBookmarks, reportError);
       detail.appendChild(subdetail);
       subnode.appendChild(detail);
 

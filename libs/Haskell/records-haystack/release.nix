@@ -11,12 +11,6 @@ let
                 haskellPackagesNew.callPackage ./default.nix { };
               aesd-records =
                 haskellPackagesNew.callPackage ../records/default.nix { };
-              raft =
-                haskellPackagesNew.callPackage /home/bbush/Projects/Deploy/raft/default.nix {};
-              daft =
-                haskellPackagesNew.callPackage /home/bbush/Projects/Haskell/daft/default.nix {};
-              singletons =
-                haskellPackagesNew.callPackage /home/bbush/Projects/Haskell/daft/singletons.nix {};
             };
           };
         };

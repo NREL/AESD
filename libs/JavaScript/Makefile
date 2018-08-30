@@ -2,10 +2,10 @@ SHELL=bash
 BROWSERIFY=node_modules/.bin/browserify
 
 
-all: cesds-bundle.js
+all: aesd-bundle.js
 
 clean:
-	-rm cesds-bundle.js gen/records_def_4_pb.js
+	-rm aesd-bundle.js gen/records_def_4_pb.js
 
 
 serve: all
@@ -17,7 +17,7 @@ setup-tools:
 gen/%_pb.js: %.proto
 	protoc --js_out=import_style=commonjs,binary:gen $^
 
-cesds-bundle.js: src/standalone.js src/cesds-records.js gen/records_def_4_pb.js lib/google-protobuf.js
+aesd-bundle.js: src/standalone.js src/aesd-records.js gen/records_def_4_pb.js lib/google-protobuf.js
 	$(BROWSERIFY) --outfile $@ $^
 
 

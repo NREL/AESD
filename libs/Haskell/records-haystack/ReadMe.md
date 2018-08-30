@@ -1,4 +1,4 @@
-# CESDS Records from Haystack
+# AESD Records from Haystack
 
 
 ## Example Session
@@ -13,7 +13,7 @@
 	      "state":"ok",
 	      "message":"operating normally"
 	   },
-	   "server_id":"CESDS Haystack",
+	   "server_id":"AESD Haystack",
 	   "server_type":"record_server",
 	   "models":[  
 	      "RSF2v0"
@@ -274,7 +274,7 @@ The generation number is simple the Unix Epoch time in seconds.  Using that as t
 	  }
 	]
 
-The server is combining observations at different measurement times: i.e., not all variables are measured at exactly the same time.  In fact some variables are measured at high frequency, and others at low frequency. One could imagine several strategies for dealing with this within the CESDS Records API:
+The server is combining observations at different measurement times: i.e., not all variables are measured at exactly the same time.  In fact some variables are measured at high frequency, and others at low frequency. One could imagine several strategies for dealing with this within the AESD Records API:
 
 1.  Only report measurements at the time they were measured. This would result in a many records with missing values.
 2.  At each time where a measurement has been made, report the most recently measured value of all of the variables.

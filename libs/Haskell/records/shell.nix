@@ -1,1 +1,1 @@
-((import ./release.nix) {}).cesds-records.env
+((import ./release.nix) {}).aesd-records.env

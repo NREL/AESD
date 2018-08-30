@@ -1,17 +1,17 @@
-# CESDS Records API in Haskell
+# AESD Records API in Haskell
 
 ## Overview
 
-This [Haskell package](cesds-records.cabal) contains . . .
+This [Haskell package](aesd-records.cabal) contains . . .
 
-1.  a library for working with the CESDS Records API,
-2.  [a skeletal server](src/CESDS/Server.hs) for the REST API
+1.  a library for working with the AESD Records API,
+2.  [a skeletal server](src/AESD/Server.hs) for the REST API
 3.  [automated tests](src/TestJSON.hs) for the library, and
 4.  [an example server](src/Main.hs) that implements the REST API and provides random, but consistent data and validates input.
 
-This implementation comforms to http://github.nrel.gov:kgruchal/cesds/commit/8c3b1aaca522cf26ec466cf9e7177e20b7ebdcb4, but see the note in the [change log](ChangeLog.md).
+This implementation comforms to http://github.nrel.gov:kgruchal/aesd/commit/8c3b1aaca522cf26ec466cf9e7177e20b7ebdcb4, but see the note in the [change log](ChangeLog.md).
 
-## Example usage of CESDS API
+## Example usage of AESD API
 
 ### Get server status
 
