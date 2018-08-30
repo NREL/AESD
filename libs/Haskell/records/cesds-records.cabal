@@ -1,0 +1,139 @@
+name         : cesds-records
+version      : 0.4.4.3
+synopsis     : CESDS Records
+description  :
+  Implementation of CESDS Records API, include a skeletal server and client.
+  .
+  The executable program /cesds-server/ serves tab-separated-value files as CESDS Records.  Its command-line arguments are (i) the WebSocket host address, (ii) the WebSocket port number, (iii) the directory where the tab-separated-value files reside, and (iv) the path to the journal file that persists data for future invocations.
+  .
+  The executable program /cesds-client-example/ prints out a model and creates a bookmark.  Its command-line arguments are (i) the WebSocket host address and (ii) the WebSocket port number.
+license      : AllRightsReserved
+license-file : LICENSE
+author       : Brian W Bush <brian.bush@nrel.gov>
+maintainer   : Brian W Bush <brian.bush@nrel.gov>
+copyright    : (c) 2016-17 National Renewable Energy Laboratory
+category     : Network
+build-type   : Simple
+cabal-version: >= 1.10
+
+stability    : Stable
+homepage     : https://github.nrel.gov/haskell/cesds-records
+bug-reports  : https://github.nrel.gov/haskell/cesds-records/issues/
+
+extra-source-files:  ReadMe.md
+
+source-repository head
+  type    : git
+  location: https://github.nrel.gov/haskell/cesds-records.git
+
+flag verbose
+  description: Verbose logging.
+  default    : False
+ 
+library
+  hs-source-dirs  : src
+  exposed-modules : CESDS.Records.Client
+                    CESDS.Records.Server
+                    CESDS.Records.Server.File
+                    CESDS.Records.Server.Manager
+                    CESDS.Types
+                    CESDS.Types.Bookmark
+                    CESDS.Types.Domain
+                    CESDS.Types.Filter
+                    CESDS.Types.Model
+                    CESDS.Types.Record
+                    CESDS.Types.Request
+                    CESDS.Types.Response
+                    CESDS.Types.Value
+                    CESDS.Types.Variable
+                    Network.WebSockets.STM
+  other-modules   : CESDS.Types.Internal
+  build-depends   : base >= 4.8 && < 4.9
+                  , bytestring
+                  , cereal
+                  , containers
+                  , data-default
+                  , lens
+                  , mtl
+                  , protobuf
+                  , regex-posix
+                  , raft
+                  , split
+                  , stm
+                  , uuid
+                  , websockets
+  default-language: Haskell2010
+  if flag(verbose)
+    cpp-options   : -DCESDS_VERBOSE
+  ghc-options     : -Wall -O2
+
+executable cesds-file-server
+  main-is         : MainServer.hs
+  hs-source-dirs  : src
+  build-depends   : base               
+                  , bytestring
+                  , cereal
+                  , containers
+                  , data-default
+                  , directory
+                  , filepath
+                  , lens
+                  , mtl
+                  , protobuf
+                  , regex-posix
+                  , raft
+                  , split
+                  , stm
+                  , uuid
+                  , websockets
+  buildable       : True               
+  default-language: Haskell2010        
+  if flag(verbose)
+    cpp-options   : -DCESDS_VERBOSE
+  ghc-options     : -Wall -O2 -threaded
+
+executable cesds-random-server
+  main-is         : MainRandomServer.hs
+  hs-source-dirs  : src
+  build-depends   : base               
+                  , bytestring
+                  , cereal
+                  , containers
+                  , data-default
+                  , lens
+                  , mtl
+                  , protobuf
+                  , raft
+                  , random
+                  , split
+                  , stm
+                  , uuid
+                  , websockets
+  buildable       : True               
+  default-language: Haskell2010        
+  cpp-options     : -DCESDS_THROTTLE=1000
+  if flag(verbose)
+    cpp-options   : -DCESDS_VERBOSE
+  ghc-options     : -Wall -O2 -threaded
+
+executable cesds-client-example
+  main-is         : MainClientExample.hs
+  hs-source-dirs  : src
+  build-depends   : base               
+                  , bytestring
+                  , cereal
+                  , containers
+                  , data-default
+                  , lens
+                  , mtl
+                  , protobuf
+                  , raft
+                  , split
+                  , stm
+                  , uuid
+                  , websockets
+  buildable       : True               
+  default-language: Haskell2010        
+  if flag(verbose)
+    cpp-options   : -DCESDS_VERBOSE
+  ghc-options     : -Wall -O2 -threaded
