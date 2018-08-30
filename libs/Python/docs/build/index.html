@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Behold CESDSpy’s documentation! &#8212; CESDSpy</title>
+    <title>Behold AESDpy’s documentation! &#8212; AESDpy</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -23,8 +23,8 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="CESDSpy" href="#" />
-    <link rel="next" title="Modules" href="cesdspy.html" />
+    <link rel="top" title="AESDpy" href="#" />
+    <link rel="next" title="Modules" href="aesdpy.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -40,37 +40,37 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="behold-cesdspy-s-documentation">
-<h1>Behold CESDSpy&#8217;s documentation!<a class="headerlink" href="#behold-cesdspy-s-documentation" title="Permalink to this headline">¶</a></h1>
-<p>A Python client for Clean Energy Systems Design Studio (CESDS) servers.</p>
+  <div class="section" id="behold-aesdpy-s-documentation">
+<h1>Behold AESDpy&#8217;s documentation!<a class="headerlink" href="#behold-aesdpy-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>A Python client for Clean Energy Systems Design Studio (AESD) servers.</p>
 <div class="section" id="install">
 <h2>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-shell"><div class="highlight"><pre><span></span>pip install git+https://github.nrel.gov/nwunder2/cesdspy
+<div class="highlight-shell"><div class="highlight"><pre><span></span>pip install git+https://github.nrel.gov/nwunder2/aesdpy
 </pre></div>
 </div>
 </div>
 <div class="section" id="use">
 <h2>Use<a class="headerlink" href="#use" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">cesdspy</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">aesdpy</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;http://1lv11lamb01.nrel.gov:8090&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">models</span> <span class="o">=</span> <span class="n">cesdspy</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">records</span> <span class="o">=</span> <span class="n">cesdspy</span><span class="o">.</span><span class="n">records</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">models</span> <span class="o">=</span> <span class="n">aesdpy</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">records</span> <span class="o">=</span> <span class="n">aesdpy</span><span class="o">.</span><span class="n">records</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">records</span><span class="p">)</span>
 <span class="go">[{u&#39;variables&#39;: [{u&#39;id&#39;: u&#39;NtA&#39;, u&#39;value&#39;: u&#39;vIf9&#39;}], u&#39;id&#39;: u&#39;Il81Na1b665QiXyF&#39;}]</span>
 </pre></div>
 </div>
-<span class="target" id="module-cesdspy"></span></div>
+<span class="target" id="module-aesdpy"></span></div>
 <div class="section" id="contents">
 <h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="cesdspy.html">Modules</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="cesdspy/servers.html"><code class="docutils literal"><span class="pre">cesdspy.servers</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="cesdspy/models.html"><code class="docutils literal"><span class="pre">cesdspy.models</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="cesdspy/records.html"><code class="docutils literal"><span class="pre">cesdspy.records</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="cesdspy/work.html"><code class="docutils literal"><span class="pre">cesdspy.work</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="cesdspy/bookmarks.html"><code class="docutils literal"><span class="pre">cesdspy.bookmarks</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="cesdspy/filters.html"><code class="docutils literal"><span class="pre">cesdspy.filters</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="aesdpy.html">Modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="aesdpy/servers.html"><code class="docutils literal"><span class="pre">aesdpy.servers</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="aesdpy/models.html"><code class="docutils literal"><span class="pre">aesdpy.models</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="aesdpy/records.html"><code class="docutils literal"><span class="pre">aesdpy.records</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="aesdpy/work.html"><code class="docutils literal"><span class="pre">aesdpy.work</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="aesdpy/bookmarks.html"><code class="docutils literal"><span class="pre">aesdpy.bookmarks</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="aesdpy/filters.html"><code class="docutils literal"><span class="pre">aesdpy.filters</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="logging.html">Logging</a><ul>
@@ -96,7 +96,7 @@
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="#">CESDSpy</a></h1>
+<h1 class="logo"><a href="#">AESDpy</a></h1>
 
 
 
@@ -107,7 +107,7 @@
 
 <h3>Navigation</h3>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="cesdspy.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="aesdpy.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="logging.html">Logging</a></li>
 </ul>
 
@@ -115,16 +115,16 @@
 <h3>Related Topics</h3>
 <ul>
   <li><a href="#">Documentation overview</a><ul>
-      <li>Next: <a href="cesdspy.html" title="next chapter">Modules</a></li>
+      <li>Next: <a href="aesdpy.html" title="next chapter">Modules</a></li>
   </ul></li>
 </ul>
-</div><h3>CESDS Clients</h3>
+</div><h3>AESD Clients</h3>
 <ul>
   <li class="toctree-l1">
-    <a href="https://github.nrel.gov/bbugbee/cesdsR" target="blank">cesdsR</a>
+    <a href="https://github.nrel.gov/bbugbee/aesdR" target="blank">aesdR</a>
   </li>
   <li class="toctree-l1">
-    <a href="https://github.nrel.gov/nwunder2/cesdspy" target="blank">cesdspy</a>
+    <a href="https://github.nrel.gov/nwunder2/aesdpy" target="blank">aesdpy</a>
   </li>
 </ul>
 <div id="searchbox" style="display: none" role="search">

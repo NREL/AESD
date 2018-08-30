@@ -34,3 +34,5 @@ Software
     *   [Project Haystack](https://project-haystack.org/) support: [aesd-records-haystack](libs/Haskell/records-haystack/)
 *   JavaScript
     *   [client library](libs/JavaScript/)
+*   Python
+    *   [client library](libs/Python/)

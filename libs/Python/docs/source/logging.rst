@@ -7,7 +7,7 @@ Logging is disabled by default. To enable . . .
 
 .. code-block:: python
 
-  import cesdspy
+  import aesdpy
   import logging
 
   logging.basicConfig(
@@ -21,12 +21,12 @@ Logging is disabled by default. To enable . . .
 
 .. code-block:: python
 
-  import cesdspy
+  import aesdpy
   import logging
 
   logging.basicConfig(
       level=logging.INFO,
-      filename='cesdspy.log',
+      filename='aesdpy.log',
       format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
       datefmt='%m/%d/%Y %H:%M:%S')
 
@@ -51,4 +51,4 @@ failed request
 
     10/26/1985 01:21:00 [INFO] requests.packages.urllib3.connectionpool: Starting new HTTP connection (1): 1lv11lamb01.nrel.gov
     10/26/1985 01:21:00 [DEBUG] requests.packages.urllib3.connectionpool: "POST / HTTP/1.1" 400 None
-    10/26/1985 01:21:00 [ERROR] cesdspy.servers:  POST http://1lv11lamb01.nrel.gov:8090/command 400 - invalid request
+    10/26/1985 01:21:00 [ERROR] aesdpy.servers:  POST http://1lv11lamb01.nrel.gov:8090/command 400 - invalid request

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# cesdspy documentation build configuration file, created by
+# aesdpy documentation build configuration file, created by
 # sphinx-quickstart on Wed Aug 31 11:51:27 2016.
 #
 # This file is execfile()d with the current directory set to its
@@ -48,7 +48,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'CESDSpy'
+project = u'AESDpy'
 copyright = u'2016'
 author = u'Nick Wunder'
 
@@ -131,7 +131,7 @@ html_theme = "alabaster"
 
 # html_theme_options = {
 #         "extra_nav_links": {
-#             "Github": "https://github.nrel.gov/nwunder2/cesdspy"
+#             "Github": "https://github.nrel.gov/nwunder2/aesdpy"
 #             }
 #         }
 
@@ -157,7 +157,7 @@ html_sidebars = {
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
 #
-html_title = u'CESDSpy'
+html_title = u'AESDpy'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #
@@ -257,7 +257,7 @@ html_static_path = ['_static']
 # html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'cesdspydoc'
+htmlhelp_basename = 'aesdpydoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -283,7 +283,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'cesdspy.tex', u'cesdspy Documentation',
+    (master_doc, 'aesdpy.tex', u'aesdpy Documentation',
      u'Nick Wunder', 'manual'),
 ]
 
@@ -325,7 +325,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'cesdspy', u'cesdspy Documentation',
+    (master_doc, 'aesdpy', u'aesdpy Documentation',
      [author], 1)
 ]
 
@@ -340,8 +340,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'cesdspy', u'cesdspy Documentation',
-     author, 'cesdspy', 'One line description of project.',
+    (master_doc, 'aesdpy', u'aesdpy Documentation',
+     author, 'aesdpy', 'One line description of project.',
      'Miscellaneous'),
 ]
 
