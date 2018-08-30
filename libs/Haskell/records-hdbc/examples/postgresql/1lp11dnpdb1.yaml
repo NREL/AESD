@@ -1,0 +1,5 @@
+host       : 127.0.0.1
+port       : 50374
+directory  : queries
+persistence: bookmarks.bin
+database   : host=1lp11dnpdb1.nrel.gov port=5432 dbname=bsm user=bsmclient password=dogsled
