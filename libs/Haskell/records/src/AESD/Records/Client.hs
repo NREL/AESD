@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
+Copyright   :  (c) 2016-19 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -11,7 +11,6 @@ A skeletal implementation of a client.
 
 
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TupleSections   #-}
 
 
 module AESD.Records.Client (
@@ -37,10 +36,10 @@ import AESD.Types.Response as Response (Response, identifier, nextChunkIdentifie
 import Control.Concurrent.Util (makeCounter)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens ((&))
-import Control.Lens.Setter ((.~), over)
+import Control.Lens.Setter ((.~), (?~), over)
 import Control.Concurrent.MVar (newEmptyMVar, putMVar, takeMVar)
 import Control.Concurrent.STM (atomically)
-import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVar, writeTVar)
+import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVar, readTVarIO, writeTVar)
 import Control.Monad (liftM2, when)
 import Control.Monad.Except (liftIO)
 import Data.Default (def)
@@ -116,7 +115,7 @@ fetchRecords :: State                              -- ^ The state of the client.
 fetchRecords State{..} i c =
   do
     -- Check if the model is on the server.
-    found <- M.member i <$> atomically (readTVar modelCache)
+    found <- M.member i <$> readTVarIO modelCache
     if found
       then
         do -- FIXME: Generalize 'accumulate' to this case, too?
@@ -187,7 +186,7 @@ makeModelCache :: Connection -- ^ The web socket connection.
                -> IO State   -- ^ Action to create the state with a new model cache.
 makeModelCache connection =
   do
-    communicator <- start connection ((Request.identifier .~) . Just) (fromJust . (^. Response.identifier))
+    communicator <- start connection (Request.identifier ?~) (fromJust . (^. Response.identifier))
     nextIdentifier <- liftIO $ makeCounter (+ 1) 0
     modelCache <- newTVarIO M.empty
     return State{..}

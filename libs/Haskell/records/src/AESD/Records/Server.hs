@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
+Copyright   :  (c) 2016-19 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -42,7 +42,7 @@ import Control.Concurrent.STM (atomically)
 import Control.Concurrent.STM.TVar (TVar, modifyTVar', newTVarIO, readTVar, readTVarIO, writeTVar)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens ((&))
-import Control.Lens.Setter ((.~))
+import Control.Lens.Setter ((.~), (?~))
 import Control.Monad (unless, void)
 import Control.Monad.Except (ExceptT, MonadError, MonadIO, liftIO, runExceptT, throwError)
 import Control.Monad.Except.Util (guardSomeException)
@@ -124,7 +124,7 @@ serverMain host port chunkSize initialManager =
                 cid' = cid + 1
               send communicator ()
                 . (Response.identifier .~ rid                                     )
-                . (chunkIdentifier     .~ Just cid                                )
+                . (chunkIdentifier     ?~ cid                                     )
                 . (nextChunkIdentifier .~ if lastChunk then Nothing else Just cid')
                 $ either errorResponse recordsResponse result
               pause

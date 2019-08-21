@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
+Copyright   :  (c) 2016-19 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -26,6 +26,9 @@ import Control.Lens.Lens ((&))
 import Control.Lens.Setter ((.~))
 import Data.Default (def)
 import Text.Regex.Posix ((=~))
+
+
+{-# ANN module "HLint: ignore Reduce duplication" #-}
 
 
 -- | Construct variable metadata for a table of data.  The strings in the table are analyzed to determine whether each column is a real, integer, or string value.  If the name of the variable contains its units in square brackets, the units are separated from the variable and put in the units metadata.

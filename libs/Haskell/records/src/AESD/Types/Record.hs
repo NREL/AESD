@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
+Copyright   :  (c) 2016-19 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -40,13 +40,16 @@ import Control.Applicative ((<|>))
 import Control.Arrow (second)
 import Control.Lens.Getter ((^.))
 import Control.Lens.Lens (Lens', (&), lens)
-import Control.Lens.Setter ((.~))
+import Control.Lens.Setter ((.~), (?~))
 import Data.Default (Default(..))
 import Data.Int (Int64)
 import Data.List.Split (chunksOf)
 import Data.Maybe (fromMaybe)
 import Data.ProtocolBuffers (Decode, Encode, Message, Optional, Packed, Repeated, Required, Value, getField, putField)
 import GHC.Generics (Generic)
+
+
+{-# ANN module "HLint: ignore Use newtype instead of data" #-}
 
 
 -- | A value of a variable.
@@ -230,9 +233,9 @@ recordTable =
     (
       \s x ->
         onDataValues
-          ((realTable    .~) . Just)
-          ((integerTable .~) . Just)
-          ((stringTable  .~) . Just)
+          (realTable    ?~)
+          (integerTable ?~)
+          (stringTable  ?~)
           (id :: RecordTable -> RecordTable )
           (fmap snd . snd =<< x :: [DataValue])
           $ s

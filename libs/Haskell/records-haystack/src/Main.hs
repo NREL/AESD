@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
+Copyright   :  (c) 2016-19 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -26,7 +26,7 @@ import Control.Monad.Except (liftIO)
 import Control.Monad.Except.Util (runToIO)
 import Control.Monad.Trans.Resource (runResourceT)
 import Data.Text (pack)
-import Data.Yaml (decodeFile)
+import Data.Yaml (decodeFileEither)
 import NREL.Meters (Site(..), meters, siteModels)
 import Network.HTTP.Conduit (newManager, tlsManagerSettings)
 import System.Environment (getArgs)
@@ -36,7 +36,7 @@ main :: IO ()
 main =
   do
     [configuration, host, port, start, persistence, chunkSize] <- getArgs -- FIXME
-    Just site <- decodeFile configuration
+    Right site <- decodeFileEither configuration
     let
       access = siteAccess site
     runResourceT

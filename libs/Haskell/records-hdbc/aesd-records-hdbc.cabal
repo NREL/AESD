@@ -1,5 +1,5 @@
 name         : aesd-records-hdbc
-version      : 0.4.1.3
+version      : 0.5.0.0
 synopsis     : Database support for AESD records API.
 description  :
   The package provides HDBC support for PostgreSQL, SQLite3, MySQL, and ODBC support for the AESD records API.
@@ -51,7 +51,7 @@ license      : MIT
 license-file : LICENSE
 author       : Brian W Bush <brian.bush@nrel.gov>
 maintainer   : Brian W Bush <brian.bush@nrel.gov>
-copyright    : (c) 2017 Alliance for Sustainable Energy LLC
+copyright    : (c) 2017-19 Alliance for Sustainable Energy LLC
 category     : Network
 build-type   : Simple
 cabal-version: >= 1.10
@@ -86,7 +86,7 @@ flag ODBC
 library
   hs-source-dirs  : src
   exposed-modules : AESD.Records.Server.HDBC
-  build-depends   : base >=4.8 && <4.9
+  build-depends   : base >=4 && <5
                   , aesd-records
                   , data-default
                   , directory
@@ -99,6 +99,7 @@ library
 executable aesd-postgresql-server
   hs-source-dirs  : src
   main-is         : MainPostgreSQL.hs
+  other-modules   : AESD.Records.Server.HDBC
   build-depends   : base
                   , aeson
                   , aesd-records
@@ -119,6 +120,7 @@ executable aesd-postgresql-server
 executable aesd-sqlite3-server
   hs-source-dirs  : src
   main-is         : MainSQLite3.hs
+  other-modules   : AESD.Records.Server.HDBC
   build-depends   : base
                   , aeson
                   , aesd-records
@@ -139,6 +141,7 @@ executable aesd-sqlite3-server
 executable aesd-mysql-server
   hs-source-dirs  : src
   main-is         : MainMySQL.hs
+  other-modules   : AESD.Records.Server.HDBC
   build-depends   : base
                   , aeson
                   , aesd-records
@@ -151,6 +154,7 @@ executable aesd-mysql-server
                   , yaml
   if flag(MySQL)
     buildable     : True
+    build-depends : HDBC-mysql
   else
     buildable     : False
   default-language: Haskell2010        
@@ -159,6 +163,7 @@ executable aesd-mysql-server
 executable aesd-odbc-server
   hs-source-dirs  : src
   main-is         : MainODBC.hs
+  other-modules   : AESD.Records.Server.HDBC
   build-depends   : base
                   , aeson
                   , aesd-records

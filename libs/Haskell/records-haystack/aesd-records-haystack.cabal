@@ -1,5 +1,5 @@
 name         : aesd-records-haystack
-version      : 0.4.1.3
+version      : 0.5.0.0
 synopsis     : Haystack support for AESD records API.
 description  :
   Haystack support for AESD records API.
@@ -7,7 +7,7 @@ license      : MIT
 license-file : LICENSE
 author       : Brian W Bush <brian.bush@nrel.gov>
 maintainer   : Brian W Bush <brian.bush@nrel.gov>
-copyright    : (c) 2016-18 Alliance for Sustainable Energy
+copyright    : (c) 2016-19 Alliance for Sustainable Energy
 category     : Network
 build-type   : Simple
 cabal-version: >= 1.10
@@ -28,7 +28,7 @@ library
   exposed-modules : AESD.Haystack
                     AESD.Haystack.Cache.Memory
                     NREL.Meters
-  build-depends   : base >=4.8 && <4.9
+  build-depends   : base >= 4.8 && < 5
                   , aeson
                   , bytestring
                   , aesd-records
@@ -51,6 +51,9 @@ library
 executable aesd-haystack-server
   hs-source-dirs  : src
   main-is         : Main.hs
+  other-modules   : AESD.Haystack
+                    AESD.Haystack.Cache.Memory
+                    NREL.Meters
   build-depends   : base
                   , aeson
                   , bytestring

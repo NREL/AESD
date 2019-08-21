@@ -1,4 +1,7 @@
-{ compiler ? "ghc7103" }:
+{
+  nixpkgs  ? import <nixpkgs>
+, compiler ? "ghc822"
+}:
 
 let
   config = {
@@ -7,10 +10,9 @@ let
         packages = pkgs.haskell.packages // {
           "${compiler}" = pkgs.haskell.packages."${compiler}".override {
             overrides = haskellPackagesNew: haskellPackagesOld: rec {
-              aesd-records-hdbc =
-                haskellPackagesNew.callPackage ./default.nix { };
-              aesd-records =
-                haskellPackagesNew.callPackage ../records/default.nix { };
+              aesd-records-hdbc = haskellPackagesNew.callPackage                ./default.nix { };
+              aesd-records      = haskellPackagesNew.callPackage       ../records/default.nix { };
+              raft              = haskellPackagesNew.callPackage ../../../../raft/default.nix { };
             };
           };
         };

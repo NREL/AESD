@@ -1,5 +1,5 @@
 name         : aesd-records
-version      : 0.4.4.4
+version      : 0.5.0.0
 synopsis     : AESD Records
 description  :
   Implementation of AESD Records API, include a skeletal server and client.
@@ -11,7 +11,7 @@ license      : MIT
 license-file : LICENSE
 author       : Brian W Bush <brian.bush@nrel.gov>
 maintainer   : Brian W Bush <brian.bush@nrel.gov>
-copyright    : (c) 2016-18 Alliance for Sustainable Energy LLC
+copyright    : (c) 2016-19 Alliance for Sustainable Energy LLC
 category     : Network
 build-type   : Simple
 cabal-version: >= 1.10
@@ -49,7 +49,7 @@ library
                     AESD.Types.Variable
                     Network.WebSockets.STM
   other-modules   : AESD.Types.Internal
-  build-depends   : base >= 4.8 && < 4.9
+  build-depends   : base >= 4 && < 5
                   , bytestring
                   , cereal
                   , containers
@@ -69,8 +69,23 @@ library
   ghc-options     : -Wall -O2
 
 executable aesd-file-server
-  main-is         : MainServer.hs
   hs-source-dirs  : src
+  main-is         : MainServer.hs
+  other-modules   : AESD.Records.Server
+                    AESD.Records.Server.File
+                    AESD.Records.Server.Manager
+                    AESD.Types
+                    AESD.Types.Bookmark
+                    AESD.Types.Domain
+                    AESD.Types.Filter
+                    AESD.Types.Internal
+                    AESD.Types.Model
+                    AESD.Types.Record
+                    AESD.Types.Request
+                    AESD.Types.Response
+                    AESD.Types.Value
+                    AESD.Types.Variable
+                    Network.WebSockets.STM
   build-depends   : base               
                   , bytestring
                   , cereal
@@ -94,8 +109,22 @@ executable aesd-file-server
   ghc-options     : -Wall -O2 -threaded
 
 executable aesd-random-server
-  main-is         : MainRandomServer.hs
   hs-source-dirs  : src
+  main-is         : MainRandomServer.hs
+  other-modules   : AESD.Records.Server
+                    AESD.Records.Server.Manager
+                    AESD.Types
+                    AESD.Types.Bookmark
+                    AESD.Types.Domain
+                    AESD.Types.Filter
+                    AESD.Types.Internal
+                    AESD.Types.Model
+                    AESD.Types.Record
+                    AESD.Types.Request
+                    AESD.Types.Response
+                    AESD.Types.Value
+                    AESD.Types.Variable
+                    Network.WebSockets.STM
   build-depends   : base               
                   , bytestring
                   , cereal
@@ -118,8 +147,23 @@ executable aesd-random-server
   ghc-options     : -Wall -O2 -threaded
 
 executable aesd-client-example
-  main-is         : MainClientExample.hs
   hs-source-dirs  : src
+  main-is         : MainClientExample.hs
+  other-modules   : AESD.Records.Client
+                    AESD.Records.Server
+                    AESD.Records.Server.Manager
+                    AESD.Types
+                    AESD.Types.Bookmark
+                    AESD.Types.Domain
+                    AESD.Types.Filter
+                    AESD.Types.Internal
+                    AESD.Types.Model
+                    AESD.Types.Record
+                    AESD.Types.Request
+                    AESD.Types.Response
+                    AESD.Types.Value
+                    AESD.Types.Variable
+                    Network.WebSockets.STM
   build-depends   : base               
                   , bytestring
                   , cereal

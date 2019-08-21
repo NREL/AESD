@@ -1,6 +1,6 @@
 {-|
 Module      :  $Header$
-Copyright   :  (c) 2016-18 Alliance for Sustainable Energy LLC
+Copyright   :  (c) 2016-19 Alliance for Sustainable Energy LLC
 License     :  MIT
 Maintainer  :  Brian W Bush <brian.bush@nrel.gov>
 Stability   :  Stable
@@ -49,7 +49,7 @@ import Data.ProtocolBuffers (Decode, Encode, Packed, Repeated, Required, Value, 
 import Data.Serialize (runGetLazy, runPutLazy)
 import Data.Word (Word32)
 import GHC.Generics (Generic)
-import Network.WebSockets (WebSocketsData(..))
+import Network.WebSockets (DataMessage(..), WebSocketsData(..))
 
 
 -- | A signed integer.
@@ -204,5 +204,7 @@ strings = getField . strings'
 
 -- Enable protocol buffers for transport via web sockets.
 instance (Decode a, Encode a) => WebSocketsData a where
+  fromDataMessage (Text   bs _) = either error id $ runGetLazy decodeMessage bs
+  fromDataMessage (Binary bs  ) = either error id $ runGetLazy decodeMessage bs
   fromLazyByteString = either error id . runGetLazy decodeMessage
   toLazyByteString = runPutLazy . encodeMessage
