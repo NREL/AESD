@@ -1,47 +1,45 @@
-{ nixpkgs ? import <nixpkgs>, compiler ? "ghc7103" }:
+{
+  package
+, nixpkgs  ? null
+, compiler ? "ghc822"
+}:
 
 let
-  config = {
-    packageOverrides = pkgs: rec {
-      haskell = pkgs.haskell // {
-        packages = pkgs.haskell.packages // {
-          "${compiler}" = pkgs.haskell.packages."${compiler}".override {
-            overrides = haskellPackagesNew: haskellPackagesOld: rec {
-              aesd-records =
-                haskellPackagesNew.callPackage ./records/default.nix { };
-              aesd-records-hdbc =
-                haskellPackagesNew.callPackage ./records-hdbc/default.nix { };
-              aesd-records-haystack =
-                haskellPackagesNew.callPackage ./records-haystack/default.nix { };
-            };
-          };
-        };
-      };
-    };
-  };
 
-  pkgs = nixpkgs { inherit config; };
+  nixpkgs1 =
+    if nixpkgs == null
+      then let
+             bootstrap = import <nixpkgs> { };
+             location = builtins.fromJSON (builtins.readFile ./nixpkgs.json);
+             src = bootstrap.fetchFromGitHub {
+               owner = "NixOS";
+               repo  = "nixpkgs";
+               inherit (location) rev sha256;
+             };
+           in
+            import src
+      else nixpkgs;
 
-  ghc = pkgs.haskell.packages.${compiler}.ghcWithPackages (self: [
-    self.aesd-records
-    self.aesd-records-hdbc
-    self.aesd-records-haystack
-  ]);
+  pkgs = nixpkgs1 { };
+
+  release = (import ./release.nix) {nixpkgs = nixpkgs1; compiler = compiler;};
+
+  target = release.${package};
+
+  haskellPackages = pkgs.haskell.packages."${compiler}";
 
 in
 
-  with pkgs;
-  stdenv.mkDerivation rec {
-    name = "aesd-env";
-    env = buildEnv {
-      inherit name;
-      paths = buildInputs;
-    };
-    buildInputs = with haskell.packages.${compiler}; [
-      standalone-haddock
-      ghc
+  pkgs.lib.overrideDerivation target.env (old: {
+    buildInputs = old.buildInputs ++ [
+      haskellPackages.cabal-install
+    # haskellPackages.ghc-mod
+      haskellPackages.ghcid
+    # haskellPackages.hasktags
+      haskellPackages.hdevtools
+      haskellPackages.hindent
+      haskellPackages.hlint
+      haskellPackages.pointfree
+      haskellPackages.pointful
     ];
-    shellHook = ''
-      standalone-haddock -o ../../docs/haskell records records-hdbc records-haystack
-    '';
-  }
+  })
